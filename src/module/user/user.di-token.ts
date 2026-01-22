@@ -1,0 +1,4 @@
+export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
+export const USER_SERVICE = Symbol('USER_SERVICE');
+export const ACCESS_TOKEN_PROVIDER = Symbol('ACCESS_TOKEN_PROVIDER');
+export const REFRESH_TOKEN_PROVIDER = Symbol('REFRESH_TOKEN_PROVIDER');

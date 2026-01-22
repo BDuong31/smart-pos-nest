@@ -4,15 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-model Role {
-  id          String   @id @default(uuid()) @map("id") @db.VarChar(36)
-  name        String   @unique @map("name") @db.VarChar(50)
-  permissions String?  @map("permissions") @db.Text // JSON list quyền
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-
-  @@map("roles")
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model UserRank {
@@ -28,18 +21,24 @@ model UserRank {
 model User {
   id            String      @id @default(uuid()) @map("id") @db.VarChar(36)
   username      String      @unique @map("username") @db.VarChar(100)
+  salt          String      @map("salt") @db.VarChar(50)
   password      String      @map("password") @db.VarChar(255)
+  email         String      @unique @map("email") @db.VarChar(255)
   fullName      String      @map("full_name") @db.VarChar(100)
-  roleId        String      @map("role_id") @db.VarChar(36)
+  birthday      DateTime    @map("birthday") @db.Timestamp(0)
+  role          UserRole    @default(customer) @map("role")
   rankId        String?     @map("rank_id") @db.VarChar(36)
   mongoUserId   String?     @map("mongo_user_id") @db.VarChar(36)
   currentPoints Int         @default(0) @map("current_points")
   status        UserStatus? @default(active) @map("status")
+  fcmToken      String?     @map("fcm_token") @db.Text
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
-  @@index([roleId], map: "roleIdIdx")
+  @@unique([email], map: "email")
+  @@index([role], map: "role")
   @@index([rankId], map: "rankIdIdx")
+  @@index([status], map: "status")
   @@map("users")
 }
 
@@ -412,10 +411,32 @@ model Invoice {
   @@map("invoices")
 }
 
+model Image {
+  id        String     @id @map("id") @db.VarChar(36)
+  url       String     @map("url") @db.Text
+  isMain    Boolean    @default(false)
+  type      ImageType  @map("type")
+  refId     String     @map("ref_id") @db.VarChar(36)
+  publicId  String     @map("public_id") @db.VarChar(255)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime   @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@map("images")
+  @@index([refId], map: "imageRefIdIdx")
+}
+
 enum UserStatus {
   active
+  pending
   inactive
   banned
+}
+
+enum UserRole {
+  customer
+  staff
+  kitchen
+  admin
 }
 
 enum TableStatus {
@@ -450,4 +471,11 @@ enum PaymentStatus {
 enum VoucherType {
   percentage
   fixed_amount
+}
+
+enum ImageType {
+  category
+  avatar
+  product
+  ingredient
 }
