@@ -7,7 +7,7 @@ import {
   EVENT_PUBLISHER, 
   TOKEN_INTROSPECTOR, 
   CACHE_SERVICE, 
-  MONGO_CONNECTION 
+  MONGO_SERVICE 
 } from "./di-token";
 import { TokenIntrospectorRPCClient } from "./rpc/token-introspect.rpc";
 
@@ -40,7 +40,7 @@ const redisProvider: Provider = {
 };
 
 const mongoProvider: Provider = {
-  provide: MONGO_CONNECTION,
+  provide: MONGO_SERVICE,
   useFactory: async () => {
     console.log(config.mongo.uri);
     await MongoClient.init(config.mongo.uri);

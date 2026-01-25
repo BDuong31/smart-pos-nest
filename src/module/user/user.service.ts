@@ -1,9 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { CACHE_SERVICE, EVENT_PUBLISHER } from "src/share/di-token";
 import { IUserService } from "./user.port";
-import type { IUserRepository } from "./user.port";
+import type { IUserMongoAuditRepository, IUserMongoOtpRepository, IUserRepository } from "./user.port";
 import {Requester, AppError, type ICacheService, UserRole, type IAccessTokenProvider, type IRefreshTokenProvider,type IEventPublisher, AccessTokenPayload, ErrInvalidRequest, ErrTokenInvalid, ErrNotFound, RefreshTokenPayload } from "src/share";
-import { ACCESS_TOKEN_PROVIDER, REFRESH_TOKEN_PROVIDER, USER_REPOSITORY } from "./user.di-token";
+import { ACCESS_TOKEN_PROVIDER, REFRESH_TOKEN_PROVIDER, USER_MONGO_AUDIT_REPOSITORY, USER_MONGO_OTP_REPOSITORY, USER_REPOSITORY } from "./user.di-token";
 import { UserAuthDTO, UserChangePasswordDTO, userChangePasswordDTOSchema, UserLoginDTO, userLoginDTOSchema, UserRegistrationDTO, userRegistrationDTOSchema, UserResetPasswordDTO, userResetPasswordDTOSchema, UserUpdateDTO, userUpdateDTOSchema } from "./user.dto";
 import { ErrEmailAlreadyExists, ErrUserBanned, ErrUserInactive, ErrUsernameAlreadyExists, ErrUserNotFound, ErrUserPending, User, UserStatus } from "./user.model";
 import { v7 } from "uuid";
@@ -16,6 +16,8 @@ import { UserCompleteChangePasswordEvent, UserCreatedEvent, UserDeletedEvent, Us
 export class UserService implements IUserService {
   constructor(
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
+    @Inject(USER_MONGO_AUDIT_REPOSITORY) private readonly userAuditRepo: IUserMongoAuditRepository,
+    @Inject(USER_MONGO_OTP_REPOSITORY) private readonly userOtpRepo: IUserMongoOtpRepository,
     @Inject(ACCESS_TOKEN_PROVIDER) private readonly accessTokenProvider: IAccessTokenProvider,
     @Inject(REFRESH_TOKEN_PROVIDER) private readonly refreshTokenProvider: IRefreshTokenProvider,
     @Inject(CACHE_SERVICE) private readonly redis: ICacheService,
@@ -23,18 +25,36 @@ export class UserService implements IUserService {
   ) {}
 
   // Phương thức đăng ký người dùng mới
-  async register(dto: UserRegistrationDTO): Promise<string> {
+  async register(dto: UserRegistrationDTO, ip?: string, userAgent?: string): Promise<string> {
     const data = userRegistrationDTOSchema.parse(dto);
 
     // 1. Kiểm tra xem email đã được sử dụng chưa
     const userEmail = await this.userRepo.findByCond({ email: data.email });
     if (userEmail) {
+      // TH1: Lưu log email đã tồn tại
+      await this.userAuditRepo.logUserAudit({
+        userId: userEmail.id,
+        action: 'REGISTER_FAILED_EMAIL_EXISTS',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'Email already exists' }
+      })
       throw AppError.from(ErrEmailAlreadyExists, 409);
     }
 
     // 2. Kiểm tra xem username đã được sử dụng chưa
     const userUsername = await this.userRepo.findByCond({ username: data.username });
     if (userUsername) {
+      // TH2: Lưu log username đã tồn tại
+      await this.userAuditRepo.logUserAudit({
+        userId: userUsername.id,
+        action: 'REGISTER_FAILED_USERNAME_EXISTS',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'Username already exists' }
+      })
       throw AppError.from(ErrUsernameAlreadyExists, 409);
     }
 
@@ -62,7 +82,50 @@ export class UserService implements IUserService {
     // 5. Lưu người dùng mới vào cơ sở dữ liệu
     await this.userRepo.insert(newUser);
 
+    // TH3: Lưu log đăng ký thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: newId,
+      action: 'REGISTER_SUCCESS',
+      success: true,
+      ip,
+      userAgent,
+      metaData: { email: data.email, username: data.username }
+    });
     return data.email;
+  }
+
+  // Phương thức yêu cầu kích hoạt tài khoản (khi token hết hạn)
+  async activateAccount(email: string, ip?: string, userAgent?: string): Promise<void> {
+    // 1. Kiểm tra xem email có tồn tại không
+    const user = await this.userRepo.findByCond({ email });
+    if (!user) {
+      throw AppError.from(ErrUserNotFound, 404);
+    }
+    // 2. Kiểm tra trạng thái người dùng
+    if (user.status !== UserStatus.PENDING) {
+      // TH4: Lưu log kích hoạt tài khoản thất bại do tài khoản đã được kích hoạt
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'ACTIVATE_ACCOUNT_FAILED_USER_ALREADY_ACTIVE',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'User already verified' }
+      });
+
+      throw AppError.from(new Error('User already verified'), 400);
+    }
+
+    // Lưu log yêu cầu kích hoạt tài khoản
+    await this.userAuditRepo.logUserAudit({
+      userId: user.id,
+      action: 'ACTIVATE_ACCOUNT_REQUESTED',
+      success: true,
+      ip,
+      userAgent,
+      metaData: { email: user.email, username: user.username }
+    });
+
   }
 
   // Phương thức tạo mã OTP để xác minh tài khoản
@@ -93,6 +156,17 @@ export class UserService implements IUserService {
     // 7. Bắn RabbitMQ qua MailService để gửi email chứa mã OTP (bỏ qua phần triển khai gửi email
     await this.eventPublisher.publish(UserCreatedEvent.create({userId: user.id, email: email, username: user.username, otp: otp}, user.id));
 
+    // Lưu log tạo mã OTP thành công
+    await this.userOtpRepo.logOTPAttempt({
+      identifier: email,
+      type: 'VERIFY_ACCOUNT',
+      action: 'GENERATE_OTP_ACCOUNT_SUCCESS',
+      success: true,
+      ip: undefined,
+      userAgent: undefined,
+      metaData: { email: email, username: user.username }
+    });
+
     // 8. Trả về token và thời gian hết hạn
     return { sessionId: token, expiry: Date.now() + 60 * 60 * 1000 }; // 60 phút
   }
@@ -103,6 +177,16 @@ export class UserService implements IUserService {
     // 1. Lấy dữ liệu phiên làm việc từ Redis
     const sessionStr = await this.redis.get(`verify-account:session:${token}`);
     if (!sessionStr) {
+      await this.userOtpRepo.logOTPAttempt({
+        identifier: 'unknown',
+        type: 'RESEND_VERIFY_ACCOUNT',
+        action: 'RESEND_VERIFY_ACCOUNT_FAILED_INVALID_OR_EXPIRED_TOKEN',
+        success: false,
+        ip: undefined,
+        userAgent: undefined,
+        metaData: { reason: 'Invalid or expired token' }
+      });
+
       throw AppError.from(new Error('Invalid or expired token'), 400);
     }
 
@@ -117,6 +201,15 @@ export class UserService implements IUserService {
 
     // 4. Kiểm tra trạng thái người dùng
     if (user.status !== UserStatus.PENDING) {
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'VERIFY_ACCOUNT_FAILED_ALREADY_VERIFIED',
+        success: false,
+        ip: undefined,
+        userAgent: undefined,
+        metaData: { reason: 'User already verified' }
+      });
+
       throw AppError.from(new Error('User already verified'), 400);
     }
 
@@ -139,6 +232,17 @@ export class UserService implements IUserService {
       const createdAt = new Date(oldOtpData.createdAt);
       const diff = (now.getTime() - createdAt.getTime()) / 1000;
       if (diff < 60) {
+        // Lưu log gửi lại OTP quá nhanh
+        await this.userOtpRepo.logOTPAttempt({
+          identifier: user.email,
+          type: 'RESEND_VERIFY_ACCOUNT',
+          action: 'RESEND_VERIFY_ACCOUNT_FAILED_TOO_MANY_REQUESTS',
+          success: false,
+          ip: undefined,
+          userAgent: undefined,
+          metaData: { reason: 'Too many requests' }
+        });
+
         throw AppError.from(new Error('Please wait before requesting a new OTP'), 400);
       }
 
@@ -151,7 +255,17 @@ export class UserService implements IUserService {
 
     if (rateStr) {
       rateData = JSON.parse(rateStr);
-      if (rateData.count >= 5) {
+      if (rateData.count > 5) {
+        // Lưu log vượt quá giới hạn gửi lại OTP
+        await this.userOtpRepo.logOTPAttempt({
+          identifier: user.email,
+          type: 'RESEND_VERIFY_ACCOUNT',
+          action: 'RESEND_VERIFY_ACCOUNT_FAILED_TOO_MANY_REQUESTS',
+          success: false,
+          ip: undefined,
+          userAgent: undefined,
+          metaData: { reason: 'Too many requests' }
+        });
         throw AppError.from(new Error('Too many requests. Please try again later.'), 429);
       }
       rateData.count += 1;
@@ -170,13 +284,25 @@ export class UserService implements IUserService {
 
     // 11. Bắn RabbitMQ qua MailService để gửi email chứa mã OTP
     await this.eventPublisher.publish(UserCreatedEvent.create({userId: user.id, email: sessionData.email, username: user.username, otp: otp}, user.id));
+    
+    // 12. Lưu log gửi lại mã OTP thành công
+    await this.userOtpRepo.logOTPAttempt({
+      identifier: user.email,
+      type: 'RESEND_VERIFY_ACCOUNT',
+      action: 'RESEND_VERIFY_ACCOUNT_SUCCESS',
+      success: true,
+      ip: undefined,
+      userAgent: undefined,
+      metaData: { email: user.email, username: user.username }
+    });
   }
 
   // Phương thức xác minh tài khoản người dùng
-  async verifyAccount(token: string, otp: string): Promise<void> {
+  async verifyAccount(token: string, otp: string, ip: string, userAgent: string): Promise<void> {
     // 1. Lấy dữ liệu phiên làm việc từ Redis
     const sessionStr = await this.redis.get(`verify-account:session:${token}`);
     if (!sessionStr) {
+      // 1. Phiên làm việc không tồn tại hoặc đã hết hạn
       throw AppError.from(new Error('Invalid or expired token'), 400);
     }
 
@@ -187,6 +313,16 @@ export class UserService implements IUserService {
     const otpStr = await this.redis.get(`verify-account:${token}`);
 
     if (!otpStr) {
+      // 3. Mã OTP không tồn tại hoặc đã hết hạn
+      await this.userOtpRepo.logOTPAttempt({
+        identifier: sessionData.email,
+        type: 'VERIFY_ACCOUNT',
+        action: 'VERIFY_ACCOUNT_FAILED_OTP_EXPIRED',
+        success: false,
+        ip: ip,
+        userAgent: userAgent,
+        metaData: { reason: 'OTP expired' }
+      });
       throw AppError.from(new Error('OTP expired. Please request a new one.'), 400);
     }
 
@@ -195,6 +331,17 @@ export class UserService implements IUserService {
     // 4. So sánh mã OTP
     const isMatch = await bcrypt.compare(otp, otpData.otp);
     if (!isMatch) {
+      // 4. Mã OTP không khớp
+      await this.userOtpRepo.logOTPAttempt({
+        identifier: sessionData.email,
+        type: 'VERIFY_ACCOUNT',
+        action: 'VERIFY_ACCOUNT_FAILED_INVALID_OTP',
+        success: false,
+        ip: ip,
+        userAgent: userAgent,
+        metaData: { reason: 'Invalid OTP' }
+      });
+
       throw AppError.from(new Error('Invalid OTP'), 400);
     }
 
@@ -214,10 +361,21 @@ export class UserService implements IUserService {
 
     // 7. Phát hành sự kiện xác minh tài khoản thành công
     await this.eventPublisher.publish(UserVerifyEvent.create({userId: user.id, email: user.email, username: user.username}, user.id));
+    
+    // 8. Lưu log xác minh tài khoản thành công
+    await this.userOtpRepo.logOTPAttempt({
+      identifier: user.email,
+      type: 'VERIFY_ACCOUNT',
+      action: 'VERIFY_ACCOUNT_SUCCESS',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { email: user.email, username: user.username }
+    });
   }
 
   // Phương thức đăng nhập
-  async login(dto: UserLoginDTO): Promise<UserAuthDTO> {
+  async login(dto: UserLoginDTO, ip: string, userAgent: string): Promise<UserAuthDTO> {
     const data = userLoginDTOSchema.parse(dto);
 
     // 1. Tìm người dùng theo email hoặc username
@@ -230,19 +388,59 @@ export class UserService implements IUserService {
     // 2. Kiểm tra mật khẩu
     const isMatch = await bcrypt.compare(`${data.password}.${user.salt}`, user.password);
     if (!isMatch) {
+      // Lưu log đăng nhập thất bại
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'LOGIN_FAILED_INVALID_PASSWORD',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'Invalid password' }
+      });
+
       throw AppError.from(ErrUserNotFound, 404); // Không tìm thấy người dùng
     }
 
     // 3. Kiểm tra trạng thái người dùng
     if (user.status === UserStatus.PENDING) {
+      // Lưu log đăng nhập thất bại do tài khoản chưa được kích hoạt
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'LOGIN_FAILED_USER_PENDING',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'User account pending activation' }
+      });
+
       throw AppError.from(ErrUserPending, 403);
     }
     
     if (user.status === UserStatus.INACTIVE) {
+      // Lưu log đăng nhập thất bại do tài khoản bị vô hiệu hóa
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'LOGIN_FAILED_USER_INACTIVE',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'User account inactive' }
+      });
+
       throw AppError.from(ErrUserInactive, 403);
     }
 
     if (user.status === UserStatus.BANNED) {
+      // Lưu log đăng nhập thất bại do tài khoản bị cấm
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'LOGIN_FAILED_USER_BANNED',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'User account banned' }
+      });
+
       throw AppError.from(ErrUserBanned, 403);
     }
 
@@ -250,6 +448,16 @@ export class UserService implements IUserService {
     const role = user.role as UserRole;
     const accessToken = await this.accessTokenProvider.generateToken({ sub: user.id, role: role });
     const refreshToken = await this.refreshTokenProvider.generateToken({ sub: user.id, type: 'refresh', jti: v7() });
+
+    // Lưu log đăng nhập thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: user.id,
+      action: 'LOGIN_SUCCESS',
+      success: true,
+      ip,
+      userAgent,
+      metaData: { email: user.email, username: user.username }
+    });
 
     // 5. Trả về dữ liệu xác thực
     return {
@@ -259,7 +467,7 @@ export class UserService implements IUserService {
   }
 
   // Phương thức đăng nhập bằng Google
-  async googleLogin(idToken: string): Promise<UserAuthDTO> {
+  async googleLogin(idToken: string, ip: string, userAgent: string): Promise<UserAuthDTO> {
     return {
       accessToken: '',
       refreshToken: '',
@@ -283,7 +491,7 @@ export class UserService implements IUserService {
   }
 
   // Phương thức cập nhật thông tin người dùng
-  async update(requester: Requester, userId: string, dto: UserUpdateDTO): Promise<Omit<User, 'password' | 'salt'>> {
+  async update(requester: Requester, userId: string, dto: UserUpdateDTO, ip?: string, userAgent?: string): Promise<Omit<User, 'password' | 'salt'>> {
     // 1. Kiểm tra dữ liệu cập nhật
     const data = userUpdateDTOSchema.parse(dto);
 
@@ -306,11 +514,20 @@ export class UserService implements IUserService {
     }
     const { password, salt, ...rest } = updatedUser;
 
+    // Lưu log cập nhật hồ sơ thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: userId,
+      action: 'UPDATE_PROFILE_SUCCESS',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { updatedFields: Object.keys(data) }
+    });
     return rest;
   }
 
   // Phương thức cập nhật mật khẩu người dùng
-  async updatePassword(requester: Requester, userId: string, dto: UserChangePasswordDTO): Promise<void> {
+  async updatePassword(requester: Requester, userId: string, dto: UserChangePasswordDTO, ip?: string, userAgent?: string): Promise<void> {
     // 1. Kiểm tra dữ liệu cập nhật mật khẩu
     const data = userChangePasswordDTOSchema.parse(dto);
 
@@ -323,6 +540,16 @@ export class UserService implements IUserService {
     // 3. Kiểm tra mật khẩu cũ
     const isMatch = await bcrypt.compare(`${data.oldPassword}.${user.salt}`, user.password);
     if (!isMatch) {
+      // Lưu log cập nhật mật khẩu thất bại do mật khẩu cũ không đúng
+      await this.userAuditRepo.logUserAudit({
+        userId: userId,
+        action: 'CHANGE_PASSWORD_FAILED_INVALID_OLD_PASSWORD',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'Invalid old password' }
+      });
+
       throw AppError.from(ErrUserNotFound, 404); // Không tìm thấy người dùng
     }
 
@@ -335,19 +562,40 @@ export class UserService implements IUserService {
 
     // 6. Phát hành sự kiện hoàn tất thay đổi mật khẩu
     await this.eventPublisher.publish(UserCompleteChangePasswordEvent.create({userId: userId, email: user.email, username: user.username}, requester.sub)); // Phát hành sự kiện hoàn tất thay đổi mật khẩu
+    
+    // Lưu log cập nhật mật khẩu thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: userId,
+      action: 'CHANGE_PASSWORD_SUCCESS',
+      success: true,
+      ip,
+      userAgent,
+      metaData: {}
+    });
+
   }
 
   // Phương thức xử lý quên mật khẩu
-  async forgotPassword(email: string): Promise<void> {
+  async forgotPassword(email: string, ip?: string, userAgent?: string): Promise<void> {
     // 1. Kiểm tra nếu người dùng tồn tại
     const user = await this.userRepo.findByCond({ email });
     if (!user) {
       throw AppError.from(ErrUserNotFound, 404);
     }
+
+    // Lưu log yêu cầu quên mật khẩu
+    await this.userAuditRepo.logUserAudit({
+      userId: user.id,
+      action: 'FORGOT_PASSWORD_REQUESTED',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { email: email }
+    });
   }
 
   // Phương thức tạo mã OTP để đặt lại mật khẩu
-  async genarateOTPForgotPassword(email: string): Promise<{sessionId: string, expiry: number} | null> {
+  async genarateOTPForgotPassword(email: string, ip?: string, userAgent?: string): Promise<{sessionId: string, expiry: number} | null> {
     // 1. Kiểm tra nếu người dùng tồn tại
     const user = await this.userRepo.findByCond({ email });
     if (!user) {
@@ -374,33 +622,63 @@ export class UserService implements IUserService {
     // 7. Bắn RabbitMQ qua MailService để gửi email chứa mã OTP
     await this.eventPublisher.publish(UserForgotPasswordEvent.create({userId: user.id, email: email, username: user.username, otp: otp}, user.id));
 
+    // Lưu log gửi mã OTP đặt lại mật khẩu thành công
+    await this.userOtpRepo.logOTPAttempt({
+      identifier: user.email,
+      type: 'FORGOT_PASSWORD',
+      action: 'FORGOT_PASSWORD_OTP_SENT_SUCCESS',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { email: user.email, username: user.username }
+    });
+
     // 8. Trả về token và thời gian hết hạn
     return { sessionId: token, expiry: Date.now() + 60 * 60 * 1000 }; // 60 phút
   }
 
   // Phương thức gửi lại mã OTP đặt lại mật khẩu
-  async resendForgotPasswordOTP(token: string): Promise<void> {
+  async resendForgotPasswordOTP(token: string, ip?: string, userAgent?: string): Promise<void> {
     // 1. Kiểm tra nếu người dùng tồn tại
     const sessionStr = await this.redis.get(`forgot-password:session:${token}`);
     if (!sessionStr) {
+      // Lưu log gửi lại OTP đặt lại mật khẩu thất bại do token không hợp lệ hoặc đã hết hạn
+      await this.userOtpRepo.logOTPAttempt({
+        identifier: 'unknown',
+        type: 'FORGOT_PASSWORD',
+        action: 'FORGOT_PASSWORD_OTP_RESEND_FAILED_INVALID_TOKEN',
+        success: false,
+        ip: ip,
+        userAgent: userAgent,
+        metaData: { reason: 'Invalid or expired token' }
+      });
       throw AppError.from(new Error('Invalid or expired token'), 400);
     }
 
-    // 2. Kiểm tra rate limit
-    const rateStr = await this.redis.get(`forgot-password:rate:${token}`);
-    let rateData = { count: 0 };
-
-    if (rateStr) {
-      rateData = JSON.parse(rateStr);
-      if (rateData.count >= 5) {
-        throw AppError.from(new Error('Too many requests. Please try again later.'), 429);
+    // 2. Kiểm tra mã OTP cũ còn hiệu lực không và xóa nó nếu có
+    const oldOtpStr = await this.redis.get(`forgot-password:${token}`);
+    if (oldOtpStr) {
+      // kiểm tra xem OTP đã qua 1 phút chưa, nếu chưa thì không cho gửi lại
+      const oldOtpData = JSON.parse(oldOtpStr) as { email: string; otp: string, createdAt: Date };
+      const now = new Date();
+      const createdAt = new Date(oldOtpData.createdAt);
+      const diff = (now.getTime() - createdAt.getTime()) / 1000;
+      if (diff < 60) {
+        // Lưu log gửi lại OTP đặt lại mật khẩu quá nhanh
+        await this.userOtpRepo.logOTPAttempt({
+          identifier: oldOtpData.email,
+          type: 'FORGOT_PASSWORD',
+          action: 'FORGOT_PASSWORD_OTP_RESEND_FAILED_TOO_MANY_REQUESTS',
+          success: false,
+          ip: ip,
+          userAgent: userAgent,
+          metaData: { reason: 'Too many requests' }
+        });
+        
+        throw AppError.from(new Error('Please wait before requesting a new OTP'), 400);
       }
-      rateData.count += 1;
-    } else {
-      rateData.count = 1;
+      await this.redis.del(`forgot-password:${token}`);
     }
-
-    await this.redis.update(`forgot-password:rate:${token}`, JSON.stringify(rateData)); // Cập nhật giá trị rate limit còn thời gian sống không đổi
 
     // 3. Lấy thông tin email từ phiên làm việc
     const sessionData = JSON.parse(sessionStr) as { email: string; purpose: string; status: string; createdAt: Date };
@@ -411,28 +689,40 @@ export class UserService implements IUserService {
       throw AppError.from(ErrUserNotFound, 404);
     }
 
-    // 5 Kiểm tra mục đích của phiên làm việc
+    // 5. Kiểm tra rate limit
+    const rateStr = await this.redis.get(`forgot-password:rate:${token}`);
+    let rateData = { count: 0 };
+
+    if (rateStr) {
+      rateData = JSON.parse(rateStr);
+      if (rateData.count > 5) {
+        // Lưu log gửi lại OTP đặt lại mật khẩu thất bại do vượt quá giới hạn
+        await this.userOtpRepo.logOTPAttempt({
+          identifier: sessionData.email,
+          type: 'FORGOT_PASSWORD',
+          action: 'FORGOT_PASSWORD_OTP_RESEND_FAILED_TOO_MANY_REQUESTS',
+          success: false,
+          ip: ip,
+          userAgent: userAgent,
+          metaData: {}
+        });
+        throw AppError.from(new Error('Too many requests. Please try again later.'), 429);
+      }
+      rateData.count += 1;
+    } else {
+      rateData.count = 1;
+    }
+
+    await this.redis.update(`forgot-password:rate:${token}`, JSON.stringify(rateData)); // Cập nhật giá trị rate limit còn thời gian sống không đổi
+
+    // 6 Kiểm tra mục đích của phiên làm việc
     if (sessionData.purpose !== 'forgot-password') {
       throw AppError.from(new Error('Invalid session purpose'), 400);
     }
 
-    // 6. Kiểm tra trạng thái phiên làm việc
+    // 7. Kiểm tra trạng thái phiên làm việc
     if (sessionData.status !== 'OTP_PENDING') {
       throw AppError.from(new Error('OTP already verified or invalid session'), 400);
-    }
-
-    // 7. Kiểm tra mã OTP cũ còn hiệu lực không và xóa nó nếu có
-    const oldOtpStr = await this.redis.get(`forgot-password:${token}`);
-    if (oldOtpStr) {
-      // kiểm tra xem OTP đã qua 1 phút chưa, nếu chưa thì không cho gửi lại
-      const oldOtpData = JSON.parse(oldOtpStr) as { email: string; otp: string, createdAt: Date };
-      const now = new Date();
-      const createdAt = new Date(oldOtpData.createdAt);
-      const diff = (now.getTime() - createdAt.getTime()) / 1000;
-      if (diff < 60) {
-        throw AppError.from(new Error('Please wait before requesting a new OTP'), 400);
-      }
-      await this.redis.del(`forgot-password:${token}`);
     }
 
     // 8. Tạo và gửi mã OTP (6 chữ số) đến email người dùng
@@ -444,10 +734,21 @@ export class UserService implements IUserService {
 
     // 10. Bắn RabbitMQ qua MailService để gửi email chứa mã OTP
     await this.eventPublisher.publish(UserForgotPasswordEvent.create({userId: user.id, email: sessionData.email, username: user.username, otp: otp}, user.id));
+    
+    // 11. Lưu log gửi lại mã OTP đặt lại mật khẩu thành công
+    await this.userOtpRepo.logOTPAttempt({
+      identifier: user.email,
+      type: 'FORGOT_PASSWORD',
+      action: 'FORGOT_PASSWORD_OTP_RESEND_SUCCESS',
+      success: true, 
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { email: user.email, username: user.username }
+    });
   }
 
   // Phương thức xác minh token đặt lại mật khẩu
-  async verifyResetPasswordToken(token: string, otp: string): Promise<void> {
+  async verifyResetPasswordToken(token: string, otp: string, ip: string | undefined, userAgent: string | undefined): Promise<void> {
     // 1. Lấy dữ liệu phiên làm việc từ Redis
     const sessionStr = await this.redis.get(`forgot-password:session:${token}`);
 
@@ -467,6 +768,16 @@ export class UserService implements IUserService {
     // 4. Lấy mã OTP băm từ Redis
     const otpStr = await this.redis.get(`forgot-password:${token}`);
     if (!otpStr) {
+      // Lưu log xác minh token đặt lại mật khẩu thất bại do OTP hết hạn
+      await this.userOtpRepo.logOTPAttempt({
+        identifier: sessionData.email,
+        type: 'FORGOT_PASSWORD',
+        action: 'FORGOT_PASSWORD_VERIFY_TOKEN_FAILED_OTP_EXPIRED',
+        success: false,
+        ip: ip,
+        userAgent: userAgent,
+        metaData: { reason: 'OTP expired' }
+      });
       throw AppError.from(new Error('OTP expired. Please request a new one.'), 400);
     }
 
@@ -474,6 +785,16 @@ export class UserService implements IUserService {
     const otpData = JSON.parse(otpStr) as { email: string; otp: string };
     const isMatch = await bcrypt.compare(otp, otpData.otp);
     if (!isMatch) {
+      // Lưu log xác minh token đặt lại mật khẩu thất bại do OTP không hợp lệ
+      await this.userOtpRepo.logOTPAttempt({
+        identifier: sessionData.email,
+        type: 'FORGOT_PASSWORD',
+        action: 'FORGOT_PASSWORD_VERIFY_TOKEN_FAILED_INVALID_OTP',
+        success: false,
+        ip: ip,
+        userAgent: userAgent,
+        metaData: { reason: 'Invalid OTP' }
+      });
       throw AppError.from(new Error('Invalid OTP'), 400);
     }
 
@@ -484,10 +805,22 @@ export class UserService implements IUserService {
 
     // 7. Tạo phiên đặt lại mật khẩu và lưu vào Redis
     await this.redis.set(`reset-password:${token}`, sessionData.email, 15 * 60); // 15 phút  
+    
+    // Lưu log xác minh token đặt lại mật khẩu thành công
+    await this.userOtpRepo.logOTPAttempt({
+      identifier: sessionData.email,
+      type: 'FORGOT_PASSWORD',
+      action: 'FORGOT_PASSWORD_VERIFY_TOKEN_SUCCESS',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { email: sessionData.email }
+    });
+    
   }
 
   // Phương thức đặt lại mật khẩu bằng token
-  async resetPassword(token: string, dto: UserResetPasswordDTO): Promise<void> {
+  async resetPassword(token: string, dto: UserResetPasswordDTO, ip: string | undefined, userAgent: string | undefined): Promise<void> {
     // 1. Lấy dữ liệu từ Redis bằng token
     const email = await this.redis.get(`reset-password:${token}`);
     if (!email) {
@@ -505,6 +838,15 @@ export class UserService implements IUserService {
 
     // 4. so sánh mật khẩu mới và xác nhận mật khẩu
     if (data.password !== data.confirmPassword) {
+      // Lưu log đặt lại mật khẩu thất bại do mật khẩu và xác nhận mật khẩu không khớp
+      await this.userAuditRepo.logUserAudit({
+        userId: user.id,
+        action: 'RESET_PASSWORD_FAILED_PASSWORD_MISMATCH',
+        success: false,
+        ip: ip,
+        userAgent: userAgent,
+        metaData: { reason: 'Password and confirm password do not match' }
+      });
       throw AppError.from(new Error('Password and confirm password do not match'), 400);
     }
 
@@ -520,10 +862,20 @@ export class UserService implements IUserService {
 
     // 8. Xoá dữ liệu khỏi Redis
     await this.redis.del(`reset-password:${token}`);
+
+    // Lưu log đặt lại mật khẩu thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: user.id,
+      action: 'RESET_PASSWORD_SUCCESS',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { resetAt: new Date().toISOString() }
+    });
   }
 
   // Phương thức xoá tài khoản người dùng
-  async deleteAccount(requester: Requester, userId: string): Promise<void> {
+  async deleteAccount(requester: Requester, userId: string, ip: string | undefined, userAgent: string | undefined): Promise<void> {
     // 1. Kiểm tra nếu người dùng tồn tại
     const user = await this.userRepo.get(userId);
     if (!user) {
@@ -535,6 +887,16 @@ export class UserService implements IUserService {
 
     // 3. Phát hành sự kiện người dùng bị xoá
     await this.eventPublisher.publish(UserDeletedEvent.create({userId: userId, email: user.email, username: user.username}, requester.sub)); // Phát hành sự kiện người dùng bị xoá
+    
+    // Lưu log xoá tài khoản thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: userId,
+      action: 'DELETE_ACCOUNT_SUCCESS',
+      success: true,
+      ip: ip,
+      userAgent: userAgent,
+      metaData: { deletedAt: new Date().toISOString() }
+    });
   }
 
   // Phương thức kiểm tra tính hợp lệ của access token
@@ -624,7 +986,7 @@ export class UserService implements IUserService {
   }
 
   // Phương thức thêm FCM token cho người dùng
-  async addFcmToken(userId: string, fcmToken: string): Promise<void> {
+  async addFcmToken(userId: string, fcmToken: string, ip: string | undefined, userAgent: string | undefined): Promise<void> {
     // 1. Kiểm tra nếu người dùng tồn tại
     const user = await this.userRepo.get(userId);
     if (!user) {
@@ -641,7 +1003,7 @@ export class UserService implements IUserService {
   }
 
   // Phương thức xoá FCM token cho người dùng
-  async removeFcmToken(userId: string, fcmToken: string): Promise<void> {
+  async removeFcmToken(userId: string, fcmToken: string, ip: string | undefined, userAgent: string | undefined): Promise<void> {
     // 1. Kiểm tra nếu người dùng tồn tại
     const user = await this.userRepo.get(userId);
     if (!user) {
@@ -693,10 +1055,20 @@ export class UserService implements IUserService {
   }
 
   // Phương thức đăng xuất người dùng
-  async logout(accessToken: string, refreshToken: string): Promise<void> {
+  async logout(accessToken: string, refreshToken: string, ip: string | undefined, userAgent: string | undefined): Promise<void> {
     // 1. Xác minh refresh token
     const payload = await this.refreshTokenProvider.verifyToken(refreshToken);
     if (!payload) {
+      // 1. Nếu token không hợp lệ, ném lỗi
+      await this.userAuditRepo.logUserAudit({
+        userId: undefined,
+        action: 'LOGOUT_FAILED_INVALID_REFRESH_TOKEN',
+        success: false,
+        ip,
+        userAgent,
+        metaData: { reason: 'Invalid refresh token' }
+      });
+
       throw AppError.from(ErrTokenInvalid, 401);
     }
 
@@ -714,5 +1086,15 @@ export class UserService implements IUserService {
         await this.redis.set(`revoked-access-token:${accessToken}`, 'revoked', accessTokenTtl);
       }
     }
+
+    // 4. Lưu log đăng xuất thành công
+    await this.userAuditRepo.logUserAudit({
+      userId: payload.sub,
+      action: 'LOGOUT_SUCCESS',
+      success: true,
+      ip,
+      userAgent,
+      metaData: { reason: 'User logged out successfully'}
+    });
   }
 }
