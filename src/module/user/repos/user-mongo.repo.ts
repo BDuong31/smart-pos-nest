@@ -5,9 +5,9 @@ import {
   IOtpAttempt,
   IUserAuditSchema,
   IOtpAttemptSchema,
-} from './user-mongo.model';
+} from '../models/user-mongo.model';
 import { MONGO_SERVICE } from 'src/share/di-token';
-import { IUserMongoAuditRepository, IUserMongoOtpRepository } from './user.port';
+import { IUserMongoAuditRepository, IUserMongoOtpRepository } from '../ports/user.port';
 @Injectable()
 export class UserAuditMongoRepo extends MongoRepository<IUserAudit> implements IUserMongoAuditRepository {
   constructor(

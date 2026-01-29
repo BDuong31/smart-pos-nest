@@ -10,6 +10,9 @@ export const EvtUserCompleteChangePassword = 'user.complete_change_password'; //
 export const EvtUserUpdateProfile = 'user.update_profile'; // Sự kiện khi người dùng cập nhật hồ sơ (gửi email thông báo)
 export const EvtUserDeleted = 'user.deleted'; // Sự kiện khi người dùng bị xóa (gửi email thông báo)
 
+// Định nghĩa tên các sự kiện liên quan đến admin thao tác người dùng
+export const EvtAdminCreateUser = 'admin.create_user'; // Sự kiện khi admin tạo người dùng
+
 // Định nghĩa các sự kiện liên quan đến người dùng
 export type UserEventPayload = {
     userId: string; // ID người dùng
@@ -126,5 +129,18 @@ export class UserDeletedEvent extends UserEvent<UserEventPayload> {
     // Chuyển đổi từ JSON sang đối tượng sự kiện
     static from(json: any): UserDeletedEvent {
         return UserEvent.fromJson<UserEventPayload>(json) as UserDeletedEvent;
+    }
+}
+
+// Sự kiện khi admin tạo người dùng
+export class AdminCreateUserEvent extends UserEvent<UserEventPayload> {
+    // Tạo sự kiện
+    static create(payload: UserEventPayload, senderId: string): AdminCreateUserEvent {
+        return UserEvent.createEvent(EvtAdminCreateUser, payload, senderId) as AdminCreateUserEvent;
+    }
+
+    // Chuyển đổi từ JSON sang đối tượng sự kiện
+    static from(json: any): AdminCreateUserEvent {
+        return UserEvent.fromJson<UserEventPayload>(json) as AdminCreateUserEvent;
     }
 }

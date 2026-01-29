@@ -14,7 +14,7 @@ model UserRank {
   minPoint        Int      @default(0) @map("min_point")
   discountPercent Float    @default(0) @map("discount_percent")
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
   @@map("user_ranks")
 }
 
@@ -47,8 +47,10 @@ model Shift {
   userId    String    @map("user_id") @db.VarChar(36)
   startTime DateTime  @default(now()) @map("start_time") @db.Timestamp(0)
   endTime   DateTime? @map("end_time") @db.Timestamp(0)
-  cashStart Decimal   @map("cash_start") @db.Decimal(12, 2)
-  cashEnd   Decimal?  @map("cash_end") @db.Decimal(12, 2)
+  cashStart Int   @map("cash_start")
+  cashEnd   Int?  @map("cash_end")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([userId], map: "shiftUserIdIdx")
   @@map("shifts")
@@ -60,7 +62,8 @@ model PointHistory {
   amount    Int      @map("amount")
   reason    String   @map("reason") @db.VarChar(255)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+  
   @@index([userId], map: "phUserIdIdx")
   @@map("point_histories")
 }
@@ -73,6 +76,8 @@ model Category {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   name      String   @map("name") @db.VarChar(100)
   parentId  String?  @map("parent_id") @db.VarChar(36)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([parentId], map: "categoryParentIdIdx")
   @@map("categories")
@@ -82,6 +87,8 @@ model Printer {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   name      String   @map("name") @db.VarChar(100)
   ipAddress String   @map("ip_address") @db.VarChar(50)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("printers")
 }
@@ -91,10 +98,11 @@ model Product {
   name       String   @map("name") @db.VarChar(150)
   categoryId String   @map("category_id") @db.VarChar(36)
   printerId  String?  @map("printer_id") @db.VarChar(36)
-  basePrice  Decimal  @map("base_price") @db.Decimal(12, 2)
+  basePrice  Int  @map("base_price")
   isCombo    Boolean? @default(false) @map("is_combo")
   isActive   Boolean? @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([categoryId], map: "prodCatIdx")
   @@map("products")
@@ -104,7 +112,9 @@ model Variant {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   productId String   @map("product_id") @db.VarChar(36)
   name      String   @map("name") @db.VarChar(100)
-  priceDiff Decimal  @default(0) @map("price_diff") @db.Decimal(12, 2)
+  priceDiff Int  @default(0) @map("price_diff")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([productId], map: "varProdIdx")
   @@map("variants")
@@ -114,6 +124,8 @@ model OptionGroup {
   id            String   @id @default(uuid()) @map("id") @db.VarChar(36)
   name          String   @map("name") @db.VarChar(100)
   isMultiSelect Boolean? @default(false) @map("is_multi_select")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("option_groups")
 }
@@ -122,7 +134,9 @@ model OptionItem {
   id         String   @id @default(uuid()) @map("id") @db.VarChar(36)
   groupId    String   @map("group_id") @db.VarChar(36)
   name       String   @map("name") @db.VarChar(100)
-  priceExtra Decimal  @default(0) @map("price_extra") @db.Decimal(12, 2)
+  priceExtra Int  @default(0) @map("price_extra")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([groupId], map: "optGrpIdx")
   @@map("option_items")
@@ -131,6 +145,8 @@ model OptionItem {
 model ProductOptionConfig {
   productId     String @map("product_id") @db.VarChar(36)
   optionGroupId String @map("option_group_id") @db.VarChar(36)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@id([productId, optionGroupId])
   @@map("product_option_configs")
@@ -140,6 +156,8 @@ model ComboItem {
   comboId   String @map("combo_id") @db.VarChar(36)
   productId String @map("product_id") @db.VarChar(36)
   quantity  Int    @default(1) @map("quantity")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@id([comboId, productId])
   @@map("combo_items")
@@ -153,6 +171,8 @@ model Supplier {
   id      String   @id @default(uuid()) @map("id") @db.VarChar(36)
   name    String   @map("name") @db.VarChar(150)
   contact String?  @map("contact") @db.VarChar(100)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("suppliers")
 }
@@ -163,6 +183,8 @@ model Ingredient {
   baseUnit       String   @map("base_unit") @db.VarChar(20)
   minStock       Float    @default(0) @map("min_stock")
   forecastDataId String?  @map("forecast_data_id") @db.VarChar(36)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("ingredients")
 }
@@ -173,6 +195,8 @@ model UnitConversion {
   fromUnit     String   @map("from_unit") @db.VarChar(20)
   toUnit       String   @map("to_unit") @db.VarChar(20)
   factor       Float    @map("factor")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([ingredientId], map: "ucIngIdx")
   @@map("unit_conversions")
@@ -184,6 +208,8 @@ model InventoryBatch {
   quantity     Float    @map("quantity")
   expiryDate   DateTime @map("expiry_date") @db.Timestamp(0)
   importDate   DateTime @default(now()) @map("import_date") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([ingredientId], map: "batchIngIdx")
   @@map("inventory_batches")
@@ -196,6 +222,8 @@ model Recipe {
   productId    String? @map("product_id") @db.VarChar(36)
   variantId    String? @map("variant_id") @db.VarChar(36)
   optionItemId String? @map("option_item_id") @db.VarChar(36)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([productId], map: "recProdIdx")
   @@index([variantId], map: "recVarIdx")
@@ -206,8 +234,10 @@ model Recipe {
 model ImportInvoice {
   id         String   @id @default(uuid()) @map("id") @db.VarChar(36)
   supplierId String   @map("supplier_id") @db.VarChar(36)
-  totalCost  Decimal  @map("total_cost") @db.Decimal(12, 2)
+  totalCost  Int  @map("total_cost")
   importDate DateTime @default(now()) @map("import_date") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([supplierId], map: "invSupIdx")
   @@map("import_invoices")
@@ -219,7 +249,9 @@ model ImportInvoiceDetail {
   ingredientId String  @map("ingredient_id") @db.VarChar(36)
   quantity     Float   @map("quantity")
   unit         String  @map("unit") @db.VarChar(20)
-  unitPrice    Decimal @map("unit_price") @db.Decimal(12, 2)
+  unitPrice    Int @map("unit_price")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([invoiceId], map: "invDetIdx")
   @@map("import_invoice_details")
@@ -230,7 +262,8 @@ model PurchaseProposal {
   creatorId String?  @map("creator_id") @db.VarChar(36)
   status    String   @default("PENDING") @map("status") @db.VarChar(20)
   note      String?  @map("note") @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("purchase_proposals")
 }
@@ -241,6 +274,8 @@ model PurchaseProposalDetail {
   ingredientId String @map("ingredient_id") @db.VarChar(36)
   quantity     Float  @map("quantity")
   unit         String @map("unit") @db.VarChar(20)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([proposalId], map: "ppDetailIdx")
   @@map("purchase_proposal_details")
@@ -251,6 +286,8 @@ model StockCheck {
   userId    String   @map("user_id") @db.VarChar(36)
   note      String?  @map("note") @db.Text
   checkDate DateTime @default(now()) @map("check_date") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("stock_checks")
 }
@@ -262,6 +299,8 @@ model StockCheckDetail {
   systemQty    Float   @map("system_qty")
   actualQty    Float   @map("actual_qty")
   reason       String? @map("reason") @db.VarChar(255)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([checkId], map: "stockDetIdx")
   @@map("stock_check_details")
@@ -274,6 +313,8 @@ model StockCheckDetail {
 model Zone {
   id   String @id @default(uuid()) @map("id") @db.VarChar(36)
   name String @map("name") @db.VarChar(50)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("zones")
 }
@@ -284,6 +325,8 @@ model Table {
   name      String      @map("name") @db.VarChar(50)
   qrCode    String      @unique @map("qr_code") @db.VarChar(100)
   status    TableStatus @default(available) @map("status")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([zoneId], map: "tblZoneIdx")
   @@map("tables")
@@ -297,6 +340,8 @@ model Reservation {
   phone        String   @map("phone") @db.VarChar(20)
   time         DateTime @map("time") @db.Timestamp(0)
   status       String   @default("PENDING") @map("status") @db.VarChar(20)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([tableId], map: "resTblIdx")
   @@map("reservations")
@@ -309,7 +354,8 @@ model Reservation {
 model Cart {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   userId    String   @unique @map("user_id") @db.VarChar(36)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("carts")
 }
@@ -320,6 +366,8 @@ model CartItem {
   productId String  @map("product_id") @db.VarChar(36)
   quantity  Int     @default(1) @map("quantity")
   note      String? @map("note") @db.Text
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([cartId], map: "cartItmIdx")
   @@map("cart_items")
@@ -329,12 +377,14 @@ model Voucher {
   id          String        @id @default(uuid()) @map("id") @db.VarChar(36)
   code        String        @unique @map("code") @db.VarChar(50)
   type        VoucherType   @default(fixed_amount) @map("type")
-  value       Decimal       @map("value") @db.Decimal(12, 2)
-  minOrderVal Decimal?      @default(0) @map("min_order_val") @db.Decimal(12, 2)
+  value       Int       @map("value")
+  minOrderVal Int?      @default(0) @map("min_order_val")
   usageLimit  Int?          @default(0) @map("usage_limit")
   isActive    Boolean       @default(true) @map("is_active")
   startDate   DateTime      @map("start_date") @db.Timestamp(0)
   endDate     DateTime      @map("end_date") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("vouchers")
 }
@@ -342,9 +392,10 @@ model Voucher {
 model Order {
   id          String      @id @default(uuid()) @map("id") @db.VarChar(36)
   userId      String?     @map("user_id") @db.VarChar(36)
-  totalAmount Decimal     @map("total_amount") @db.Decimal(12, 2)
+  totalAmount Int     @map("total_amount")
   status      OrderStatus @default(pending) @map("status")
-  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([userId], map: "ordUserIdx")
   @@map("orders")
@@ -353,6 +404,8 @@ model Order {
 model OrderVoucher {
   orderId   String @map("order_id") @db.VarChar(36)
   voucherId String @map("voucher_id") @db.VarChar(36)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@id([orderId, voucherId])
   @@map("order_vouchers")
@@ -361,6 +414,8 @@ model OrderVoucher {
 model OrderTable {
   orderId String @map("order_id") @db.VarChar(36)
   tableId String @map("table_id") @db.VarChar(36)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@id([orderId, tableId])
   @@map("order_tables")
@@ -372,8 +427,10 @@ model OrderItem {
   productId   String  @map("product_id") @db.VarChar(36)
   variantId   String? @map("variant_id") @db.VarChar(36)
   productName String  @map("product_name") @db.VarChar(150)
-  price       Decimal @map("price") @db.Decimal(12, 2)
+  price       Int @map("price")
   quantity    Int     @map("quantity")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([orderId], map: "oiOrdIdx")
   @@map("order_items")
@@ -384,7 +441,9 @@ model OrderItemOption {
   orderItemId  String  @map("order_item_id") @db.VarChar(36)
   optionItemId String  @map("option_item_id") @db.VarChar(36)
   optionName   String  @map("option_name") @db.VarChar(100)
-  price        Decimal @map("price") @db.Decimal(12, 2)
+  price        Int @map("price")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([orderItemId], map: "oioItemIdx")
   @@map("order_item_options")
@@ -393,10 +452,11 @@ model OrderItemOption {
 model PaymentTransaction {
   id        String        @id @default(uuid()) @map("id") @db.VarChar(36)
   orderId   String        @map("order_id") @db.VarChar(36)
-  amount    Decimal       @map("amount") @db.Decimal(12, 2)
+  amount    Int       @map("amount")
   method    PaymentMethod @default(cash) @map("method")
   status    PaymentStatus @default(pending) @map("status")
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([orderId], map: "payOrdIdx")
   @@map("payment_transactions")
@@ -407,6 +467,8 @@ model Invoice {
   orderId  String   @unique @map("order_id") @db.VarChar(36)
   taxCode  String?  @map("tax_code") @db.VarChar(50)
   issuedAt DateTime @default(now()) @map("issued_at") @db.Timestamp(0)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@map("invoices")
 }

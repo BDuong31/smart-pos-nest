@@ -8,4 +8,7 @@ export interface IMailService {
     emailCompleteChanggePassword(to: string, userName: string): Promise<void>;  // Gửi Email thông báo hoàn tất thay đổi mật khẩu
     emailUpdateProfile(to: string, userName: string): Promise<void>;  // Gửi Email thông báo cập nhật hồ sơ
     emailDeleteAccount(to: string, userName: string): Promise<void>;  // Gửi Email thông báo xóa tài khoản
+
+    // Các email gửi staff
+    emailWelcomStaff(to: string, staffName: string): Promise<void>;  // Gửi Email chào mừng nhân viên mới
 } 

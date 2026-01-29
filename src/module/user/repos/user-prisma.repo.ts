@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { IUserRepository } from "./user.port";
+import { IUserRepository } from "../ports/user.port";
 import prisma from "src/share/components/prisma"
 import { User as UserPrisma } from "@prisma/client";
-import { User } from "./user.model";
+import { User } from "../models/user.model";
 import { UserRole } from "src/share";
-import { UserCondDTO, UserUpdateDTO } from "./user.dto";
+import { UserCondDTO, UserUpdateDTO } from "../dtos/user.dto";
 
 // Lớp UserPrismaRepository cung cấp phương thức truy vấn dữ liệu người dùng từ Prisma
 @Injectable()

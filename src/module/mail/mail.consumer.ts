@@ -1,7 +1,7 @@
 import { Controller, OnModuleInit } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { RabbitMQClient } from '../../share/components/rabbitmq'; // Import Singleton RabbitMQ
-import { EvtUserCompleteChangePassword, EvtUserCompleteResetPassword, EvtUserCretated, EvtUserDeleted, EvtUserForgotPassword, EvtUserUpdateProfile, EvtUserVerify, UserCreatedEvent } from 'src/share/event/user.evt';
+import { EvtAdminCreateUser, EvtUserCompleteChangePassword, EvtUserCompleteResetPassword, EvtUserCretated, EvtUserDeleted, EvtUserForgotPassword, EvtUserUpdateProfile, EvtUserVerify, UserCreatedEvent } from 'src/share/event/user.evt';
 
 @Controller()
 export class MailConsumer implements OnModuleInit {
@@ -74,6 +74,13 @@ export class MailConsumer implements OnModuleInit {
     RabbitMQClient.getInstance().subscribe(EvtUserDeleted, async (event: any) => {
       const evt = UserCreatedEvent.from(event);
       await this.mailService.emailDeleteAccount(evt.payload.email, evt.payload?.username || 'Bạn');
+    });
+
+    // Lắng nghe sự kiện nhân viên được tạo
+    RabbitMQClient.getInstance().subscribe(EvtAdminCreateUser, async (event: any) => {
+      const data  = JSON.parse(event);
+      const evt = UserCreatedEvent.from(data);
+      await this.mailService.emailWelcomStaff(evt.payload.email, evt.payload?.username || 'Nhân viên');
     });
   }
 }

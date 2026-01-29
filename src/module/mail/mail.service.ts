@@ -126,4 +126,21 @@ export class MailService implements IMailService {
       Logger.error(`Failed to send email: ${error}`);
     }
   }
+
+  // Gửi Email chào mừng nhân viên mới
+  async emailWelcomStaff(to: string, staffName: string): Promise<void> {
+    try {
+      await this.mailerService.sendMail({
+        to: to,
+        subject: 'Baso Corner - Chào mừng nhân viên mới!',
+        template: './welcome-staff',
+        context: {
+          name: staffName,
+        },
+      });
+      Logger.log(`Welcome Staff Email sent to ${to}`);
+    } catch (error) {
+      Logger.error(`Failed to send email: ${error}`);
+    }
+  }
 }
