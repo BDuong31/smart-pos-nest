@@ -6,10 +6,10 @@ import { ACCESS_TOKEN_PROVIDER, REFRESH_TOKEN_PROVIDER, USER_MONGO_AUDIT_REPOSIT
 import { UserAuthDTO, UserChangePasswordDTO, userChangePasswordDTOSchema, UserLoginDTO, userLoginDTOSchema, UserRegistrationDTO, userRegistrationDTOSchema, UserResetPasswordDTO, userResetPasswordDTOSchema } from "../dtos/auth.dto";
 import { v7 } from "uuid";
 import bcrypt from "bcrypt";
-import { ErrEmailAlreadyExists, ErrUserBanned, ErrUserInactive, ErrUsernameAlreadyExists, ErrUserNotFound, ErrUserPending, UserStatus } from "../models/user.model";
+import { ErrEmailAlreadyExists, ErrPasswordNotMatch, ErrUserBanned, ErrUserInactive, ErrUsernameAlreadyExists, ErrUsernameOrPasswordInvalid, ErrUserNotFound, ErrUserPending, UserStatus } from "../models/user.model";
 import { OAuth2Client } from "google-auth-library";
 import { randomBytes } from "crypto";
-import { UserCompleteChangePasswordEvent, UserCreatedEvent, UserForgotPasswordEvent, UserVerifyEvent } from "src/share/event";
+import { UserCompleteChangePasswordEvent, UserCompleteResetPasswordEvent, UserCreatedEvent, UserForgotPasswordEvent, UserVerifyEvent } from "src/share/event";
 import { IAuthService } from "../ports/auth.port";
 // Lớp AuthService triển khai các phương thức xác thực người dùng
 @Injectable()
@@ -32,16 +32,17 @@ export class AuthService implements IAuthService {
         const data = userRegistrationDTOSchema.safeParse(dto);
 
         // 2. Kiểm tra xem email đã được sử dụng chưa
-        const userEmail = await this.userRepo.findByCond({ email: dto.email });
+        const userEmail = await this.userRepo.list({ email: dto.email }, { page: 1, limit: 1 });
 
-        if (userEmail) {
+
+        if (userEmail && userEmail.data.length > 0) {
             // Lưu log đăng ký thất bại
             await this.userAuditRepo.logUserAudit({
                 action: 'REGISTER',
                 success: false,
                 ip,
                 userAgent,
-                userId: userEmail.id,
+                userId: userEmail.data[0].id,
                 metaData: {
                     reason: 'Email already exists'
                 }
@@ -52,15 +53,15 @@ export class AuthService implements IAuthService {
         }
 
         // 3. Kiểm tra xem username đã được sử dụng chưa
-        const userUsername = await this.userRepo.findByCond({ username: dto.username });
-        if (userUsername) {
+        const userUsername = await this.userRepo.list({ username: dto.username }, { page: 1, limit: 1 });
+        if (userUsername && userUsername.data.length > 0) {
             // Lưu log đăng ký thất bại
             await this.userAuditRepo.logUserAudit({
                 action: 'REGISTER',
                 success: false,
                 ip,
                 userAgent,
-                userId: userUsername.id,
+                userId: userUsername.data[0].id,
                 metaData: {
                     reason: 'Username already exists'
                 }
@@ -120,15 +121,23 @@ export class AuthService implements IAuthService {
         const data = userLoginDTOSchema.parse(dto);
 
         // 2. Tìm người dùng theo username hoặc email
-        const user = await this.userRepo.findByCondOr({ username: data.username, email: data.username });
+        const userByEmail = await this.userRepo.list({ email: data.username }, { page: 1, limit: 1 });
+        const userByUsername = await this.userRepo.list({ username: data.username }, { page: 1, limit: 1 });
+
+        let user;        
+        if (userByEmail && userByEmail.data.length > 0) {
+            user = userByEmail.data[0];
+        } else if (userByUsername && userByUsername.data.length > 0) {
+            user = userByUsername.data[0];
+        }
 
         if (!user) {
-            // Trả về lỗi 401 Unauthorized
-            throw AppError.from(ErrInvalidRequest, 401);
+            // Trả về lỗi 401 Unauthorized nhưng không cho biết chính xác là lỗi gì để tránh lộ thông tin người dùng
+            throw AppError.from(ErrUsernameOrPasswordInvalid, 401);
         }
 
         // 3. Kiểm tra mật khẩu
-        const isMatch = bcrypt.compare(`${data.password}.${user.salt}`, user.password);
+        const isMatch = await bcrypt.compare(`${data.password}.${user.salt}`, user.password);
 
         if (!isMatch) {
             // Lưu log đăng nhập thất bại
@@ -143,8 +152,8 @@ export class AuthService implements IAuthService {
                 }
             });
 
-            // Trả về lỗi 401 Unauthorized
-            throw AppError.from(ErrInvalidRequest, 401);
+            // Trả về lỗi sai mật khẩu nhưng không cho biết chính xác là lỗi gì để tránh lộ thông tin người dùng
+            throw AppError.from(ErrUsernameOrPasswordInvalid, 401);
         }
 
         // 4. Kiểm tra trạng thái người dùng
@@ -162,7 +171,7 @@ export class AuthService implements IAuthService {
             });
 
             // Trả về lỗi 403 Forbidden
-            throw AppError.from(ErrForbidden, 403);
+            throw AppError.from(ErrUserPending, 403);
         }
 
         if (user.status === UserStatus.BANNED) {
@@ -178,7 +187,7 @@ export class AuthService implements IAuthService {
                 }
             });
             // Trả về lỗi 403 Forbidden
-            throw AppError.from(ErrForbidden, 403);
+            throw AppError.from(ErrUserBanned, 403);
         }
 
         if (user.status === UserStatus.INACTIVE) {
@@ -194,7 +203,7 @@ export class AuthService implements IAuthService {
                 }
             });
             // Trả về lỗi 403 Forbidden
-            throw AppError.from(ErrForbidden, 403);
+            throw AppError.from(ErrUserInactive, 403);
         }
 
         // 5. Tạo access token và refresh token
@@ -241,7 +250,7 @@ export class AuthService implements IAuthService {
         }
 
         // 4. Kiểm tra xem người dùng đã tồn tại trong hệ thống chưa
-        let user = await this.userRepo.findByCond({ email: payload.email });
+        let user = await this.userRepo.list({ email: payload.email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         
         if (!user) {
             const passwordDefault = randomBytes(16).toString('hex');
@@ -469,7 +478,7 @@ export class AuthService implements IAuthService {
     // Phương thức yêu cầu tạo phiên làm việc kích hoạt tài khoản
     async activateAccount(email: string, ip: string, userAgent: string): Promise<void> {
         // 1. Kiểm tra người dùng theo email
-        const user = await this.userRepo.findByCond({ email });
+        const user = await this.userRepo.list({ email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
             // Trả về lỗi 404 Not Found
             throw AppError.from(ErrUserNotFound, 404);
@@ -507,7 +516,7 @@ export class AuthService implements IAuthService {
     // Phương thức tạo mã OTP để xác minh tài khoản
     async genarateOTPAccount(email: string, ip: string, userAgent: string): Promise<{sessionId: string, expiry: number} | null> {
         // 1. Kiểm tra người dùng theo email
-        const user = await this.userRepo.findByCond({ email });
+        const user = await this.userRepo.list({ email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
         }
@@ -566,7 +575,7 @@ export class AuthService implements IAuthService {
         const email = session.email;
 
         // 3. Lấy người dùng theo email
-        const user = await this.userRepo.findByCond({ email: email });
+        const user = await this.userRepo.list({ email: email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
 
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
@@ -720,7 +729,7 @@ export class AuthService implements IAuthService {
         const otpData = JSON.parse(otpDataStr) as { email: string; otp: string };
 
         // 4. So sánh mã OTP
-        const isMatch = bcrypt.compare(otp, otpData.otp);
+        const isMatch = await bcrypt.compare(otp, otpData.otp);
 
         if (!isMatch) {
             // Lưu log xác minh tài khoản thất bại do OTP không đúng
@@ -740,7 +749,7 @@ export class AuthService implements IAuthService {
         }
 
         // 5. Cập nhật trạng thái người dùng thành ACTIVE
-        const user = await this.userRepo.findByCond({ email: session.email });
+        const user = await this.userRepo.list({ email: session.email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
         }
@@ -773,7 +782,7 @@ export class AuthService implements IAuthService {
     // Phương thức yêu cầu tạo phiêm làm việc đặt lại mật khẩu
     async forgotPassword(email: string, ip: string, userAgent: string): Promise<void> {
         // 1. Kiểm tra người dùng theo email
-        const user = await this.userRepo.findByCond({ email });
+        const user = await this.userRepo.list({ email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null    );
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
         }
@@ -794,7 +803,7 @@ export class AuthService implements IAuthService {
     // Phương thức tạo mã OTP để đặt lại mật khẩu
     async genarateOTPForgotPassword(email: string, ip?: string, userAgent?: string): Promise<{sessionId: string, expiry: number} | null> {
         // 1. Kiểm tra nếu người dùng tồn tại
-        const user = await this.userRepo.findByCond({ email });
+        const user = await this.userRepo.list({ email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
         throw AppError.from(ErrUserNotFound, 404);
         }
@@ -848,7 +857,7 @@ export class AuthService implements IAuthService {
         const email = session.email;
 
         // 3. Lấy người dùng theo email
-        const user = await this.userRepo.findByCond({ email: email });
+        const user = await this.userRepo.list({ email: email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
         }
@@ -964,7 +973,7 @@ export class AuthService implements IAuthService {
         const session = JSON.parse(sessionData) as { email: string; purpose: string; status: string; createdAt: Date };
 
         // 3. Lấy thông tin User theo email
-        const user = await this.userRepo.findByCond({ email: session.email });
+        const user = await this.userRepo.list({ email: session.email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
         }
@@ -990,7 +999,7 @@ export class AuthService implements IAuthService {
 
         // 5. So sánh mã OTP
         const otpData = JSON.parse(otpDataStr) as { email: string; otp: string };
-        const isMatch = bcrypt.compare(otp, otpData.otp);
+        const isMatch = await bcrypt.compare(otp, otpData.otp);
         if (!isMatch) {
             // Lưu log xác minh OTP đặt lại mật khẩu thất bại do OTP không đúng
             await this.userOtpRepo.logOTPAttempt({
@@ -1014,7 +1023,7 @@ export class AuthService implements IAuthService {
         await this.cacheService.del(`forgot-password:rate:${token}`);
 
         // 7. Tao phiên làm việc mới để đặt lại mật khẩu
-        await this.cacheService.set(`reset-password:${token}`, sessionData.email, 15 * 60); // 15 phút  
+        await this.cacheService.set(`reset-password:${token}`, session.email, 15 * 60); // 15 phút  
         
         // 8. Lưu log xác minh OTP đặt lại mật khẩu thành công
         await this.userOtpRepo.logOTPAttempt({
@@ -1036,13 +1045,13 @@ export class AuthService implements IAuthService {
     // Phương thức đặt lại mật khẩu bằng token
     async resetPassword(token: string, dto: UserResetPasswordDTO, ip?: string, userAgent?: string): Promise<void> {
         // 1. Lấy dữ liệu từ Redis bằng token
-        const email = await this.redis.get(`reset-password:${token}`);
+        const email = await this.cacheService.get(`reset-password:${token}`);
         if (!email) {
             throw AppError.from(ErrInvalidRequest, 400);
         }
 
         // 2. Kiểm tra người dùng theo email
-        const user = await this.userRepo.findByCond({ email: email });
+        const user = await this.userRepo.list({ email: email }, { page: 1, limit: 1 }).then(res => res.data.length > 0 ? res.data[0] : null);
         if (!user) {
             throw AppError.from(ErrUserNotFound, 404);
         }
@@ -1051,7 +1060,7 @@ export class AuthService implements IAuthService {
         const data = userResetPasswordDTOSchema.parse(dto);
 
         // 4. so sánh mật khẩu mới và mật khẩu xác nhận
-        if (data.newPassword !== data.confirmPassword) {
+        if (data.password !== data.confirmPassword) {
             // Lưu log đặt lại mật khẩu thất bại do mật khẩu mới và xác nhận không khớp
             await this.userAuditRepo.logUserAudit({
                 userId: user.id,
@@ -1075,7 +1084,7 @@ export class AuthService implements IAuthService {
         await this.userRepo.update(user.id, { password: hashPassword, salt: salt });
 
         // 7. Xóa phiên làm việc đặt lại mật khẩu khỏi Redis
-        await this.redis.del(`reset-password:${token}`);
+        await this.cacheService.del(`reset-password:${token}`);
 
         // 8. Lưu log đặt lại mật khẩu thành công
         await this.userAuditRepo.logUserAudit({
@@ -1090,7 +1099,7 @@ export class AuthService implements IAuthService {
         });
 
         // 9. Gửi sự kiện đặt lại mật khẩu thành công
-        await this.eventPublisher.publish(UserCompleteChangePasswordEvent.create({userId: user.id, email: user.email, username: user.username}, user.id)); // Phát hành sự kiện hoàn tất đặt lại mật khẩu
+        await this.eventPublisher.publish(UserCompleteResetPasswordEvent.create({userId: user.id, email: user.email, username: user.username}, user.id)); // Phát hành sự kiện hoàn tất đặt lại mật khẩu
     }
     // Phương thức cập nhật mật khẩu người dùng
     async updatePassword(requester: Requester, userId: string, dto: UserChangePasswordDTO, ip?: string, userAgent?: string): Promise<void> {
@@ -1116,12 +1125,12 @@ export class AuthService implements IAuthService {
             metaData: { reason: 'Invalid old password' }
         });
 
-        throw AppError.from(ErrUserNotFound, 404); // Không tìm thấy người dùng
+        throw AppError.from(ErrPasswordNotMatch, 400); // Không tìm thấy người dùng
         }
 
         // 4. Tạo salt và hash mật khẩu mới
         const salt = bcrypt.genSaltSync(8);
-        const hashPassword = bcrypt.hash(`${data.newPassword}.${salt}`, 10);
+        const hashPassword = await bcrypt.hash(`${data.newPassword}.${salt}`, 10);
 
         // 5. Cập nhật mật khẩu mới cho người dùng
         await this.userRepo.update(userId, { password: hashPassword, salt: salt });

@@ -1,4 +1,4 @@
-import { Requester, TokenPayload, AccessTokenPayload, RefreshTokenPayload } from 'src/share'
+import { Requester, TokenPayload, AccessTokenPayload, RefreshTokenPayload, PagingDTO, Paginated } from 'src/share'
 import { User } from '../models/user.model'
 import {  CreateStaffDTO, UserCondDTO, UserUpdateDTO } from '../dtos/user.dto'
 import { IOtpAttempt, IUserAudit } from '../models/user-mongo.model';
@@ -25,9 +25,9 @@ export interface IUserService {
 export interface IUserRepository {
     // truy vấn
     get(id: string): Promise<User | null>; // Lấy người dùng theo ID
-    findByCond(cond: UserCondDTO): Promise<User | null>; // Tìm người dùng theo điều kiện
-    findByCondOr(cond: UserCondDTO): Promise<User | null>; // Tìm người dùng đúng theo 1 trong các điều kiện
+    list(cond: UserCondDTO, paging: PagingDTO): Promise<Paginated<User>>; // Lấy danh sách người dùng theo điều kiện và phân trang
     listByIds(ids: string[]): Promise<User[]>; // Lấy danh sách người dùng theo mảng IDs
+    listBySearch(keyword: string, paging: PagingDTO): Promise<Paginated<User>>; // Tìm kiếm người dùng theo từ khóa và phân trang
 
     // yêu cầu
     insert(user: User): Promise<void>; // Thêm người dùng mới
@@ -43,6 +43,7 @@ export interface IUserMongoAuditRepository {
     success: boolean;
     ip?: string;
     userAgent?: string;
+    metaData?: Record<string, any>;
   }): Promise<void>;
 
   getUserAudits(
@@ -57,10 +58,11 @@ export interface IUserMongoOtpRepository {
     logOTPAttempt(data: {
     identifier: string;
     type: string;
+    action: string;
     success: boolean;
     ip?: string;
-    deviceInfo?: string;
     userAgent?: string;
+    metaData?: Record<string, any>;
   }): Promise<void>;
 
   getOTPAttempts(
@@ -73,5 +75,6 @@ export interface IUserMongoOtpRepository {
     identifier: string,
     type: string,
     from: Date,
+    to?: Date,
   ): Promise<number>;
 }

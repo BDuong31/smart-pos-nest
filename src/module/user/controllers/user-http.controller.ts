@@ -1,15 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
 import type { Request as ExpressRequest } from "express";
 import { USER_REPOSITORY, USER_SERVICE } from "../user.di-token";
 import { type IUserRepository, type IUserService } from "../ports/user.port";
-import type { UserUpdateDTO, UserUpdateProfileDTO } from "../dtos/user.dto";
+import type { UserCondDTO, UserUpdateDTO, UserUpdateProfileDTO } from "../dtos/user.dto";
 import { ApiCreatedResponse, ApiOperation } from "@nestjs/swagger";
-import { AppError, ErrTokenInvalid, getIPv4FromReq, type ReqWithRequester, UserRole } from "src/share";
+import { AppError, ErrTokenInvalid, getIPv4FromReq, type PagingDTO, type ReqWithRequester, UserRole } from "src/share";
 import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
 import { ErrUserNotFound, User } from "../models/user.model";
 
 // Lớp UserHttpController xử lý các yêu cầu HTTP liên quan đến người dùng
-@Controller('v1')
+@Controller('v1/users')
 export class UserHttpController {
   constructor(
     @Inject(USER_SERVICE) private readonly userService: IUserService,
@@ -29,8 +29,22 @@ export class UserHttpController {
     return { data };
   } 
 
+  // API lấy danh sách người dùng với phân trang và lọc
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiOperation({ summary: 'Lấy danh sách người dùng với phân trang và lọc' })
+  @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo điều kiện với phân trang.' })
+  async listUsers(@Request() req: ReqWithRequester, @Request() expressReq: ExpressRequest, @Query() cond: UserCondDTO, @Query() paging: PagingDTO) {
+    const ip = getIPv4FromReq(expressReq);
+    const userAgent = expressReq.headers['user-agent'] || '';
+    const { data, total } = await this.userRepo.list(cond, paging);
+    return { data, total };
+  }
+
   // API lấy thông tin hồ sơ người dùng theo userId
-  @Get('user/:id')
+  @Get(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
@@ -46,7 +60,7 @@ export class UserHttpController {
   }
 
   // API lấy danh sách người dùng theo mảng userIds
-  @Post('users/list-by-ids')
+  @Post('list-by-ids')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
@@ -58,7 +72,7 @@ export class UserHttpController {
   }
 
   // API cập nhật thông tin cho người dùng
-  @Patch('user/:id/update')
+  @Patch('user/:id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard)
   @ApiOperation({ summary: 'Cập nhật thông tin cho người dùng' })
@@ -74,7 +88,7 @@ export class UserHttpController {
   }
 
   // API cập nhật thông tin người dùng cho Admin và Staff
-  @Patch('user/:id/admin-update')
+  @Patch('admin-update/:id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
@@ -89,7 +103,7 @@ export class UserHttpController {
   }
 
   // API xóa tài khoản người dùng
-  @Delete('user/:id/delete')
+  @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
@@ -132,7 +146,7 @@ export class UserHttpController {
   }
 }
 
-@Controller('v1/rpc')
+@Controller('v1/rpc/users')
 export class UserHttpRpcController{
   constructor(
     @Inject(USER_SERVICE) private readonly userService: IUserService,
@@ -140,7 +154,7 @@ export class UserHttpRpcController{
   ) {}
 
   // API RPC lấy thông tin hồ sơ người dùng theo userId
-  @Get('user/:id')
+  @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy thông tin hồ sơ người dùng theo userId' })
   @ApiCreatedResponse({ description: 'Trả về thông tin hồ sơ người dùng theo userId.' })
@@ -153,7 +167,7 @@ export class UserHttpRpcController{
   }
 
   // API RPC lấy danh sách người dùng theo mảng userIds
-  @Post('users/list-by-ids')
+  @Post('list-by-ids')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy danh sách người dùng theo mảng userIds' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo mảng userIds.' })

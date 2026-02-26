@@ -15,6 +15,7 @@ export const ErrUserAlreadyExists = new Error('User already exists'); // Lỗi n
 export const ErrUserInactive = new Error('User is inactive'); // Lỗi người dùng không hoạt động
 export const ErrUserBanned = new Error('User is banned'); // Lỗi người dùng bị cấm
 export const ErrUserPending = new Error('User is pending verification'); // Lỗi người dùng đang chờ xác thực
+export const ErrUsernameOrPasswordInvalid = new Error('Invalid email or password'); // Lỗi đăng nhập thất bại
 
 // Lỗi về UserName
 export const ErrUsernameRequired = new Error('Username is required'); // Lỗi tên người dùng bắt buộc

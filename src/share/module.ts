@@ -23,7 +23,6 @@ const rabbitMQProvider: Provider = {
   provide: EVENT_PUBLISHER, 
   useFactory: async () => {
     // Khởi tạo Singleton RabbitMQ
-    console.log(config.rabbitmq.url);
     await RabbitMQClient.init(config.rabbitmq.url); 
     return RabbitMQClient.getInstance();
   }
@@ -33,7 +32,6 @@ const redisProvider: Provider = {
   provide: CACHE_SERVICE, 
   useFactory: async () => {
     // Khởi tạo Singleton Redis
-    console.log(config.redis.url);
     const redisClient = new RedisClient();
     return redisClient;
   }
@@ -42,7 +40,6 @@ const redisProvider: Provider = {
 const mongoProvider: Provider = {
   provide: MONGO_SERVICE,
   useFactory: async () => {
-    console.log(config.mongo.uri);
     await MongoClient.init(config.mongo.uri);
     return MongoClient.getInstance();
   }

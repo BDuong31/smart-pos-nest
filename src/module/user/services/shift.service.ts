@@ -3,7 +3,7 @@ import { ShiftCondDTO, ShiftCreateDTO, ShiftUpdateDTO } from "../dtos/shift.dto"
 import { type IShiftRepository, IShiftService } from "../ports/shift.port";
 import { Inject } from "@nestjs/common";
 import { SHIFT_REPOSITORY, USER_MONGO_AUDIT_REPOSITORY } from "../user.di-token";
-import { AppError } from "src/share";
+import { AppError, Paginated, PagingDTO } from "src/share";
 import { v7 } from "uuid";
 import { type IUserMongoAuditRepository } from "../ports/user.port";
 
@@ -17,8 +17,8 @@ export class ShiftService implements IShiftService {
     // Nhân viên check in bắt đầu ca làm việc
     async checkIn(userId: string, dto: ShiftCreateDTO, ip: string, userAgent: string): Promise<void> {
         // 1. Kiểm tra nếu nhân viên đã có ca làm việc hiện tại chưa
-        const currentShift = await this.shiftRepository.get(userId);
-        if (currentShift) {
+        const currentShift = await this.shiftRepository.list({ userId, endTime: null }, { page: 1, limit: 1 });
+        if (currentShift.data.length > 0) {
             await this.userAuditRepo.logUserAudit({
                 userId: userId,
                 action: 'CHECK_IN',
@@ -27,7 +27,7 @@ export class ShiftService implements IShiftService {
                 userAgent,
 
                 // Lưu thông tin bổ sung về ca làm việc
-                metadata: {
+                metaData: {
                     reason: 'Shift already exists'
                 }
             });
@@ -38,10 +38,11 @@ export class ShiftService implements IShiftService {
         // 2. Tạo ca làm việc mới và lưu vào cơ sở dữ liệu
         const shiftId = v7();
         const newShift: Shift = {
-            ...dto,
             id: shiftId,
             userId: userId,
+            startTime: dto.startTime ?? new Date(),
             endTime: null,
+            cashStart: dto.cashStart,
             cashEnd: null,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -58,7 +59,7 @@ export class ShiftService implements IShiftService {
             userAgent,
 
             // Lưu thông tin bổ sung về ca làm việc
-            metadata: {
+            metaData: {
                 shiftId: shiftId,
                 startTime: newShift.startTime,
                 cashStart: newShift.cashStart, 
@@ -80,16 +81,19 @@ export class ShiftService implements IShiftService {
                 ip,
                 userAgent,
                 // Lưu thông tin bổ sung về ca làm việc
-                metadata: {
+                metaData: {
                     reason: 'Shift not found or does not belong to user'
                 }
             });
-            throw AppError.from(ErrShiftAlreadyExists, 400);
+            throw AppError.from(ErrShiftNotFound, 404);
         }
+
+        const endTime = dto.endTime ?? new Date();
 
         // 2. Cập nhật ca làm việc với thông tin kết thúc
         await this.shiftRepository.update(shiftId, {
             ...dto,
+            endTime,
             updatedAt: new Date(),
         });
 
@@ -101,9 +105,9 @@ export class ShiftService implements IShiftService {
             ip,
             userAgent,
             // Lưu thông tin bổ sung về ca làm việc
-            metadata: {
+            metaData: {
                 shiftId: shiftId,
-                endTime: dto.endTime,
+                endTime,
                 cashEnd: dto.cashEnd,
             }
         });
@@ -118,7 +122,7 @@ export class ShiftService implements IShiftService {
                 ip,
                 userAgent,
                 // Lưu thông tin bổ sung về chênh lệch tiền mặt
-                metadata: {
+                metaData: {
                     shiftId: shiftId,
                     cashDifference: cashDifference,
                 }
@@ -133,30 +137,30 @@ export class ShiftService implements IShiftService {
     // Lấy ca làm việc hiện tại của nhân viên
     async getCurrentShift(userId: string, ip: string, userAgent: string): Promise<Shift> {
         // 1. Truy vấn ca làm việc hiện tại từ cơ sở dữ liệu
-        const shift = await this.shiftRepository.findByCond({ userId: userId, endTime: null });
-        if (shift.length === 0) {
+        const shift = await this.shiftRepository.list({ userId: userId, endTime: null }, { page: 1, limit: 1 });
+        if (shift.data.length === 0) {
             throw AppError.from(ErrShiftNotFound, 404);
         }
 
-        return shift[0];
+        return shift.data[0];
     }
 
     // Lấy lịch sử ca làm việc của nhân viên
-    async getShiftHistory(userId: string, ip: string, userAgent: string): Promise<Shift[]> {
+    async getShiftHistory(userId: string, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<Shift>> {
         // 1. Truy vấn lịch sử ca làm việc từ cơ sở dữ liệu
-        const shifts = await this.shiftRepository.findByCond({ userId: userId });
-        if (shifts.length === 0) {
+        const shifts = await this.shiftRepository.list({ userId: userId }, paging);
+        if (shifts.data.length === 0) {
             throw AppError.from(ErrShiftNotFound, 404);
         }
         return shifts;
     }
 
     // Tìm ca làm việc theo điều kiện
-    async findShifts(cond: ShiftCondDTO, ip: string, userAgent: string): Promise<Shift[]> {
+    async findShifts(cond: ShiftCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<Shift>> {
         // 1. Truy vấn ca làm việc theo điều kiện từ cơ sở dữ liệu
-        const shifts = await this.shiftRepository.findByCond(cond);
+        const shifts = await this.shiftRepository.list(cond, paging);
         
-        if (shifts.length === 0) {
+        if (shifts.data.length === 0) {
             throw AppError.from(ErrShiftNotFound, 404);
         }
 

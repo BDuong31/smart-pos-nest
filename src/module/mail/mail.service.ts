@@ -133,7 +133,7 @@ export class MailService implements IMailService {
       await this.mailerService.sendMail({
         to: to,
         subject: 'Baso Corner - Chào mừng nhân viên mới!',
-        template: './welcome-staff',
+        template: './welcom-staff',
         context: {
           name: staffName,
         },

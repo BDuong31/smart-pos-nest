@@ -78,8 +78,7 @@ export class MailConsumer implements OnModuleInit {
 
     // Lắng nghe sự kiện nhân viên được tạo
     RabbitMQClient.getInstance().subscribe(EvtAdminCreateUser, async (event: any) => {
-      const data  = JSON.parse(event);
-      const evt = UserCreatedEvent.from(data);
+      const evt = UserCreatedEvent.from(event);
       await this.mailService.emailWelcomStaff(evt.payload.email, evt.payload?.username || 'Nhân viên');
     });
   }

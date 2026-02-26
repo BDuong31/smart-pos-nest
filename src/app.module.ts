@@ -6,6 +6,9 @@ import { AppService } from './app.service';
 import { ShareModule } from './share/module';
 import { MailModule } from './module/mail/mail.module';
 import { UserModule } from './module/user/user.module';
+import { ImageModule } from './module/image/image.module';
+import { CatalogModule } from './module/catalog/catalog.module';
+import { OperationsModule } from './module/operations/operations.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -14,7 +17,10 @@ import { UserModule } from './module/user/user.module';
     }),
     ShareModule,
     MailModule,
+    ImageModule,
     UserModule,
+    CatalogModule,
+    OperationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

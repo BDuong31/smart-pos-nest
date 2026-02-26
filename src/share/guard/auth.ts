@@ -13,7 +13,6 @@ export class RemoteAuthGuard implements CanActivate {
 
     // Hàm kiểm tra token
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        console.log('RemoteAuthGuard: canActivate called');
         const request = context.switchToHttp().getRequest(); // Lấy request từ context
         const token = extractTokenFromHeader(request); // Lấy token từ header
 

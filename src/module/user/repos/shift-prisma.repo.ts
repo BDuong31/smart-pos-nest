@@ -3,6 +3,7 @@ import { Shift } from "../models/shift.model";
 import { Shift as ShiftPrisma } from "@prisma/client";
 import { IShiftRepository } from "../ports/shift.port";
 import prisma from "src/share/components/prisma"
+import { Paginated, PagingDTO } from "src/share";
 
 // Lớp ShiftPrismaRepository cung cấp phương thức truy vấn dữ liệu ca làm việc từ Prisma
 export class ShiftPrismaRepository implements IShiftRepository {
@@ -17,32 +18,61 @@ export class ShiftPrismaRepository implements IShiftRepository {
         return this._toModel(data);
     }
 
-    // Phương thức tìm ca làm việc theo điều kiện
-    async findByCond(cond: ShiftCondDTO): Promise<Shift[]> {
-        const data = await prisma.shift.findMany({
-            where: { ...cond }
-        });
-        
-        if (!data) return [];
-        return data.map(this._toModel);
-    }
+    // Phương thức lấy danh sách ca làm việc theo điều kiện và phân trang
+    async list(cond: ShiftCondDTO, paging: PagingDTO): Promise<Paginated<Shift>> {
+        const { userId, startTime, endTime, ...rest } = cond;
 
-    // Phương thức tìm ca làm việc đúng theo 1 trong các điều kiện
-    async findByCondOr(cond: ShiftCondDTO): Promise<Shift[]> {
+        let where = {
+            ...rest,
+        }
+
+        if (userId) {
+            where = {
+                ...where,
+                userId: userId,
+            }
+        }
+
+        if (startTime) {
+            where = {
+                ...where,
+                startTime: { gte: startTime },
+            }
+        }
+
+        if (endTime) {
+            where = {
+                ...where,
+                endTime: { lte: endTime },
+            }
+        }
+
+        const total = await prisma.shift.count({ where });
+
+        const skip = (paging.page - 1) * paging.limit;  
+
         const data = await prisma.shift.findMany({
-            where: { OR: [ ...Object.entries(cond).map(([key, value]) => ({ [key]: value })) ] }
-        });
-        if (!data) return [];
-        return data.map(this._toModel);
-    }
-    
-    // Phương thức lấy danh sách ca làm việc theo mảng IDs
+            where,
+            skip,
+            take: paging.limit,
+            orderBy: { createdAt: 'desc' }
+        }); 
+
+        return {    
+            data: data.map(this._toModel),
+            paging,
+            total,
+         }
+     }
+
+     // Phương thức lấy danh sách ca làm việc của nhân viên theo user ID    
     async listByIds(ids: string[]): Promise<Shift[]> {
         const data = await prisma.shift.findMany({
-            where: { id: { in: ids } }
+            where: { userId: { in: ids } },
+            orderBy: { createdAt: 'desc' }
         });
         return data.map(this._toModel);
-    }
+     }
 
     // Phương thức thêm ca làm việc mới
     async insert(shift: any): Promise<void> {

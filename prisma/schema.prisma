@@ -87,6 +87,7 @@ model Printer {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   name      String   @map("name") @db.VarChar(100)
   ipAddress String   @map("ip_address") @db.VarChar(50)
+  type      String   @default("RECEIPT")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
@@ -313,6 +314,8 @@ model StockCheckDetail {
 model Zone {
   id   String @id @default(uuid()) @map("id") @db.VarChar(36)
   name String @map("name") @db.VarChar(50)
+  description String?  @map("description") @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
@@ -324,6 +327,8 @@ model Table {
   zoneId    String      @map("zone_id") @db.VarChar(36)
   name      String      @map("name") @db.VarChar(50)
   qrCode    String      @unique @map("qr_code") @db.VarChar(100)
+  capacity    Int         @default(4) @map("capacity")
+  isActive    Boolean     @default(true) @map("is_active")
   status    TableStatus @default(available) @map("status")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
@@ -339,9 +344,11 @@ model Reservation {
   customerName String   @map("customer_name") @db.VarChar(100)
   phone        String   @map("phone") @db.VarChar(20)
   time         DateTime @map("time") @db.Timestamp(0)
-  status       String   @default("PENDING") @map("status") @db.VarChar(20)
-  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
+  guestCount   Int               @default(1) @map("guest_count")
+  note         String?           @map("note") @db.Text
+  status       ReservationStatus @default(pending) @map("status")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([tableId], map: "resTblIdx")
   @@map("reservations")
@@ -506,6 +513,13 @@ enum TableStatus {
   occupied
   reserved
   maintenance
+}
+
+enum ReservationStatus {
+  pending   
+  confirmed
+  arrived  
+  cancelled
 }
 
 enum OrderStatus {

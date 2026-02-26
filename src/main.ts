@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as swaggerUi from 'swagger-ui-express';
 import { ValidationPipe } from '@nestjs/common';
 import * as dns from 'dns';
+import { AppExceptionFilter } from './share/filter/app-exception.filter';
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 async function bootstrap() {
   // Tạo ứng dụng NestJS
@@ -23,6 +24,7 @@ async function bootstrap() {
       transform: true // Tự động chuyển đổi payload thành các đối tượng có kiểu theo các lớp DTO
     }),
   )
+  app.useGlobalFilters(new AppExceptionFilter());
 
   // Cấu hình Swagger
   const config = new DocumentBuilder()
@@ -31,7 +33,7 @@ async function bootstrap() {
     .setVersion('1.0') // Phiên bản của API
     .addTag('smart-pos') // Thêm thẻ cho API
     .addBearerAuth() // Thêm xác thực Bearer
-    .addServer('http://localhost:5000') // Thêm server mặc định
+    .addServer('') // Thêm server mặc định
     .build(); // Xây dựng cấu hình
 
   // Tạo tài liệu Swagger

@@ -3,6 +3,7 @@ import prisma from "src/share/components/prisma"
 import { UserRank as UserRankPrisma, PointHistory as PointHistoryPrisma, PointHistory } from "@prisma/client";
 import { UserRank } from "../models/user-rank.model";
 import { PointHistoryCondDTO, PointHistoryDTO, UserRankCondDTO, UserRankDTO, UserRankUpdateDTO } from "../dtos/loyalty.dto";
+import { Paginated, PagingDTO } from "src/share";
 // Lớp LoyaltyPrismaRepository cung cấp phương thức truy vấn dữ liệu hệ thống khách hàng thân thiết từ Prisma
 export class LoyaltyPrismaRepository implements ILoyaltyRepository {
     // Phương thức lấy hạng khách hàng thân thiết theo ID
@@ -14,22 +15,53 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
         return this._toUserRankModel(data);
     }
 
-    // Phương thức tìm hạng khách hàng thân thiết theo điều kiện
-    async findUserRanksByCond(cond: UserRankCondDTO): Promise<UserRank[]> {
+    // Phương thức lấy danh sách hạng khách hàng thân thiết theo điều kiện và phân trang
+    async listUserRank(cond: UserRankCondDTO, paging: PagingDTO): Promise<Paginated<UserRank>> {
+        const { name, minPoint, discountPercent, ...rest } = cond;
+
+        let where = {
+            ...rest,
+        }
+
+        if (name) {
+            where = {
+                ...where,
+                name: name,
+            }
+        }
+
+        if (minPoint) {
+            where = {
+                ...where,
+                minPoint: minPoint,
+            }
+        }
+
+        if (discountPercent) {
+            where = {
+                ...where,
+                discountPercent: discountPercent,
+            }
+        }
+
+        const total = await prisma.userRank.count({ where });
+
+        const skip = (paging.page - 1) * paging.limit;
+
         const data = await prisma.userRank.findMany({
-            where: { ...cond }
+            where,
+            skip,
+            take: paging.limit,
+            orderBy: { minPoint: 'desc' }
         });
-        return data.map(this._toUserRankModel);
+
+        return {
+            data: data.map(this._toUserRankModel),
+            paging,
+            total,
+        }
     }
 
-    // Phương thức tìm hạng khách hàng thân thiết đúng theo 1 trong các điều kiện
-    async findUserRanksByCondOr(cond: UserRankCondDTO): Promise<UserRank[]> {
-        const data = await prisma.userRank.findMany({
-            where: { OR: [ ...Object.entries(cond).map(([key, value]) => ({ [key]: value })) ] }
-        });
-        return data.map(this._toUserRankModel);
-    }
-    
     // Phương thức lấy danh sách hạng khách hàng thân thiết theo mảng IDs
     async listUserRanksByIds(ids: string[]): Promise<UserRank[]> {
         const data = await prisma.userRank.findMany({
@@ -37,7 +69,7 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
         });
         return data.map(this._toUserRankModel);
     }
-
+    
     // Phương thức thêm hạng khách hàng thân thiết mới
     async insertUserRank(userRank: UserRankDTO): Promise<void> {
         await prisma.userRank.create({ data: userRank });
@@ -73,18 +105,59 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
         });
         return data.map(this._toPointHistoryModel);
     }
-    // Phương thức tìm lịch sử điểm khách hàng thân thiết đúng theo 1 trong các điều kiện
-    async findPointHistoriesByCondOr(cond: PointHistoryCondDTO): Promise<PointHistory[]> {
+
+    // Phương thức lấy lịch sử điểm khách hàng thân thiết theo điều kiện và phân trang
+    async listPointHistory(cond: PointHistoryCondDTO, paging: PagingDTO): Promise<Paginated<PointHistory>> {
+        const { userId, reason, createdAt, ...rest } = cond;
+
+        let where = {
+            ...rest,
+        }
+
+        if (userId) {
+            where = {
+                ...where,
+                userId: userId,
+            }
+        }
+
+        if (reason) {
+            where = {
+                ...where,
+                reason: reason,
+            }
+        }
+
+        if (createdAt) {
+            where = {
+                ...where,
+                createdAt: createdAt,
+            }
+        }
+
+        const total = await prisma.pointHistory.count({ where });
+
+        const skip = (paging.page - 1) * paging.limit;
+
         const data = await prisma.pointHistory.findMany({
-            where: { OR: [ ...Object.entries(cond).map(([key, value]) => ({ [key]: value })) ] }
+            where,
+            skip,
+            take: paging.limit,
+            orderBy: { createdAt: 'desc' }
         });
-        return data.map(this._toPointHistoryModel);
+
+        return {
+            data: data.map(this._toPointHistoryModel),
+            paging,
+            total,
+        }
     }
 
-    // Phương thức lấy danh sách lịch sử điểm khách hàng thân thiết theo mảng IDs
-    async listPointHistoriesByIds(ids: string[]): Promise<PointHistory[]> {
+    // Phương thức lấy danh sách lịch sử điểm khách hàng thân thiết theo mảng user IDs
+    async listPointHistoriesByUserIds(userIds: string[]): Promise<PointHistory[]> {
         const data = await prisma.pointHistory.findMany({
-            where: { id: { in: ids } }
+            where: { userId: { in: userIds } },
+            orderBy: { createdAt: 'desc' }
         });
         return data.map(this._toPointHistoryModel);
     }

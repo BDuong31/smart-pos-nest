@@ -16,7 +16,12 @@ export class TokenIntrospectorRPCClient<T extends TokenPayload> implements IToke
                 { timeout: 5000 } // Thiết lập thời gian chờ 5 giây
             );
 
-            const { sub, role } = response.data ;
+            const payload = response.data?.data ?? response.data;
+            const { sub, role } = payload ?? {};
+
+            if (!sub || !role) {
+                throw new Error('Invalid introspection payload');
+            }
 
             return { payload: { sub, role } as T, isOk: true };
         } catch (error) {

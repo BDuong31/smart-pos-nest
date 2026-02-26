@@ -1,0 +1,6 @@
+export const ZONE_REPOSITORY = Symbol('ZONE_REPOSITORY');
+export const ZONE_SERVICE = Symbol('ZONE_SERVICE');
+export const TABLE_REPOSITORY = Symbol('TABLE_REPOSITORY');
+export const TABLE_SERVICE = Symbol('TABLE_SERVICE');
+export const RESERVATION_REPOSITORY = Symbol('RESERVATION_REPOSITORY');
+export const RESERVATION_SERVICE = Symbol('RESERVATION_SERVICE');

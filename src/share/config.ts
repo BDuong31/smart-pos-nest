@@ -17,7 +17,7 @@ export const config = {
     rpc: {
         accessJwtSecret: process.env.ACCESS_JWT_SECRET || 'baso_smart_pos_secret_key',
         refreshJwtSecret: process.env.REFRESH_JWT_SECRET || 'baso_smart_pos_refresh_secret_key',
-        introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/introspect`,
+        introspectUrl: process.env.VERIFY_TOKEN_URL || `http://localhost:${port}/v1/rpc/auth/introspect`,
     },
 
     // Cấu hình redis

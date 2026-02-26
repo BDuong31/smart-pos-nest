@@ -27,6 +27,7 @@ export const shiftCondDTOSchema = shiftSchema.pick({
     userId: true,
     startTime: true,
     endTime: true,
+    
 }).partial();
 
 // Định nghĩa kiểu dữ liệu cho điều kiện truy vấn ca làm việc
