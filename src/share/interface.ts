@@ -28,7 +28,7 @@ export interface ReqWithRequesterOpt { requester?: Requester } // Requester có 
 // Định nghĩa interface cho access token provider
 export interface IAccessTokenProvider {
     // Tạo mã truy cập token
-    generateToken(payload: AccessTokenPayload): Promise<string>;
+    generateToken(payload: AccessTokenPayload, expiresIn?: string | number): Promise<string>;
 
     // Giải mã và xác thực token
     verifyToken(token: string): Promise<AccessTokenPayload | null>;
@@ -37,7 +37,7 @@ export interface IAccessTokenProvider {
 // Định nghĩa interface cho refresh token provider
 export interface IRefreshTokenProvider {
     // Tạo mã làm mới token
-    generateToken(payload: RefreshTokenPayload): Promise<string>;
+    generateToken(payload: RefreshTokenPayload, expiresIn?: string | number): Promise<string>;
     // Giải mã và xác thực token
     verifyToken(token: string): Promise<RefreshTokenPayload | null>;
 }

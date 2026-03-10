@@ -2,7 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Inject, Patch, Post, Request, U
 import { AUTH_SERVICE } from "../user.di-token";
 import { type IAuthService } from "../ports/auth.port";
 import { ApiBadRequestResponse, ApiBody, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from "@nestjs/swagger";
-import type { UserLoginDTO, UserRegistrationDTO, UserResetPasswordDTO } from "../dtos/auth.dto";
+import type { UserChangePasswordDTO, UserLoginDTO, UserRegistrationDTO, UserResetPasswordDTO } from "../dtos/auth.dto";
 import type { Request as ExpressRequest } from "express";
 import { getIPv4FromReq, type ReqWithRequester } from "src/share";
 import { RemoteAuthGuard } from "src/share/guard";
@@ -252,6 +252,18 @@ export class AuthHttpController {
         const userAgent = req.headers['user-agent'] || '';
         await this.authService.resetPassword(body.resetToken, body.dto, ip, userAgent);
         return { message: 'Password reset successfully' };
+    }
+
+    // API đổi mật khẩu
+    @Patch('change-password')
+    @UseGuards(RemoteAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Đổi mật khẩu' })
+    async changePassword(@Body() body: UserChangePasswordDTO, @Request() req: ReqWithRequester, @Request() expressReq: ExpressRequest) {
+        const ip = getIPv4FromReq(expressReq);
+        const userAgent = expressReq.headers['user-agent'] || '';
+        await this.authService.updatePassword(req.requester, req.requester.sub, body, ip, userAgent);
+        return { message: 'Password changed successfully' };
     }
 
     // API làm mới token

@@ -28,7 +28,7 @@ import { MailConsumer } from './mail.consumer';
         },
 
         template: {
-          dir: join(__dirname, 'templates'),
+          dir: join(process.cwd(), 'src/module/mail/templates'),
           adapter: new HandlebarsAdapter(),
           options: { strict: true },
         },

@@ -6,7 +6,6 @@ import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
 import { imageCondDTOSchema,type UpdateImageDTO, type CreateImageDTO, type ImageCondDTO } from "./image.dto";
 import {paginatedResponse, type PagingDTO, pagingDTOSchema, ReqWithRequester, UserRole } from "src/share";
 import { ImageType } from "./image.model";
-import { undefinedProcessor } from "node_modules/zod/v4/core/json-schema-processors.cjs";
 import { ApiBadRequestResponse, ApiBody, ApiConsumes, ApiCreatedResponse, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiServiceUnavailableResponse, ApiUnauthorizedResponse } from "@nestjs/swagger";
 @Controller('v1/images')
 export class ImageHttpController {

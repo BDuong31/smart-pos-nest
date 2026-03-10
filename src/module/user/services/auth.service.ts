@@ -115,6 +115,7 @@ export class AuthService implements IAuthService {
         return dto.email;
 
     }
+
     // Phương thức đăng nhập
     async login(dto: UserLoginDTO, ip: string, userAgent: string): Promise<UserAuthDTO> {
         // 1. Kiểm tra dữ liệu đầu vào
@@ -208,8 +209,8 @@ export class AuthService implements IAuthService {
 
         // 5. Tạo access token và refresh token
         const role = user.role as UserRole;
-        const accessToken = await this.accessTokenProvider.generateToken({ sub: user.id, role });
-        const refreshToken = await this.refreshTokenProvider.generateToken({ sub: user.id, type: 'refresh', jti: v7() });
+        const accessToken = await this.accessTokenProvider.generateToken({ sub: user.id, role }, '30d' ); // Đang test nên để token không có thời gian hết hạn để dễ dàng test, sau này sẽ chỉnh lại như cũ (30 ngày)
+        const refreshToken = await this.refreshTokenProvider.generateToken({ sub: user.id, type: 'refresh', jti: v7() }, '30d' ); // Đang test nên để token không có thời gian hết hạn để dễ dàng test, sau này sẽ chỉnh lại như cũ (30 ngày)
 
         // Lưu log đăng nhập thành công
         await this.userAuditRepo.logUserAudit({
@@ -387,8 +388,8 @@ export class AuthService implements IAuthService {
         
         // 6. Tạo access token và refresh token mới
         const role = user.role as UserRole;
-        const newAccessToken = await this.accessTokenProvider.generateToken({ sub: user.id, role });
-        const newRefreshToken = await this.refreshTokenProvider.generateToken({ sub: user.id, type: 'refresh', jti: v7() });
+        const newAccessToken = await this.accessTokenProvider.generateToken({ sub: user.id, role }, '30d' ); // Đang test nên để token không có thời gian hết hạn để dễ dàng test, sau này sẽ chỉnh lại như cũ (30 ngày)
+        const newRefreshToken = await this.refreshTokenProvider.generateToken({ sub: user.id, type: 'refresh', jti: v7() }, '30d' ); // Đang test nên để token không có thời gian hết hạn để dễ dàng test, sau này sẽ chỉnh lại như cũ (30 ngày)
 
         return {
             accessToken: newAccessToken,

@@ -9,10 +9,14 @@ export class MailService implements IMailService {
   // Gửi Email OTP kích hoạt tài khoản
   async emailOTPVerify(to: string, otp: string, userName: string = 'Bạn'): Promise<void> {
     try {
+      console.log (`Gửi email OTP Verify đến: ${to} với OTP: ${otp}`);
+
       await this.mailerService.sendMail({
+        from:  'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Mã OTP kích hoạt tài khoản',
-        template: './otp-verify', 
+        template: 'otp-verify', 
+        // html: `<b>Chào ${userName}, OTP của bạn là: ${otp}</b>`, // Dùng HTML thay thế
         context: { 
           name: userName,
           otp: otp,
@@ -28,11 +32,13 @@ export class MailService implements IMailService {
   async emailWelcome(to: string, userName: string = 'Bạn'): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Chào mừng bạn đến với Baso Corner!',
-        template: './welcome', 
+        template: 'welcome', 
         context: {
-          name: userName,
+          fullName: userName,
+          appUrl: 'https://baso.id.vn', // Thêm URL ứng dụng nếu cần
         },
       });
       Logger.log(`Welcome Email sent to ${to}`);
@@ -45,6 +51,7 @@ export class MailService implements IMailService {
   async emailOTPForgotPassword(to: string, otp: string, userName: string = 'Bạn'): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Mã OTP đặt lại mật khẩu',
         template: 'otp-forgot-password',
@@ -63,6 +70,7 @@ export class MailService implements IMailService {
   async emailCompleteResetPassword(to: string, userName: string = 'Bạn'): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Hoàn tất đặt lại mật khẩu',
         template: './complete-reset-password',
@@ -80,6 +88,7 @@ export class MailService implements IMailService {
   async emailCompleteChanggePassword(to: string, userName: string = 'Bạn'): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Hoàn tất thay đổi mật khẩu',
         template: './complete-change-password',
@@ -97,6 +106,7 @@ export class MailService implements IMailService {
   async emailUpdateProfile(to: string, userName: string = 'Bạn'): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Cập nhật hồ sơ thành công',
         template: './update-profile',
@@ -114,6 +124,7 @@ export class MailService implements IMailService {
   async emailDeleteAccount(to: string, userName: string = 'Bạn'): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Tài khoản đã bị xóa',
         template: './delete-account',
@@ -131,6 +142,7 @@ export class MailService implements IMailService {
   async emailWelcomStaff(to: string, staffName: string): Promise<void> {
     try {
       await this.mailerService.sendMail({
+        from: 'Baso Corner <vtbduong@baso.id.vn>',
         to: to,
         subject: 'Baso Corner - Chào mừng nhân viên mới!',
         template: './welcom-staff',

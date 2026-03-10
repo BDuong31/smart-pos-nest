@@ -20,10 +20,9 @@ export class ShiftPrismaRepository implements IShiftRepository {
 
     // Phương thức lấy danh sách ca làm việc theo điều kiện và phân trang
     async list(cond: ShiftCondDTO, paging: PagingDTO): Promise<Paginated<Shift>> {
-        const { userId, startTime, endTime, ...rest } = cond;
+        const { userId, startTime, endTime } = cond;
 
         let where = {
-            ...rest,
         }
 
         if (userId) {
@@ -54,7 +53,7 @@ export class ShiftPrismaRepository implements IShiftRepository {
         const data = await prisma.shift.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: Number(paging.limit),
             orderBy: { createdAt: 'desc' }
         }); 
 

@@ -31,16 +31,19 @@ export class UserService implements IUserService {
     const data = createStaffDTOSchema.parse(dto);
 
     // 2. Kiểm tra nếu email hoặc username đã tồn tại
-    const existingByEmail = await this.userRepo.findByCondOr({ email: data.email, username: data.username });
-    if (existingByEmail) {
-      if (existingByEmail.email === data.email) {
-        throw AppError.from(ErrEmailAlreadyExists, 400);
-      }
-      if (existingByEmail.username === data.username) {
-        throw AppError.from(ErrUsernameAlreadyExists, 400);
-      }
-    }
+    const dtoEmail = { email: data.email };
+    const dtoUsername = { username: data.username };
 
+    const existingUserByEmail = await this.userRepo.list(dtoEmail, { page: 1, limit: 1 });
+    const existingUserByUsername = await this.userRepo.list(dtoUsername, { page: 1, limit: 1 });
+    
+    if (existingUserByEmail.data.length > 0) {
+      throw AppError.from(ErrEmailAlreadyExists, 400);
+    }
+    
+    if (existingUserByUsername.data.length > 0) {
+      throw AppError.from(ErrUsernameAlreadyExists, 400);
+    }
     // 3. Tạo người dùng mới
     const userId = v7();
     const salt = bcrypt.genSaltSync(10);

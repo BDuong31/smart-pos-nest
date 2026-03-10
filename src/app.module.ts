@@ -9,6 +9,8 @@ import { UserModule } from './module/user/user.module';
 import { ImageModule } from './module/image/image.module';
 import { CatalogModule } from './module/catalog/catalog.module';
 import { OperationsModule } from './module/operations/operations.module';
+import { SalesModule } from './module/sales/sales.module';
+import { InventoryModule } from './module/inventory/inventory.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -21,6 +23,8 @@ import { OperationsModule } from './module/operations/operations.module';
     UserModule,
     CatalogModule,
     OperationsModule,
+    SalesModule,
+    InventoryModule
   ],
   controllers: [AppController],
   providers: [AppService],

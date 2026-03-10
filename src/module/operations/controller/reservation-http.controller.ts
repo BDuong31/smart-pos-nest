@@ -86,7 +86,7 @@ export class ReservationRpcController {
     // RPC để lấy danh sách đặt bàn theo điều kiện với phân trang
     @Get()
     @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Body() cond: ReservationCondDTO, @Query() paging: PagingDTO) {
+    async list(@Request() req: ReqWithRequester, @Query() cond: ReservationCondDTO, @Query() paging: PagingDTO) {
         const data = await this.reservationService.list(cond, paging);
         return { data };
     }

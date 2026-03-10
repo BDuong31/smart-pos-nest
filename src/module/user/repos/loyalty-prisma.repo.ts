@@ -17,10 +17,9 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
 
     // Phương thức lấy danh sách hạng khách hàng thân thiết theo điều kiện và phân trang
     async listUserRank(cond: UserRankCondDTO, paging: PagingDTO): Promise<Paginated<UserRank>> {
-        const { name, minPoint, discountPercent, ...rest } = cond;
-
+        const { name, minPoint, discountPercent } = cond;
+        
         let where = {
-            ...rest,
         }
 
         if (name) {
@@ -44,14 +43,17 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
             }
         }
 
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
         const total = await prisma.userRank.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const data = await prisma.userRank.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { minPoint: 'desc' }
         });
 
@@ -108,10 +110,9 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
 
     // Phương thức lấy lịch sử điểm khách hàng thân thiết theo điều kiện và phân trang
     async listPointHistory(cond: PointHistoryCondDTO, paging: PagingDTO): Promise<Paginated<PointHistory>> {
-        const { userId, reason, createdAt, ...rest } = cond;
+        const { userId, reason, createdAt } = cond;
 
         let where = {
-            ...rest,
         }
 
         if (userId) {

@@ -1,0 +1,8 @@
+export const CART_REPOSITORY = Symbol("CART_REPOSITORY");
+export const CART_SERVICE = Symbol("CART_SERVICE");
+export const ORDER_REPOSITORY = Symbol("ORDER_REPOSITORY");
+export const ORDER_SERVICE = Symbol("ORDER_SERVICE");
+export const PAYMENT_REPOSITORY = Symbol("PAYMENT_REPOSITORY");
+export const PAYMENT_SERVICE = Symbol("PAYMENT_SERVICE");
+export const VOUCHER_REPOSITORY = Symbol("VOUCHER_REPOSITORY");
+export const VOUCHER_SERVICE = Symbol("VOUCHER_SERVICE");

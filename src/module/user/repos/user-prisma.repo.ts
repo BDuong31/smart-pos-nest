@@ -72,14 +72,18 @@ export class UserPrismaRepository implements IUserRepository {
             }
         }
 
+        const page = Number(paging.page)
+        const limit = Number(paging.limit)
+
+
         const total = await prisma.user.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const data = await prisma.user.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { createdAt: 'desc' }
         });
 
@@ -92,9 +96,7 @@ export class UserPrismaRepository implements IUserRepository {
 
     // Lấy người dùng theo danh sách
     async listByIds(ids: string[]): Promise<User[]> {
-        const data = await prisma.user.findMany({
-            where: { id: { in: ids } }
-        })
+        const data = await prisma.user.findMany({ where: { id: { in: ids } } });
         
         return data.map(this._toModel);
     }

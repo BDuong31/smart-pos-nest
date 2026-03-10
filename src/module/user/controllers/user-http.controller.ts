@@ -33,7 +33,7 @@ export class UserHttpController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Lấy danh sách người dùng với phân trang và lọc' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo điều kiện với phân trang.' })
   async listUsers(@Request() req: ReqWithRequester, @Request() expressReq: ExpressRequest, @Query() cond: UserCondDTO, @Query() paging: PagingDTO) {
@@ -47,7 +47,7 @@ export class UserHttpController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Lấy thông tin hồ sơ người dùng theo userId' })
   @ApiCreatedResponse({ description: 'Trả về thông tin hồ sơ người dùng theo userId.' })
   async getUserById(@Param('id') id: string, @Request() req: ExpressRequest) {
@@ -63,7 +63,7 @@ export class UserHttpController {
   @Post('list-by-ids')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Lấy danh sách người dùng theo mảng userIds' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo mảng userIds.' })
   async listUsersByIds(@Body() body: { userIds: string[] }) {
@@ -91,7 +91,7 @@ export class UserHttpController {
   @Patch('admin-update/:id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Cập nhật thông tin người dùng cho Admin và Staff' })
   @ApiCreatedResponse({ description: 'Cập nhật thông tin người dùng thành công, trả về thông tin người dùng đã được cập nhật.' })
   async adminUpdateUser(@Request() req: ReqWithRequester, @Param('id') id: string, @Body() dto: UserUpdateDTO, @Request() expressReq: ExpressRequest) {
@@ -106,7 +106,7 @@ export class UserHttpController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Xóa tài khoản người dùng' })
   @ApiCreatedResponse({ description: 'Xóa tài khoản người dùng thành công.' })
   async deleteUser(@Request() req: ReqWithRequester, @Param('id') id: string, @Request() expressReq: ExpressRequest) {
@@ -171,9 +171,9 @@ export class UserHttpRpcController{
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Lấy danh sách người dùng theo mảng userIds' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo mảng userIds.' })
-  async rpcListUsersByIds(@Body() body: { userIds: string[] }) {
-    const users =  await this.userRepo.listByIds(body.userIds);
-    return { data: users.map(user => this._toResponseModel(user)) };
+  async rpcListUsersByIds(@Body('ids') ids: string[]) {
+    const data = await this.userRepo.listByIds(ids);
+    return { data: data.map(this._toResponseModel) };
   }
 
   // Chuyển đổi dữ liệu từ User sang dạng trả về

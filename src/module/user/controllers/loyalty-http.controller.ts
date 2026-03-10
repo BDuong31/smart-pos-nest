@@ -37,6 +37,9 @@ export class LoyaltyHttpController {
     async getUserRanks(@Request() req: ExpressRequest, @Query() dto: UserRankCondDTO, @Query() paging: PagingDTO) {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
+
+        console.log('dto:', dto);
+        console.log('paging:', paging);
         const userRanks = await this.loyaltyService.getUserRanks(dto, ip, userAgent, paging);
         return { data: userRanks };
     }

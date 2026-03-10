@@ -15,9 +15,9 @@ export class JwtTokenService implements IAccessTokenProvider {
     }
 
     // Tạo mã truy cập token
-    async generateToken(payload: AccessTokenPayload): Promise<string> {
+    async generateToken(payload: AccessTokenPayload, expiresIn?: string | number): Promise<string> {
         return jwt.sign(payload, this.secretKey, {
-            expiresIn: this.expiresIn as StringValue | number,
+            expiresIn: expiresIn || this.expiresIn as StringValue | number,
         });
     }
 
@@ -43,9 +43,9 @@ export class JwtRefreshTokenService implements IRefreshTokenProvider {
     }
 
     // Tạo mã làm mới token
-    async generateToken(payload: RefreshTokenPayload): Promise<string> {
+    async generateToken(payload: RefreshTokenPayload, expiresIn?: string | number): Promise<string> {
         return jwt.sign(payload, this.secretKey, {
-            expiresIn: this.expiresIn as StringValue | number,
+            expiresIn: expiresIn || this.expiresIn as StringValue | number,
         });
     }
 

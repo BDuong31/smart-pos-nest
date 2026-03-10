@@ -234,6 +234,7 @@ model Recipe {
 
 model ImportInvoice {
   id         String   @id @default(uuid()) @map("id") @db.VarChar(36)
+  code       String   @unique @map("code") @db.VarChar(50)
   supplierId String   @map("supplier_id") @db.VarChar(36)
   totalCost  Int  @map("total_cost")
   importDate DateTime @default(now()) @map("import_date") @db.Timestamp(0)
@@ -252,7 +253,7 @@ model ImportInvoiceDetail {
   unit         String  @map("unit") @db.VarChar(20)
   unitPrice    Int @map("unit_price")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
+  updactedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([invoiceId], map: "invDetIdx")
   @@map("import_invoice_details")
@@ -260,6 +261,7 @@ model ImportInvoiceDetail {
 
 model PurchaseProposal {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
+  code       String   @unique @map("code") @db.VarChar(50)
   creatorId String?  @map("creator_id") @db.VarChar(36)
   status    String   @default("PENDING") @map("status") @db.VarChar(20)
   note      String?  @map("note") @db.Text
@@ -284,6 +286,7 @@ model PurchaseProposalDetail {
 
 model StockCheck {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
+  code       String   @unique @map("code") @db.VarChar(50)
   userId    String   @map("user_id") @db.VarChar(36)
   note      String?  @map("note") @db.Text
   checkDate DateTime @default(now()) @map("check_date") @db.Timestamp(0)
@@ -361,6 +364,7 @@ model Reservation {
 model Cart {
   id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   userId    String   @unique @map("user_id") @db.VarChar(36)
+  totalItem Int @map("total_item") @db.Integer
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
@@ -371,6 +375,7 @@ model CartItem {
   id        String  @id @default(uuid()) @map("id") @db.VarChar(36)
   cartId    String  @map("cart_id") @db.VarChar(36)
   productId String  @map("product_id") @db.VarChar(36)
+  variantId   String? @map("variant_id") @db.VarChar(36)
   quantity  Int     @default(1) @map("quantity")
   note      String? @map("note") @db.Text
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
@@ -378,6 +383,17 @@ model CartItem {
 
   @@index([cartId], map: "cartItmIdx")
   @@map("cart_items")
+}
+
+model CartItemOption {
+  id           String   @id @default(uuid()) @map("id") @db.VarChar(36)
+  cartItemId   String   @map("cart_item_id") @db.VarChar(36)
+  optionItemId String   @map("option_item_id") @db.VarChar(36)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@index([cartItemId], map: "cioItemIdx")
+  @@map("cart_item_options")
 }
 
 model Voucher {
@@ -398,6 +414,7 @@ model Voucher {
 
 model Order {
   id          String      @id @default(uuid()) @map("id") @db.VarChar(36)
+  code        String      @unique @map("code") @db.VarChar(50)
   userId      String?     @map("user_id") @db.VarChar(36)
   totalAmount Int     @map("total_amount")
   status      OrderStatus @default(pending) @map("status")
@@ -409,22 +426,26 @@ model Order {
 }
 
 model OrderVoucher {
+  id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   orderId   String @map("order_id") @db.VarChar(36)
   voucherId String @map("voucher_id") @db.VarChar(36)
+  discountApplied Float @map("discount_applied")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
-
-  @@id([orderId, voucherId])
+  
+  @@unique([orderId, voucherId], map: "ordVouUnique")
   @@map("order_vouchers")
 }
 
 model OrderTable {
+  id      String @id @default(uuid()) @map("id") @db.VarChar(36)
+
   orderId String @map("order_id") @db.VarChar(36)
   tableId String @map("table_id") @db.VarChar(36)
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
-  @@id([orderId, tableId])
+  @@unique([orderId, tableId], map: "ordTabUnique")
   @@map("order_tables")
 }
 
@@ -459,9 +480,12 @@ model OrderItemOption {
 model PaymentTransaction {
   id        String        @id @default(uuid()) @map("id") @db.VarChar(36)
   orderId   String        @map("order_id") @db.VarChar(36)
+  externalTransactionId String? @map("external_transaction_id") @db.VarChar(100)
   amount    Int       @map("amount")
   method    PaymentMethod @default(cash) @map("method")
+  gatewayResponse Json? @map("gateway_response")
   status    PaymentStatus @default(pending) @map("status")
+  paidAt DateTime? @map("paid_at")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
@@ -533,9 +557,9 @@ enum OrderStatus {
 
 enum PaymentMethod {
   cash
-  credit_card
-  bank_transfer
-  wallet
+  momo
+  vnpay
+  zalo
 }
 
 enum PaymentStatus {
