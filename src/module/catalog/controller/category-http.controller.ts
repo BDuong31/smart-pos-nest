@@ -76,7 +76,7 @@ export class CategoryHttpController {
     }
 
     // API lấy danh sách danh mục sản phẩm theo nhiều ID
-    @Get('list-by-ids')
+    @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Lấy danh sách danh mục sản phẩm theo nhiều ID' })
     @ApiCreatedResponse({ description: 'Danh sách danh mục sản phẩm được lấy thành công' })

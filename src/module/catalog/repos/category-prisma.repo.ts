@@ -20,10 +20,9 @@ export class CategoryPrismaRepo implements ICategoryRepository {
 
     // Lấy danh sách danh mục
     async list(cond: CategoryCondDTO, paging: PagingDTO): Promise<Paginated<Category>> {
-        const { name, parentId, ...rest} = cond;
+        const { name, parentId } = cond;
         
         let where = {
-            ...rest,
         }
 
         if (name) {
