@@ -97,16 +97,6 @@ export class CartRpcController {
         }
     }
 
-    // RPC lấy danh sách giỏ hàng theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async listCart(@Query() cond: CartCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCart(cond, paging);
-        return {
-            data,
-        }
-    }
-
     // RPC lấy danh sách giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @HttpCode(HttpStatus.OK)
@@ -208,16 +198,6 @@ export class CartItemRpcController {
         }
      }
 
-    // RPC lấy danh sách mục trong giỏ hàng theo điều kiện  
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async listCartItem(@Query() cond: CartItemCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItem(cond, paging);
-        return {
-            data,
-        }
-     }
-
     // RPC lấy danh sách mục trong giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @HttpCode(HttpStatus.OK)
@@ -314,16 +294,6 @@ export class CartItemOptionRpcController {
     @HttpCode(HttpStatus.OK)
     async getCartItemOptionById(@Param('id') id: string) {
         const data = await this.cartService.getCartItemOption(id);
-        return {
-            data,
-        }
-     }
-
-    // RPC lấy danh sách tùy chọn trong mục giỏ hàng theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async listCartItemOption(@Query() cond: CartItemOptionCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItemOption(cond, paging);
         return {
             data,
         }

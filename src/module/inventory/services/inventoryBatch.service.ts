@@ -76,7 +76,7 @@ export class InventoryBatchService implements IInventoryBatchService {
     }
 
     // Lấy danh sách lô hàng tồn kho theo nhiều ID
-    async listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<InventoryBatch>> {
-        return await this.inventoryBatchRepo.listByIds(ids, pagingDTO);
+    async listByIds(inventoryBatchIds: string[]): Promise<InventoryBatch[]> {
+        return await this.inventoryBatchRepo.listByIds(inventoryBatchIds);
     }
 }

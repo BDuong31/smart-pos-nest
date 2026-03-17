@@ -102,12 +102,4 @@ export class InventoryBatchRpcController {
         const inventoryBatches = await this.inventoryBatchService.listByIds(ids, paging);
         return paginatedResponse(inventoryBatches, paging); 
     }
-
-    // RPC để lấy danh sách lô hàng tồn kho theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: InventoryBatchCondDTO,  @Query() paging: PagingDTO) {
-        const inventoryBatches = await this.inventoryBatchService.list(cond, paging);
-        return paginatedResponse(inventoryBatches, paging);
-    }
 }

@@ -135,7 +135,7 @@ export class ShiftService implements IShiftService {
     }
 
     // Lấy ca làm việc hiện tại của nhân viên
-    async getCurrentShift(userId: string, ip: string, userAgent: string): Promise<Shift> {
+    async getCurrentShift(userId: string): Promise<Shift> {
         // 1. Truy vấn ca làm việc hiện tại từ cơ sở dữ liệu
         const shift = await this.shiftRepository.list({ userId: userId, endTime: null }, { page: 1, limit: 1 });
         if (shift.data.length === 0) {
@@ -146,7 +146,7 @@ export class ShiftService implements IShiftService {
     }
 
     // Lấy lịch sử ca làm việc của nhân viên
-    async getShiftHistory(userId: string, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<Shift>> {
+    async getShiftHistory(userId: string, paging: PagingDTO): Promise<Paginated<Shift>> {
         // 1. Truy vấn lịch sử ca làm việc từ cơ sở dữ liệu
         const shifts = await this.shiftRepository.list({ userId: userId }, paging);
         if (shifts.data.length === 0) {
@@ -156,7 +156,7 @@ export class ShiftService implements IShiftService {
     }
 
     // Tìm ca làm việc theo điều kiện
-    async findShifts(cond: ShiftCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<Shift>> {
+    async findShifts(cond: ShiftCondDTO, paging: PagingDTO): Promise<Paginated<Shift>> {
         // 1. Truy vấn ca làm việc theo điều kiện từ cơ sở dữ liệu
         const shifts = await this.shiftRepository.list(cond, paging);
         
@@ -168,7 +168,7 @@ export class ShiftService implements IShiftService {
     }
 
     // Lấy ca làm việc theo ID
-    async getShiftById(shiftId: string, ip: string, userAgent: string): Promise<Shift> {
+    async getShiftById(shiftId: string): Promise<Shift> {
         // 1. Truy vấn ca làm việc theo ID từ cơ sở dữ liệu
         const shift = await this.shiftRepository.get(shiftId);
         if (!shift) {

@@ -14,14 +14,14 @@ export interface IRecipeService {
 
     get(recipeId: string): Promise<Recipe | null> // Lấy thông tin công thức theo ID  
     list(cond: RecipeCondDTO, pagingDTO: PagingDTO): Promise<Paginated<Recipe>> // Lấy danh sách công thức theo điều kiện
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Recipe>> // Lấy danh sách công thức theo nhiều ID
+    listByIds(ids: string[]): Promise<Recipe[]> // Lấy danh sách công thức theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà RecipeRepository phải triển khai
 export interface IRecipeRepository {
     get(recipeId: string): Promise<Recipe | null> // Lấy thông tin công thức theo ID  
     list(cond: RecipeCondDTO, paging: PagingDTO): Promise<Paginated<Recipe>> // Lấy danh sách công thức theo điều kiện
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Recipe>> // Lấy danh sách công thức theo nhiều ID  
+    listByIds(ids: string[]): Promise<Recipe[]> // Lấy danh sách công thức theo nhiều ID  
 
     insert(dto: Recipe): Promise<void> // Tạo mới công thức
     update(recipeId: string, dto: RecipeUpdateDTO): Promise<void> // Cập nhật thông tin công thức theo ID

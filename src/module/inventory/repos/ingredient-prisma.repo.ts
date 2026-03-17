@@ -71,23 +71,10 @@ export class IngredientPrismaRepo implements IIngredientRepository {
     }
 
     // Lấy danh sách nguyên liệu theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Ingredient>> {
-        const total = await prisma.ingredient.count({ where: { id: { in: ids } } });
+    async listByIds(ids: string[]): Promise<Ingredient[]> {
+        const result = await prisma.ingredient.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.ingredient.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return result.map(this._toModel);
     }
 
     // Tạo mới nguyên liệu

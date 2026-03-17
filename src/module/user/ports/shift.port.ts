@@ -14,13 +14,13 @@ export interface IShiftService {
     checkOut(userId: string, shiftId: string, dto: ShiftUpdateDTO, ip: string, userAgent: string): Promise<void>; // Nhân viên check out kết thúc ca làm việc
     
     // Lấy thông tin ca làm việc
-    getCurrentShift(userId: string, ip: string, userAgent: string): Promise<Shift>; // Lấy ca làm việc hiện tại của nhân viên
-    getShiftHistory(userId: string, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<Shift>>; // Lấy lịch sử ca làm việc của nhân viên
+    getCurrentShift(userId: string): Promise<Shift>; // Lấy ca làm việc hiện tại của nhân viên
+    getShiftHistory(userId: string, paging: PagingDTO): Promise<Paginated<Shift>>; // Lấy lịch sử ca làm việc của nhân viên
     
 
     // Quản lý ca làm việc
-    findShifts(cond: ShiftCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<Shift>>; // Tìm ca làm việc theo điều kiện
-    getShiftById(shiftId: string, ip: string, userAgent: string): Promise<Shift>; // Lấy ca làm việc theo ID
+    findShifts(cond: ShiftCondDTO, paging: PagingDTO): Promise<Paginated<Shift>>; // Tìm ca làm việc theo điều kiện
+    getShiftById(shiftId: string): Promise<Shift>; // Lấy ca làm việc theo ID
 }
 
 // Định nghĩa các phương thức mà ShiftRepository phải triển khai

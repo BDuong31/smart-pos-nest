@@ -16,4 +16,4 @@ export const pointHistorySchema = z.object({
     updatedAt: z.date(),
 })
 
-export interface PointHistory extends z.infer<typeof pointHistorySchema> {}
+export type PointHistory = z.infer<typeof pointHistorySchema>;

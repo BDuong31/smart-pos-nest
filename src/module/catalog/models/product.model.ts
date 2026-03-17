@@ -1,4 +1,5 @@
 import { create } from 'axios';
+import { PublicCategory, PublicComboItem, PublicImage, PublicProduct, PublicVariant } from 'src/share';
 import { z } from 'zod';
 import { ca, is } from 'zod/v4/locales';
 // Định nghĩa lỗi về sản phẩm
@@ -40,14 +41,24 @@ export const ErrPriceDiffNegative = new Error('Price difference cannot be negati
 export const ErrComboNotFound = new Error('Combo not found'); // Lỗi combo sản phẩm không tồn tại
 export const ErrComboAlreadyExists = new Error('Combo already exists'); // Lỗi combo sản phẩm đã tồn tại
 
-// 2. Định nghĩa lỗi về số lượng trong combo
-export const ErrComboQuantityInvalid = new Error('Combo quantity is invalid'); // Lỗi số lượng trong combo không hợp lệ
-export const ErrComboQuantityNegative = new Error('Combo quantity cannot be negative'); // Lỗi số lượng trong combo không thể âm
-export const ErrComboQuantityZero = new Error('Combo quantity must be at least 1'); // Lỗi số lượng trong combo phải lớn hơn hoặc bằng 1
+// 2. Định nghĩa lỗi về tên combo sản phẩm
+export const ErrComboNameRequired = new Error('Combo name is required');
+export const ErrComboNameTooShort = new Error('Combo name is too short');
+export const ErrComboNameTooLong = new Error('Combo name is too long');
+export const ErrComboNameInvalidFormat = new Error('Combo name has invalid format');
 
-// 3. Định nghĩa lỗi về sản phẩm trong combo
-export const ErrComboProductNotFound = new Error('Product in combo not found'); // Lỗi sản phẩm trong combo không tồn tại
-export const ErrComboProductAlreadyExists = new Error('Product in combo already exists'); // Lỗi sản phẩm trong combo đã tồn tại
+// 3. Định nghĩa lỗi về giá combo sản phẩm
+export const ErrComboPriceInvalid = new Error('Combo price is invalid'); // Lỗi giá combo sản phẩm không hợp lệ
+export const ErrComboPriceNegative = new Error('Combo price cannot be negative'); // Lỗi giá combo sản phẩm không thể âm
+
+// Định nghĩa lỗi về  mục combo sản phẩm
+// 1. Định nghĩa lỗi chung về mục combo sản phẩm
+export const ErrComboItemNotFound = new Error('Combo item not found'); // Lỗi mục combo sản phẩm không tồn tại
+export const ErrComboItemAlreadyExists = new Error('Combo item already exists');
+
+// 2. Định nghĩa lỗi về số lượng mục combo sản phẩm
+export const ErrComboItemQuantityInvalid = new Error('Combo item quantity is invalid'); // Lỗi số lượng mục combo sản phẩm không hợp lệ
+export const ErrComboItemQuantityNegative = new Error('Combo item quantity cannot be negative'); // Lỗi số lượng mục combo sản phẩm không thể âm
 
 // Mô hình dữ liệu sản phẩm
 export const productSchema = z.object({
@@ -62,7 +73,7 @@ export const productSchema = z.object({
     updatedAt: z.date(),
 });
 
-export interface Product extends z.infer<typeof productSchema> {}
+export type Product = z.infer<typeof productSchema> & {category?: PublicCategory, images?: PublicImage[]};
 
 // Mô hình dữ liệu biến thể sản phẩm
 export const variantSchema = z.object({
@@ -74,15 +85,28 @@ export const variantSchema = z.object({
     updatedAt: z.date(),
 })
 
-export interface Variant extends z.infer<typeof variantSchema> {}
+export type Variant = z.infer<typeof variantSchema>;
 
 // Mô hình dữ liệu combo sản phẩm
 export const comboSchema = z.object({
-    comboId: z.string().uuid(),
-    productId: z.string().uuid(),
-    quantity: z.number().min(1, ErrComboQuantityZero),
+    id: z.string().uuid(),
+    name: z.string().min(1, ErrComboNameTooShort).max(200, ErrComboNameTooLong),
+    price: z.number().min(0, ErrComboPriceNegative),
     createdAt: z.date(),
     updatedAt: z.date(),
 });
 
-export interface Combo extends z.infer<typeof comboSchema> {}
+export type Combo = z.infer<typeof comboSchema> & { images?: PublicImage[] };
+
+// Mô hình dữ liệu mục combo sản  phẩm
+export const comboItemSchema = z.object({
+    id: z.string().uuid(),
+    comboId: z.string().uuid(),
+    productId: z.string().uuid(),
+    variantId: z.string().uuid(),
+    quantity: z.number().min(1, ErrComboItemQuantityNegative),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+});
+
+export type ComboItem = z.infer<typeof comboItemSchema> & { product?: PublicProduct, variant?: PublicVariant };

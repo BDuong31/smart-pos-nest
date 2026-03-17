@@ -71,23 +71,10 @@ export class UnitConversionPrismaRepo implements IUnitConversionRepository {
     }
 
     // Lấy danh sách quy đổi đơn vị theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<UnitConversion>> {
-        const total = await prisma.unitConversion.count({ where: { id: { in: ids } } });
+    async listByIds(unitConversionIds: string[]): Promise<UnitConversion[]> {
+        const result = await prisma.unitConversion.findMany({ where: { id: { in: unitConversionIds } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.unitConversion.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return result.map(this._toModel);
     }
 
     // Tạo mới quy đổi đơn vị

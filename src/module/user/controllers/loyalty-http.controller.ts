@@ -115,14 +115,23 @@ export class LoyaltyRpcController {
         };
     }
 
-    // RPC lấy danh sách hạng thành viên
-    @Get('user-ranks/list')
+    // RPC lấy thông tin hạng thành viên theo ID
+    @Get('user-ranks/:id')
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'RPC lấy danh sách hạng thành viên' })
-    @ApiCreatedResponse({ description: 'Trả về danh sách hạng thành viên' })
-    async getUserRanksRpc(@Request() req: ExpressRequest, @Query() dto: UserRankCondDTO, @Query() paging: PagingDTO) {
+    @ApiOperation({ summary: 'RPC lấy thông tin hạng thành viên theo ID' })
+    @ApiCreatedResponse({ description: 'Trả về thông tin hạng thành viên theo ID' })
+    async getUserRankByIdRpc(@Request() req: ExpressRequest, @Param('id') id: string) {
         const { ip, userAgent } = this.getRpcMetadata(req);
-        return await this.loyaltyService.getUserRanks(dto, ip, userAgent, paging);
+        return await this.loyaltyService.getUserRankById(id, ip, userAgent);
     }
 
+    // RPC lấy danh sách hạng thành viên theo nhiều ID
+    @Post('user-ranks/list-by-ids')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'RPC lấy danh sách hạng thành viên theo nhiều ID' })
+    @ApiCreatedResponse({ description: 'Trả về danh sách hạng thành viên theo nhiều ID' })
+    async getUserRanksByIdsRpc(@Request() req: ExpressRequest, @Body() dto: { ids: string[] }, @Query() paging: PagingDTO) {
+        const { ip, userAgent } = this.getRpcMetadata(req);
+        return await this.loyaltyService.getUserRankByIds(dto.ids, ip, userAgent);
+    }
 }

@@ -3,14 +3,17 @@ import type { Request as ExpressRequest } from "express";
 import { SHIFT_SERVICE } from "../user.di-token";
 import type { IShiftService } from "../ports/shift.port";
 import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
-import { getIPv4FromReq,type PagingDTO,type ReqWithRequester, UserRole } from "src/share";
+import { getIPv4FromReq, type IPublicUserRpc,type PagingDTO,PublicUser,type ReqWithRequester, USER_RPC, UserRole } from "src/share";
 import { ApiCreatedResponse, ApiOperation } from "@nestjs/swagger";
 import type{ ShiftCondDTO, ShiftCreateDTO, ShiftUpdateDTO } from "../dtos/shift.dto";
+import { paginatedResponse } from "src/share/utils";
+import { Shift } from "../models/shift.model";
 
 @Controller('v1/shifts')
 export class ShiftHttpController {
     constructor(
-        @Inject(SHIFT_SERVICE) private readonly shiftService: IShiftService
+        @Inject(SHIFT_SERVICE) private readonly shiftService: IShiftService,
+        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
     ){ }
 
     // API checkin
@@ -52,10 +55,13 @@ export class ShiftHttpController {
     @ApiCreatedResponse({ description: 'Trả về ca làm việc hiện tại.' })
     async getCurrentShift(@Request() req: ReqWithRequester, @Request() reqExpress: ExpressRequest) {
         const userId = req.requester.sub;
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        const shift = await this.shiftService.getCurrentShift(userId, ip, userAgent);
-        return { data: shift };
+
+        const result = await this.shiftService.getCurrentShift(userId);
+
+        const user = await this.userRpc.getUserById(userId);
+
+        const data = { ...result, user} as Shift
+        return { data };
     }
 
     // API lấy lịch sử ca làm việc
@@ -65,12 +71,17 @@ export class ShiftHttpController {
     @Roles(UserRole.STAFF, UserRole.ADMIN, UserRole.KITCHEN)
     @ApiOperation({ summary: 'Lấy lịch sử ca làm việc' })
     @ApiCreatedResponse({ description: 'Trả về lịch sử ca làm việc.' })
-    async getShiftHistory(@Request() req: ReqWithRequester, @Request() reqExpress: ExpressRequest, @Query() paging: PagingDTO) {
+    async getShiftHistory(@Request() req: ReqWithRequester, @Query() paging: PagingDTO) {
         const userId = req.requester.sub;
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        const shifts = await this.shiftService.getShiftHistory(userId, ip, userAgent, paging);
-        return { data: shifts };
+        const result = await this.shiftService.getShiftHistory(userId, paging);
+
+        const user = await this.userRpc.getUserById(userId);
+
+        result.data = result.data.map((shift) => {
+            return { ...shift, user } as Shift;
+        })
+
+        return paginatedResponse(result, paging);
     }
 
     // API tìm kiếm ca làm việc
@@ -80,11 +91,25 @@ export class ShiftHttpController {
     @Roles(UserRole.STAFF, UserRole.ADMIN, UserRole.KITCHEN)
     @ApiOperation({ summary: 'Tìm kiếm ca làm việc' })
     @ApiCreatedResponse({ description: 'Trả về danh sách ca làm việc theo điều kiện tìm kiếm.' })
-    async findShifts(@Query() cond: ShiftCondDTO, @Request() reqExpress: ExpressRequest, @Query() paging: PagingDTO) {
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        const shifts = await this.shiftService.findShifts(cond, ip, userAgent, paging);
-        return { data: shifts };
+    async findShifts(@Query() cond: ShiftCondDTO, @Query() paging: PagingDTO) {
+    
+        const result = await this.shiftService.findShifts(cond, paging);
+
+        const userIds = result.data.map(shift => shift.userId);
+
+        const users = await this.userRpc.getUsersByIds(userIds);
+
+        const userMap: Record<string, PublicUser> = {}
+        users.forEach(user => {
+            userMap[user.id] = user;
+        });
+
+        result.data = result.data.map(shift => {
+            const user = userMap[shift.userId];
+            return { ...shift, user } as Shift;
+        });
+
+        return paginatedResponse(result, paging);
     }
 
     // API lấy ca làm việc theo ID
@@ -94,11 +119,13 @@ export class ShiftHttpController {
     @Roles(UserRole.STAFF, UserRole.ADMIN, UserRole.KITCHEN)
     @ApiOperation({ summary: 'Lấy ca làm việc theo ID' })
     @ApiCreatedResponse({ description: 'Trả về ca làm việc theo ID.' })
-    async getShiftById(@Param('shiftId') shiftId: string, @Request() reqExpress: ExpressRequest) {
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        const shift = await this.shiftService.getShiftById(shiftId, ip, userAgent);
-        return { data: shift };
+    async getShiftById(@Param('shiftId') shiftId: string) {
+        const result = await this.shiftService.getShiftById(shiftId);
+
+        const user = await this.userRpc.getUserById(result.userId);
+
+        const shift = { ...result, user } as Shift;
+        return { shift };
     }
 
 }
@@ -122,10 +149,8 @@ export class ShiftRpcController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'RPC lấy ca hiện tại của user' })
     @ApiCreatedResponse({ description: 'Trả về ca hiện tại của user.' })
-    async getCurrentShift(@Query() body: { userId: string }, @Request() req: ExpressRequest) {
-        const { ip, userAgent } = this.getRpcMetadata(req);
-
-        const shift = await this.shiftService.getCurrentShift(body.userId, ip, userAgent);
+    async getCurrentShift(@Query() userId: string) {
+        const shift = await this.shiftService.getCurrentShift(userId);
         return { data: shift };
     }
 
@@ -134,9 +159,8 @@ export class ShiftRpcController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'RPC lấy chi tiết ca' })
     @ApiCreatedResponse({ description: 'Trả về chi tiết ca.' })
-    async getShiftById(@Query() body: { shiftId: string }, @Request() req: ExpressRequest) {
-        const { ip, userAgent } = this.getRpcMetadata(req);
-        const shift = await this.shiftService.getShiftById(body.shiftId, ip, userAgent);
+    async getShiftById(@Query() shiftId: string) {
+        const shift = await this.shiftService.getShiftById(shiftId);
         return { data: shift };
     }
 
@@ -145,10 +169,9 @@ export class ShiftRpcController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'RPC kiểm tra nhanh User có đang làm việc không' })
     @ApiCreatedResponse({ description: 'Trả về trạng thái làm việc của User.' })
-    async isUserWorking(@Param('userId') userId: string, @Request() req: ExpressRequest) {
-        const { ip, userAgent } = this.getRpcMetadata(req);
+    async isUserWorking(@Param('userId') userId: string) {
         try {
-            await this.shiftService.getCurrentShift(userId, ip, userAgent);
+            await this.shiftService.getCurrentShift(userId);
             return { data: true };
         } catch (error) {
             return { data: false };

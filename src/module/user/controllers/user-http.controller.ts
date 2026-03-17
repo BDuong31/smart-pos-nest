@@ -1,20 +1,37 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
 import type { Request as ExpressRequest } from "express";
-import { USER_REPOSITORY, USER_SERVICE } from "../user.di-token";
+import { LOYALTY_REPOSITORY, USER_REPOSITORY, USER_SERVICE } from "../user.di-token";
 import { type IUserRepository, type IUserService } from "../ports/user.port";
-import type { UserCondDTO, UserUpdateDTO, UserUpdateProfileDTO } from "../dtos/user.dto";
+import { userCondDTOSchema, type CreateStaffDTO, type UserCondDTO, type UserUpdateDTO, type UserUpdateProfileDTO } from "../dtos/user.dto";
 import { ApiCreatedResponse, ApiOperation } from "@nestjs/swagger";
-import { AppError, ErrTokenInvalid, getIPv4FromReq, type PagingDTO, type ReqWithRequester, UserRole } from "src/share";
+import { AppError, ErrTokenInvalid, getIPv4FromReq, IMAGE_RPC,  ImageType,  type IPublicImageRpc, type IPublicLoyaltyRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicImage, PublicRank, type ReqWithRequester, UserRole } from "src/share";
 import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
-import { ErrUserNotFound, User } from "../models/user.model";
+import { ErrUserNotFound, User } from "../models/user.model"
 
 // Lớp UserHttpController xử lý các yêu cầu HTTP liên quan đến người dùng
 @Controller('v1/users')
 export class UserHttpController {
   constructor(
     @Inject(USER_SERVICE) private readonly userService: IUserService,
-    @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository
+    @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
+    @Inject(IMAGE_RPC) private readonly imageRpc: IPublicImageRpc,
+    @Inject(LOYALTY_REPOSITORY) private readonly loyaltyRpc: IPublicLoyaltyRpc,
   ) {}
+
+  // API tạo tài khoản người dùng mới
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Tạo tài khoản người dùng mới' })
+  @ApiCreatedResponse({ description: 'Tài khoản người dùng được tạo thành công, trả về thông tin người dùng đã được tạo.' })
+  async createUser(@Request() req: ReqWithRequester, @Body() dto: CreateStaffDTO, @Request() expressReq: ExpressRequest) {
+    const requester = req.requester;
+    const ip = getIPv4FromReq(expressReq);
+    const userAgent = expressReq.headers['user-agent'] || '';
+    const data = await this.userService.createStart(requester, dto, ip, userAgent);
+    return { data };
+  }
 
   // API lấy profile người dùng
   @Get('profile')
@@ -22,10 +39,21 @@ export class UserHttpController {
   @UseGuards(RemoteAuthGuard)
   @ApiOperation({ summary: 'Lấy thông tin hồ sơ người dùng' })
   @ApiCreatedResponse({ description: 'Trả về thông tin hồ sơ người dùng.' })
-  async profile(@Request() req: ReqWithRequester, @Request() expressReq: ExpressRequest) {
-    const ip = getIPv4FromReq(expressReq);
-    const userAgent = expressReq.headers['user-agent'] || '';
-    const data = await this.userService.profile(req.requester.sub, ip, userAgent);
+  async profile(@Request() req: ReqWithRequester) {
+
+    const result = await this.userService.profile(req.requester.sub);
+
+    if (!result) {
+      throw AppError.from(ErrUserNotFound, 404);
+    }
+
+    const avatars = await this.imageRpc.getImagesByRefId(result.id, ImageType.AVATAR);
+
+    const avatar = avatars[0];
+
+    const rank = await this.loyaltyRpc.getUserRank(result?.rankId || '');
+
+    const data: Omit<User, 'password' | 'salt'> = { ...result, avatar, rank };
     return { data };
   } 
 
@@ -36,11 +64,42 @@ export class UserHttpController {
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Lấy danh sách người dùng với phân trang và lọc' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo điều kiện với phân trang.' })
-  async listUsers(@Request() req: ReqWithRequester, @Request() expressReq: ExpressRequest, @Query() cond: UserCondDTO, @Query() paging: PagingDTO) {
-    const ip = getIPv4FromReq(expressReq);
-    const userAgent = expressReq.headers['user-agent'] || '';
-    const { data, total } = await this.userRepo.list(cond, paging);
-    return { data, total };
+  async listUsers(@Request() req: ReqWithRequester, @Query() cond: UserCondDTO, @Query() paging: PagingDTO) {
+    paging = pagingDTOSchema.parse(paging);
+    cond = userCondDTOSchema.parse(cond);
+
+    const results = await this.userRepo.list(cond, paging);
+
+    const userIds = results.data.map(user => user.id);
+    const rankIds = results.data.map(user => user.rankId).filter(rankId => rankId !== undefined && rankId !== null);
+    
+    const ranks = await this.loyaltyRpc.getUserRanksByIds(rankIds);
+
+    const avatarMap: Record<string, PublicImage | null> = {};
+    const rankMap: Record<string, PublicRank | null> = {};
+
+    userIds.map(async (userId) => {
+      const avatars = await this.imageRpc.getImagesByRefId(userId, ImageType.AVATAR);
+      const rank = await this.loyaltyRpc.getUserRank(results.data.find(user => user.id === userId)?.rankId || '');
+
+      if (avatars.length > 0) { 
+        avatarMap[userId] = avatars[0];
+      } else {
+        avatarMap[userId] = null;
+      }
+    })
+
+    ranks.map((rank) => {
+      rankMap[rank.id] = rank;
+    })
+    
+    results.data = results.data.map((item) => {
+      const avatar = avatarMap[item.id] || undefined;
+      const rank = rankMap[item.id] || undefined;
+      return { ...item, avatar, rank };
+    })
+
+    return paginatedResponse(results, cond);
   }
 
   // API lấy thông tin hồ sơ người dùng theo userId
@@ -56,6 +115,15 @@ export class UserHttpController {
     if (!user) {
       throw AppError.from(ErrUserNotFound, 404);
     }
+
+    const avatars = await this.imageRpc.getImagesByRefId(user.id, ImageType.AVATAR);
+
+    const avatar = avatars[0];
+
+    const rank = await this.loyaltyRpc.getUserRank(user?.rankId || '');
+
+    const data: Omit<User, 'password' | 'salt'> = { ...user, avatar, rank };
+    
     return { data: user };
   }
 

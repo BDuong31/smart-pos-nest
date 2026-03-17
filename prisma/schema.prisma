@@ -144,23 +144,39 @@ model OptionItem {
 }
 
 model ProductOptionConfig {
+  id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   productId     String @map("product_id") @db.VarChar(36)
   optionGroupId String @map("option_group_id") @db.VarChar(36)
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
-  @@id([productId, optionGroupId])
+  @@index([productId], map: "ProductOptionConfigIdx")
   @@map("product_option_configs")
 }
 
+model Combo {
+  id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
+  name      String   @map("name") @db.VarChar(150)
+  price     Int      @map("price")
+  isActive  Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@map("combos")
+}
 model ComboItem {
+  id        String   @id @default(uuid()) @map("id") @db.VarChar(36)
   comboId   String @map("combo_id") @db.VarChar(36)
   productId String @map("product_id") @db.VarChar(36)
+  variantId String @map("variant_id") @db.VarChar(36)
   quantity  Int    @default(1) @map("quantity")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
-  @@id([comboId, productId])
+  @@index([comboId], map:  "comboIdx")
+  @@index([productId], map: "comboProductIdx")
+  @@index([variantId], map: "comboVariantIdx")
   @@map("combo_items")
 }
 
@@ -253,7 +269,7 @@ model ImportInvoiceDetail {
   unit         String  @map("unit") @db.VarChar(20)
   unitPrice    Int @map("unit_price")
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
-  updactedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([invoiceId], map: "invDetIdx")
   @@map("import_invoice_details")
@@ -575,7 +591,9 @@ enum VoucherType {
 
 enum ImageType {
   category
+  combo
   avatar
   product
   ingredient
+  option
 }

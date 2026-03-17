@@ -12,12 +12,13 @@ export interface ILoyaltyService {
     createUserRank(dto: UserRankDTO, ip: string, userAgent: string): Promise<void>; // Tạo hạng khách hàng thân thiết mới
     updateUserRank(id: string, dto: UserRankUpdateDTO, ip: string, userAgent: string): Promise<void>; // Cập nhật hạng khách hàng thân thiết
     deleteUserRank(id: string, ip: string, userAgent: string): Promise<void>; // Xóa hạng khách hàng thân thiết
-    getUserRankById(id: string, ip: string, userAgent: string): Promise<UserRank | null>; // Lấy hạng khách hàng thân thiết theo ID
-    getUserRanks(cond: UserRankCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<UserRank>>; // Lấy danh sách hạng khách hàng thân thiết theo điều kiện
+    getUserRankById(id: string): Promise<UserRank | null>; // Lấy hạng khách hàng thân thiết theo ID
+    getUserRanks(cond: UserRankCondDTO, paging: PagingDTO): Promise<Paginated<UserRank>>; // Lấy danh sách hạng khách hàng thân thiết theo điều kiện
+    getUserRankByIds(ids: string[]): Promise<UserRank[] | null>; // Lấy danh sách hạng khách hàng thân thiết theo mảng ID
 
     // Quản lý lịch sử điểm khách hàng thân thiết
     createPointHistory(dto: PointHistoryDTO, ip: string, userAgent: string): Promise<void>; // Tạo lịch sử điểm khách hàng thân thiết mới
-    getPointHistories(cond: PointHistoryCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<PointHistory>>; // Lấy danh sách lịch sử điểm khách hàng thân thiết theo điều kiện   
+    getPointHistories(cond: PointHistoryCondDTO, paging: PagingDTO): Promise<Paginated<PointHistory>>; // Lấy danh sách lịch sử điểm khách hàng thân thiết theo điều kiện   
 }
 
 // Định nghĩa các phương thức mà LoyaltyRepository phải triển khai

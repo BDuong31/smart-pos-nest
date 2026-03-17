@@ -1,3 +1,4 @@
+import { PublicIngredient } from "src/share/data-model";
 import { z } from "zod";
 
 // ============================
@@ -24,5 +25,5 @@ export const recipeSchema = z.object({
     updatedAt: z.date(),
 })  
 
-export type Recipe = z.infer<typeof recipeSchema>;
+export type Recipe = z.infer<typeof recipeSchema> & { ingredient?: PublicIngredient };
 

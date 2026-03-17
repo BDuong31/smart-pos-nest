@@ -1,12 +1,12 @@
 import { Module, Provider } from "@nestjs/common";
-import { CATEGORY_REPOSITORY, CATEGORY_SERVICE, PRODUCT_REPOSITORY, PRODUCT_SERVICE, OPTION_REPOSITORY,OPTION_SERVICE, PRINTER_SERVICE, PRINTER_REPOSITORY,  } from "./catalog.di-token";
+import { CATEGORY_REPOSITORY, CATEGORY_SERVICE, PRODUCT_REPOSITORY, PRODUCT_SERVICE, OPTION_REPOSITORY, OPTION_SERVICE, PRINTER_SERVICE, PRINTER_REPOSITORY } from "./catalog.di-token";
 import { CategoryPrismaRepo } from "./repos/category-prisma.repo";
 import { CategoryService } from "./services/category.service";
 import { ShareModule } from "src/share/module";
 import { CategoryHttpController, CategoryRpcController } from "./controller/category-http.controller";
 import { ProductService } from "./services/product.service";
 import { ProductRepository } from "./repos/product-prisma.repo";
-import { ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController } from "./controller/product-http.controller";
+import { ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController, ComboHttpController, ComboRpcController, ComboItemHttpController, ComboItemRpcController } from "./controller/product-http.controller";
 import { OptionService } from "./services/option.service";
 import { OptionPrismaRepository } from "./repos/option-prisma.repo";
 import { OptionHttpController, OptionRpcController } from "./controller/option-http.controller";
@@ -28,7 +28,7 @@ const dependencies: Provider[] = [
 
 @Module({
     imports: [ShareModule],
-    controllers: [CategoryHttpController, CategoryRpcController, ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController, OptionHttpController, OptionRpcController, PrinterHttpController, PrinterRpcController],
+    controllers: [CategoryHttpController, CategoryRpcController, ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController, ComboHttpController, ComboRpcController, ComboItemHttpController, ComboItemRpcController, OptionHttpController, OptionRpcController, PrinterHttpController, PrinterRpcController],
     providers: [...dependencies],
 })
 

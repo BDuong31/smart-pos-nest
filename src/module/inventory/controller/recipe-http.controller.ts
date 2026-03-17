@@ -95,14 +95,6 @@ export class RecipeRpcController {
         return recipe;
     }
 
-    // RPC lấy danh sách công thức theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: RecipeCondDTO,  @Query() paging: PagingDTO) {
-        const recipes = await this.recipeService.list(cond, paging);
-        return paginatedResponse(recipes, paging);
-    }
-
     // RPC lấy thông tin công thức theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)

@@ -94,14 +94,6 @@ export class SupplierRpcController {
         return supplier;
     }   
 
-    // RPC để lấy danh sách nhà cung cấp theo điều kiện 
-    @Get()  
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: SupplierCondDTO,  @Query() paging: PagingDTO) {   
-        const suppliers = await this.supplierService.list(cond, paging);
-        return paginatedResponse(suppliers, paging);
-    }
-
     // RPC để lấy danh sách nhà cung cấp theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)

@@ -14,14 +14,14 @@ export interface IUnitConversionService {
 
     get(id: string): Promise<UnitConversion | null> // Lấy thông tin quy đổi đơn vị theo ID  
     list(cond: UnitConversionCondDTO, pagingDTO: PagingDTO): Promise<Paginated<UnitConversion>> // Lấy danh sách quy đổi đơn vị có phân trang
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<UnitConversion>> // Lấy danh sách quy đổi đơn vị theo nhiều ID có phân trang
+    listByIds(ids: string[]): Promise<UnitConversion[]> // Lấy danh sách quy đổi đơn vị theo nhiều ID có phân trang
 }
 
 // Định nghĩa các phương thức mà UnitConversionRepository phải triển khai
 export interface IUnitConversionRepository {
     get(id: string): Promise<UnitConversion | null> // Lấy thông tin quy đổi đơn vị theo ID  
     list(cond: UnitConversionCondDTO, pagingDTO: PagingDTO): Promise<Paginated<UnitConversion>> // Lấy danh sách quy đổi đơn vị có phân trang
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<UnitConversion>> // Lấy danh sách quy đổi đơn vị theo nhiều ID có phân trang  
+    listByIds(ids: string[]): Promise<UnitConversion[]> // Lấy danh sách quy đổi đơn vị theo nhiều ID có phân trang  
 
     insert(dto: UnitConversion): Promise<void> // Tạo mới quy đổi đơn vị
     update(id: string, dto: Partial<UnitConversionUpdateDTO>): Promise<void> // Cập nhật thông tin quy đổi đơn vị theo ID

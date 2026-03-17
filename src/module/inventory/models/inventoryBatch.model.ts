@@ -1,3 +1,4 @@
+import { PublicIngredient } from "src/share/data-model";
 import { z } from "zod";
 
 // ============================
@@ -29,4 +30,4 @@ export const inventoryBatchSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type InventoryBatch = z.infer<typeof inventoryBatchSchema>;
+export type InventoryBatch = z.infer<typeof inventoryBatchSchema> & { ingredient?: PublicIngredient };

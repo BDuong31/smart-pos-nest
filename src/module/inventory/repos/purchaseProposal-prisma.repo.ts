@@ -72,25 +72,10 @@ export class PurchaseProposalPrismaRepo implements IPurchaseProposalRepository {
     }
 
     // Lấy danh sách đề xuất mua hàng theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<PurchaseProposal>> {
-        const total = await prisma.purchaseProposal.count({ where: { id: { in: ids } } });
+    async listByIds(purchaseProposalIds: string[]): Promise<PurchaseProposal[]> {
+        const result = await prisma.purchaseProposal.findMany({ where: { id: { in: purchaseProposalIds } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.purchaseProposal.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: {
-                createdAt: "desc",
-            }
-        });
-
-        return {
-            data: result.map((item) => this._toModel(item)),
-            paging,
-            total,
-        };
+        return result.map((item) => this._toModel(item));
     }
 
     // Tạo mới đề xuất mua hàng

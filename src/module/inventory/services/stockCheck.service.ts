@@ -90,7 +90,7 @@ export class StockCheckService implements IStockCheckService {
     }
 
     // Lấy danh sách kiểm kê tồn kho theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<StockCheck>> {
-        return await this.stockCheckRepo.listByIds(ids, paging);
+    async listByIds(stockCheckIds: string[]): Promise<StockCheck[]> {
+        return await this.stockCheckRepo.listByIds(stockCheckIds);
     }
 }

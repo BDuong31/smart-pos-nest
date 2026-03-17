@@ -1,3 +1,4 @@
+import { PublicUser } from "src/share/data-model";
 import { z } from "zod";
 
 // ============================
@@ -19,4 +20,4 @@ export const purchaseProposalSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type PurchaseProposal = z.infer<typeof purchaseProposalSchema>;  
+export type PurchaseProposal = z.infer<typeof purchaseProposalSchema> & { creator?: PublicUser };  

@@ -1,8 +1,8 @@
 import { IProductRepository } from '../ports/product.port';
-import { Product, Variant } from '../models/product.model';
+import { Product, Variant, Combo, ComboItem } from '../models/product.model';
 import prisma from 'src/share/components/prisma';
-import {Prisma , Product as ProductPrisma, Variant as VariantPrisma } from '@prisma/client';
-import { ProductCondDTO, ProductUpdateDTO, VariantCondDTO, VariantUpdateDTO } from '../dtos/product.dto';
+import {Prisma , Product as ProductPrisma, Variant as VariantPrisma, Combo as ComboPrisma, ComboItem as ComboItemPrisma } from '@prisma/client';
+import { ProductCondDTO, ProductUpdateDTO, VariantCondDTO, VariantUpdateDTO, ComboCreateDTO, ComboUpdateDTO, ComboCondDTO, ComboItemCreateDTO, ComboItemUpdateDTO, ComboItemCondDTO } from '../dtos/product.dto';
 import { Paginated, PagingDTO } from 'src/share/data-model';
 
 // Lớp ProductRepository sử dụng Prisma để tương tác với cơ sở dữ liệu`
@@ -79,23 +79,11 @@ export class ProductRepository implements IProductRepository {
     }
 
     // Lấy danh sách sản phẩm theo mảng IDs
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Product>> {
-        const total = await prisma.product.count({ where: { id: { in: ids } } });
-
-        const skip = (paging.page - 1) * paging.limit;
-
+    async listByIds(ids: string[]): Promise<Product[]> {
         const data = await prisma.product.findMany({
             where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
         });
-
-        return {
-            data: data.map(this._toModel),
-            paging,
-            total
-        };
+        return data.map(this._toModel);
     }
 
     // Tìm kiếm sản phẩm theo từ khóa
@@ -188,23 +176,11 @@ export class ProductRepository implements IProductRepository {
     }
 
     // Lấy danh sách biến thể sản phẩm theo mảng IDs
-    async listVariantByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Variant>> {
-        const total = await prisma.variant.count({ where: { id: { in: ids } } });   
-
-        const skip = (paging.page - 1) * paging.limit;
-        
+    async listVariantByIds(ids: string[]): Promise<Variant[]> {
         const data = await prisma.variant.findMany({
             where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
         });
-
-        return {
-            data: data.map(this._toModelVariant),
-            paging,
-            total
-        };
+        return data.map(this._toModelVariant);
     }
 
     // Thêm biến thể sản phẩm mới
@@ -227,6 +203,165 @@ export class ProductRepository implements IProductRepository {
         await prisma.variant.delete({ where: { id } });
     }
 
+    // ============================
+    // Thao tác với combo sản phẩm
+    // ============================
+
+    // Lấy combo sản phẩm theo ID
+    async getCombo(id: string): Promise<Combo | null> {
+        const data = await prisma.combo.findUnique({ where: { id } });
+        return data ? this._toModelCombo(data) : null;
+    }
+
+    // Lấy danh sách combo sản phẩm theo điều kiện lọc
+    async listCombo(cond: ComboCondDTO, paging: PagingDTO): Promise<Paginated<Combo>> {
+        const { name, price } = cond; 
+
+        let where = {}
+
+        if (name) {
+            where = {
+                ...where,
+                name: name,
+            }
+        }
+
+        if (price) {
+            where = {
+                ...where,
+                price: price,
+            }
+        }
+
+        const page = Number(paging.page) || 1;
+        const limit = Number(paging.limit) || 10;
+        
+        const skip = (page - 1) * limit;
+        const total = await prisma.combo.count({ where });
+
+        const data = await prisma.combo.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { name: 'asc' },
+        });
+
+        return {
+            data: data.map(this._toModelCombo),
+            paging,
+            total
+        };
+    }
+
+    // Lấy danh sách combo sản phẩm theo mảng IDs
+    async listComboByIds(ids: string[]): Promise<Combo[]> {
+        const data = await prisma.combo.findMany({
+            where: { id: { in: ids } },
+        });
+        return data.map(this._toModelCombo);
+    }
+
+    // Tạo combo sản phẩm mới
+    async insertCombo(combo: Combo): Promise<void> {
+        await prisma.combo.create({ data: combo });
+    }
+
+    // Cập nhật thông tin combo sản phẩm
+    async updateCombo(id: string, dto: ComboUpdateDTO): Promise<void> {
+        await prisma.combo.update({ where: { id }, data: dto });
+    }
+
+    // Xóa combo sản phẩm theo ID
+    async deleteCombo(id: string): Promise<void> {
+        await prisma.combo.delete({ where: { id } });
+    }
+
+     // ============================
+    // Thao tác với mục combo sản phẩm
+    // ============================
+
+     // Lấy mục combo sản phẩm theo ID
+     async getComboItem(id: string): Promise<ComboItem | null> {
+        const data = await prisma.comboItem.findUnique({ where: { id } });
+        return data ? this._toModelComboItem(data) : null;
+    }
+
+    // Lấy danh sách mục combo sản phẩm theo điều kiện lọc
+    async listComboItem(cond: ComboItemCondDTO, paging: PagingDTO): Promise<Paginated<ComboItem>> {
+        const { comboId, productId, variantId, quantity } = cond;    
+        let where = {}  
+
+        if (comboId) {
+            where = {
+                ...where,
+                comboId: comboId,
+            }
+        }
+
+        if (productId) {
+            where = {
+                ...where,
+                productId: productId,
+            }
+        }
+
+        if (variantId) {
+            where = {
+                ...where,
+                variantId: variantId,
+            }
+        }
+
+        if (quantity) {
+            where = {
+                ...where,
+                quantity: quantity,
+            }
+        }
+
+        const page = Number(paging.page) || 1;
+        const limit = Number(paging.limit) || 10;
+        
+        const skip = (page - 1) * limit;
+        const total = await prisma.comboItem.count({ where });
+
+        const data = await prisma.comboItem.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'asc' },
+        });
+
+        return {
+            data: data.map(this._toModelComboItem),
+            paging,
+            total
+        };
+    }
+
+    // Lấy danh sách mục combo sản phẩm theo mảng IDs
+    async listComboItemsByIds(ids: string[]): Promise<ComboItem[]> {
+        const data = await prisma.comboItem.findMany({
+            where: { id: { in: ids } },
+        });
+        return data.map(this._toModelComboItem);
+    }
+
+    // Tạo mục combo sản phẩm mới
+    async insertComboItem(comboItem: ComboItem): Promise<void> {
+        await prisma.comboItem.create({ data: comboItem });
+    }
+
+    // Cập nhật thông tin mục combo sản phẩm
+    async updateComboItem(id: string, dto: ComboItemUpdateDTO): Promise<void> {
+        await prisma.comboItem.update({ where: { id }, data: dto });
+    }
+
+    // Xóa mục combo sản phẩm theo ID
+    async deleteComboItem(id: string): Promise<void> {
+        await prisma.comboItem.delete({ where: { id } });
+    }
+
     // Chuyển đổi dữ liệu từ Prisma sang Model
     private _toModel(data: ProductPrisma): Product {
         return {...data} as Product;
@@ -234,5 +369,13 @@ export class ProductRepository implements IProductRepository {
 
     private _toModelVariant(data: VariantPrisma): Variant {
         return {...data} as Variant;
+    }
+
+    private _toModelCombo(data: ComboPrisma): Combo {
+        return {...data} as Combo;
+    }
+
+    private _toModelComboItem(data: ComboItemPrisma): ComboItem {
+        return {...data} as ComboItem;
     }
 }

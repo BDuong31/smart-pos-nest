@@ -14,14 +14,14 @@ export interface ISupplierService {
     
     get(supplierId: string): Promise<Supplier | null> // Lấy thông tin nhà cung cấp theo ID
     list(cond: SupplierCondDTO, pagingDTO: PagingDTO): Promise<Paginated<Supplier>> // Lấy danh sách nhà cung cấp theo điều kiện
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Supplier>> // Lấy danh sách nhà cung cấp theo nhiều ID
+    listByIds(ids: string[]): Promise<Supplier[]> // Lấy danh sách nhà cung cấp theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà SupplierRepository phải triển khai
 export interface ISupplierRepository {
     get(supplierId: string): Promise<Supplier | null> // Lấy thông tin nhà cung cấp theo ID
     list(cond: SupplierCondDTO, paging: PagingDTO): Promise<Paginated<Supplier>> // Lấy danh sách nhà cung cấp theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Supplier>> // Lấy danh sách nhà cung cấp theo nhiều ID
+    listByIds(ids: string[]): Promise<Supplier[]> // Lấy danh sách nhà cung cấp theo nhiều ID
 
     insert(dto: Supplier): Promise<void> // Tạo mới nhà cung cấp
     update(supplierId: string, dto: SupplierUpdateDTO): Promise<void> // Cập nhật thông tin nhà cung cấp theo ID

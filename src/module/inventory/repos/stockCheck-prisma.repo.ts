@@ -73,25 +73,10 @@ export class StockCheckPrismaRepo implements IStockCheckRepository {
     }
 
     // Lấy danh sách kiểm kê tồn kho theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<StockCheck>> {
-        const total = await prisma.stockCheck.count({ where: { id: { in: ids } } });
+    async listByIds(stockCheckIds: string[]): Promise<StockCheck[]> {
+        const result = await prisma.stockCheck.findMany({ where: { id: { in: stockCheckIds } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.stockCheck.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: {
-                createdAt: "desc",
-            }
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total,
-        }
+        return result.map(this._toModel);
     }
 
     // Tạo mới kiểm kê tồn kho

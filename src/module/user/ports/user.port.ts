@@ -12,7 +12,7 @@ export interface IUserService {
   createStart(requester: Requester, dto: CreateStaffDTO, ip: string, userAgent: string): Promise<string>; // Tạo người dùng mới cho Staff/Kitchen
 
   // Người dùng thao tác
-  profile(userId: string, ip: string, userAgent: string): Promise<Omit<User, 'password' | 'salt'>>; // Lấy thông tin hồ sơ người dùng
+  profile(userId: string): Promise<Omit<User, 'password' | 'salt'>>; // Lấy thông tin hồ sơ người dùng
   update(requester: Requester, userId: string, dto: UserUpdateDTO, ip: string, userAgent: string): Promise<Omit<User, 'password' | 'salt'>>; // Cập nhật thông tin người dùng
   deleteAccount(requester: Requester, userId: string, ip: string, userAgent: string): Promise<void>; // Xóa tài khoản người dùng
 

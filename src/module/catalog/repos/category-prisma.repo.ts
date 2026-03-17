@@ -39,14 +39,17 @@ export class CategoryPrismaRepo implements ICategoryRepository {
             }
         }
 
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
         const total = await prisma.category.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const result = await prisma.category.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { name: 'asc' },
         });
 
@@ -58,23 +61,9 @@ export class CategoryPrismaRepo implements ICategoryRepository {
     }
 
     // Lấy danh sách danh mục theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Category>> {
-        const total = await prisma.category.count({ where: { id: { in: ids } } });  
-
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.category.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+    async listByIds(ids: string[]): Promise<Category[]> {
+        const data = await prisma.category.findMany({ where: { id: { in: ids } } });
+        return data.map(this._toModel);
     }
 
     // Tạo mới danh mục

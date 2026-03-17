@@ -89,14 +89,6 @@ export class ZoneRpcController {
         return { data };
     }
 
-    // RPC để lấy danh sách khu vực theo điều kiện với phân trang
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Query() cond: ZoneCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.zoneService.list(cond, paging);
-        return { data };
-    }
-
     // RPC để lấy danh sách khu vực theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)

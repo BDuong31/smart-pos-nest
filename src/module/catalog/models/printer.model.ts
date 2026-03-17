@@ -23,8 +23,8 @@ export const ErrPrinterTypeInvalid = new Error('Printer type is invalid');
 export const printerSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1).max(200),
-    ipAddress: z.string().ipv4(),
-    type: z.enum(['RECEIPT', 'KITCHEN', 'LABEL']),
+    ipAddress: z.string(),
+    type: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
 });

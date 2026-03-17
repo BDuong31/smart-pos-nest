@@ -114,16 +114,4 @@ export class CategoryRpcController {
         const data = await this.categoryService.listByIds(dto.ids, paging);
         return paginatedResponse(data, dto);
     }
-
-     // RPC lấy danh mục theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'RPC: Lấy danh sách danh mục sản phẩm theo điều kiện' })  
-    @ApiCreatedResponse({ description: 'Danh sách danh mục sản phẩm được lấy thành công' })
-    async list(@Query() dto: CategoryCondDTO, @Query() paging: PagingDTO){
-        paging = pagingDTOSchema.parse(paging);
-        dto = categoryCondDTOSchema.parse(dto);
-        const data = await this.categoryService.list(dto, paging);
-        return paginatedResponse(data, dto);
-    }
 }

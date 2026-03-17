@@ -73,25 +73,10 @@ export class ImportInvoicePrismaRepo implements IImportInvoiceRepository {
     }
 
     // Lấy danh sách phiếu nhập kho theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<ImportInvoice>> {
-        const total = await prisma.importInvoice.count({ where: { id: { in: ids } } });
+    async listByIds(ids: string[]): Promise<ImportInvoice[]> {
+        const result = await prisma.importInvoice.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.importInvoice.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: {
-                createdAt: "desc",
-            }
-        });
-
-        return {
-            data: result.map((item) => this._toModel(item)),
-            paging,
-            total,
-        };
+        return result.map((item) => this._toModel(item));
     }
 
     // Tạo mới phiếu nhập kho

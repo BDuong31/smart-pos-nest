@@ -14,14 +14,14 @@ export interface IIngredientService {
 
     get(ingredientId: string): Promise<Ingredient | null> // Lấy thông tin nguyên liệu theo ID  
     list(cond: IngredientCondDTO, pagingDTO: PagingDTO): Promise<Paginated<Ingredient>> // Lấy danh sách nguyên liệu theo điều kiện
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Ingredient>> // Lấy danh sách nguyên liệu theo nhiều ID
+    listByIds(ids: string[]): Promise<Ingredient[]> // Lấy danh sách nguyên liệu theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà IngredientRepository phải triển khai
 export interface IIngredientRepository {
     get(ingredientId: string): Promise<Ingredient | null> // Lấy thông tin nguyên liệu theo ID  
     list(cond: IngredientCondDTO, paging: PagingDTO): Promise<Paginated<Ingredient>> // Lấy danh sách nguyên liệu theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Ingredient>> // Lấy danh sách nguyên liệu theo nhiều ID  
+    listByIds(ids: string[]): Promise<Ingredient[]> // Lấy danh sách nguyên liệu theo nhiều ID  
 
     insert(dto: Ingredient): Promise<void> // Tạo mới nguyên liệu
     update(ingredientId: string, dto: IngredientUpdateDTO): Promise<void> // Cập nhật thông tin nguyên liệu theo ID

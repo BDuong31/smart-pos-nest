@@ -90,7 +90,7 @@ export class ImportInvoiceDetailService implements IImportInvoiceDetailService {
      }
 
     // Lấy danh sách chi tiết hóa đơn nhập hàng theo nhiều ID
-    async listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<ImportInvoiceDetail>> {
-        return await this.importInvoiceDetailRepo.listByIds(ids, pagingDTO);
+    async listByIds(ids: string[]): Promise<ImportInvoiceDetail[]> {
+        return await this.importInvoiceDetailRepo.listByIds(ids);
     }
 }

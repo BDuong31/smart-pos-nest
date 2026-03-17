@@ -66,6 +66,7 @@ export type OptionItem = z.infer<typeof optionItem>;
 
 // Định nghĩa dữ liệu ProductOptionConfig
 export const productOptionConfig = z.object({
+    id: z.string().uuid(),
     productId: z.string().uuid(),
     optionGroupId: z.string().uuid(),
     createdAt: z.date(),

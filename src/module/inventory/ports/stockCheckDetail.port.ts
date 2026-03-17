@@ -14,14 +14,14 @@ export interface IStockCheckDetailService {
 
     get(stockCheckDetailId: string): Promise<StockCheckDetail | null> // Lấy thông tin chi tiết phiếu kiểm kho theo ID  
     list(cond: StockCheckDetailCondDTO, pagingDTO: PagingDTO): Promise<Paginated<StockCheckDetail>> // Lấy danh sách chi tiết phiếu kiểm kho theo điều kiện
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<StockCheckDetail>> // Lấy danh sách chi tiết phiếu kiểm kho theo nhiều ID
+    listByIds(ids: string[]): Promise<StockCheckDetail[]> // Lấy danh sách chi tiết phiếu kiểm kho theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà StockCheckDetailRepository phải triển khai
 export interface IStockCheckDetailRepository {
     get(stockCheckDetailId: string): Promise<StockCheckDetail | null> // Lấy thông tin chi tiết phiếu kiểm kho theo ID  
     list(cond: StockCheckDetailCondDTO, pagingDTO: PagingDTO): Promise<Paginated<StockCheckDetail>> // Lấy danh sách chi tiết phiếu kiểm kho theo điều kiện
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<StockCheckDetail>> // Lấy danh sách chi tiết phiếu kiểm kho theo nhiều ID  
+    listByIds(ids: string[]): Promise<StockCheckDetail[]> // Lấy danh sách chi tiết phiếu kiểm kho theo nhiều ID  
 
     insert(dto: StockCheckDetail): Promise<void> // Tạo mới chi tiết phiếu kiểm kho
     update(stockCheckDetailId: string, dto: StockCheckDetailUpdateDTO): Promise<void> // Cập nhật thông tin chi tiết phiếu kiểm kho theo ID

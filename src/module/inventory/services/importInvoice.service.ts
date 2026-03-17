@@ -87,7 +87,7 @@ export class ImportInvoiceService implements IImportInvoiceService {
     }
 
     // Lấy danh sách hóa đơn nhập hàng theo nhiều ID
-    async listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<ImportInvoice>> {
-        return await this.importInvoiceRepo.listByIds(ids, pagingDTO);
+    async listByIds(importInvoiceIds: string[]): Promise<ImportInvoice[]> {
+        return await this.importInvoiceRepo.listByIds(importInvoiceIds);
     }
 }

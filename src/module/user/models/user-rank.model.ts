@@ -28,4 +28,4 @@ export const userRankSchema = z.object({
     updatedAt: z.date(),
 })
 
-export interface UserRank extends z.infer<typeof userRankSchema> {}
+export type UserRank = z.infer<typeof userRankSchema>;

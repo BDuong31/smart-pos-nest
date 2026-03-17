@@ -1,3 +1,4 @@
+import { PublicUser } from "src/share/data-model";
 import { z } from "zod";
 
 // ============================
@@ -22,4 +23,4 @@ export const stockCheckSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type StockCheck = z.infer<typeof stockCheckSchema>;
+export type StockCheck = z.infer<typeof stockCheckSchema> & { user?: PublicUser };

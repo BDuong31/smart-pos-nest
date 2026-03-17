@@ -89,7 +89,7 @@ export class PurchaseProposalService implements IPurchaseProposalService {
     }   
 
     // Lấy danh sách đề xuất mua hàng theo nhiều ID
-    async listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<PurchaseProposal>> {
-        return await this.purchaseProposalRepo.listByIds(ids, pagingDTO);
+    async listByIds(purchaseProposalIds: string[]): Promise<PurchaseProposal[]> {
+        return await this.purchaseProposalRepo.listByIds(purchaseProposalIds);
     }
 }

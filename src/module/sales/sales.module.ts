@@ -9,7 +9,7 @@ import { VoucherService } from "./services/voucher.service";
 import { PaymentPrismaRepo } from "./repos/payment-prisma.repo";
 import { PaymentService } from "./services/payment.service";
 import { ShareModule } from "src/share/module";
-import { CartHttpController, CartItemHttpController, CartItemRpcController, CartRpcController } from "./controller/cart-http.controller";
+import { CartHttpController, CartItemHttpController, CartItemOptionHttpController, CartItemOptionRpcController, CartItemRpcController, CartRpcController } from "./controller/cart-http.controller";
 import { InvoiceHttpController, InvoiceRpcController, OrderHttpController, OrderItemHttpController, OrderItemOptionHttpController, OrderItemOptionRpcController, OrderItemRpcController, OrderRpcController, OrderTableHttpController, OrderTableRpcController, OrderVoucherHttpController, OrderVoucherRpcController } from "./controller/order-http.controller";
 import { VoucherHttpController, VoucherRpcController } from "./controller/voucher-http.controller";
 import { PaymentHttpController, PaymentRpcController } from "./controller/payment-http.controller";
@@ -34,7 +34,7 @@ const dependencies: Provider[] = [
 
 @Module({
     imports: [ShareModule, ConfigModule.forRoot({isGlobal: true}),],
-    controllers: [CartHttpController, CartRpcController, CartItemHttpController, CartItemRpcController, OrderHttpController, OrderRpcController, OrderItemHttpController, OrderItemRpcController, OrderItemOptionHttpController, OrderItemOptionRpcController, OrderTableHttpController, OrderTableRpcController, OrderVoucherHttpController, OrderVoucherRpcController, InvoiceHttpController, InvoiceRpcController, VoucherHttpController, VoucherRpcController,  PaymentHttpController, PaymentRpcController],
+    controllers: [CartHttpController, CartRpcController, CartItemHttpController, CartItemRpcController, CartItemOptionHttpController, CartItemOptionRpcController, OrderHttpController, OrderRpcController, OrderItemHttpController, OrderItemRpcController, OrderItemOptionHttpController, OrderItemOptionRpcController, OrderTableHttpController, OrderTableRpcController, OrderVoucherHttpController, OrderVoucherRpcController, InvoiceHttpController, InvoiceRpcController, VoucherHttpController, VoucherRpcController,  PaymentHttpController, PaymentRpcController],
     providers: [...dependencies],
 })
 

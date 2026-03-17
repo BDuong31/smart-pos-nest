@@ -2,8 +2,8 @@ import { Inject, Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, H
 import { IMPORTINVOICE_REPOSITORY, IMPORTINVOICE_SERVICE } from '../inventory.di-token';
 import type { IImportInvoiceService } from '../ports/importInvoice.port';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
-import type { ImportInvoiceCreateDTO, ImportInvoiceUpdateDTO, ImportInvoiceCondDTO } from '../dtos/importInvoice.dto';
-import { getIPv4FromReq, paginatedResponse, type PagingDTO, type ReqWithRequester, UserRole } from 'src/share';
+import { type ImportInvoiceCreateDTO, type ImportInvoiceUpdateDTO, type ImportInvoiceCondDTO, importInvoiceCondDTOSchema } from '../dtos/importInvoice.dto';
+import { getIPv4FromReq, paginatedResponse, type PagingDTO, pagingDTOSchema, type ReqWithRequester, UserRole } from 'src/share';
 import type { Request as ExpressRequest } from 'express';
 
 @Controller('v1/import-invoices')
@@ -56,6 +56,8 @@ export class ImportInvoiceHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: ImportInvoiceCondDTO, @Query() paging: PagingDTO) {
+        paging = pagingDTOSchema.parse(paging);
+        cond = importInvoiceCondDTOSchema.parse(cond);
         const importInvoices = await this.importInvoiceService.list(cond, paging);
         return paginatedResponse(importInvoices, paging);
     }
@@ -66,8 +68,8 @@ export class ImportInvoiceHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const importInvoice = await this.importInvoiceService.get(id);
-        return importInvoice;
+        const data = await this.importInvoiceService.get(id);
+        return { data };
     }
 
     // API để lấy danh sách phiếu nhập hàng theo nhiều ID
@@ -75,9 +77,9 @@ export class ImportInvoiceHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const importInvoices = await this.importInvoiceService.listByIds(ids, paging);
-        return importInvoices;
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.importInvoiceService.listByIds(ids);
+        return { data };
     }
 
 }
@@ -94,14 +96,6 @@ export class ImportInvoiceRpcController {
     async getById(@Param('id') id: string) {
         const importInvoice = await this.importInvoiceService.get(id);
         return importInvoice;
-    }
-
-    // RPC lấy danh sách phiếu nhập hàng theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: ImportInvoiceCondDTO, @Query() paging: PagingDTO) {
-        const importInvoices = await this.importInvoiceService.list(cond, paging);
-        return paginatedResponse(importInvoices, paging);
     }
 
     // RPC lấy danh sách phiếu nhập hàng theo nhiều ID

@@ -90,14 +90,6 @@ export class VoucherRpcController {
         return { data };
     }
 
-    // RPC để lấy danh sách voucher theo điều kiện với phân trang
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Query() cond: VoucherCondDTO, @Query() paging: PagingDTO) {
-         const data = await this.voucherService.listVouchers(req.requester, paging, cond);
-         return { data };
-     }
-
      // RPC để lấy danh sách voucher theo nhiều ID với phân trang
      @Post('list-by-ids')
      @HttpCode(HttpStatus.OK)

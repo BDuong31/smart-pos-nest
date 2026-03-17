@@ -14,14 +14,14 @@ export interface IPurchaseProposalService {
 
     get(purchaseProposalId: string): Promise<PurchaseProposal | null> // Lấy thông tin đề xuất mua hàng theo ID  
     list(cond: PurchaseProposalCondDTO,pagingDTO: PagingDTO): Promise<Paginated<PurchaseProposal>> // Lấy danh sách đề xuất mua hàng có phân trang
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<PurchaseProposal>> // Lấy danh sách đề xuất mua hàng theo nhiều ID có phân trang
+    listByIds(ids: string[]): Promise<PurchaseProposal[]> // Lấy danh sách đề xuất mua hàng theo nhiều ID có phân trang
 }
 
 // Định nghĩa các phương thức mà PurchaseProposalRepository phải triển khai
 export interface IPurchaseProposalRepository {
     get(purchaseProposalId: string): Promise<PurchaseProposal | null> // Lấy thông tin đề xuất mua hàng theo ID  
     list(cond: PurchaseProposalCondDTO, pagingDTO: PagingDTO): Promise<Paginated<PurchaseProposal>> // Lấy danh sách đề xuất mua hàng có phân trang
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<PurchaseProposal>> // Lấy danh sách đề xuất mua hàng theo nhiều ID có phân trang
+    listByIds(ids: string[]): Promise<PurchaseProposal[]> // Lấy danh sách đề xuất mua hàng theo nhiều ID có phân trang
 
     insert(dto: PurchaseProposal): Promise<void> // Tạo mới đề xuất mua hàng
     update(purchaseProposalId: string, dto: PurchaseProposalUpdateDTO): Promise<void> // Cập nhật thông tin đề xuất mua hàng theo ID

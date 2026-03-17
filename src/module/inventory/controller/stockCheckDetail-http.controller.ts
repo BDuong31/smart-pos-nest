@@ -96,14 +96,6 @@ export class StockCheckDetailRpcController {
         return stockCheckDetail;
      }
 
-    // RPC lấy thông tin chi tiết kiểm kê tồn kho theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: StockCheckDetailCondDTO, @Query() paging: PagingDTO) {
-        const stockCheckDetails = await this.stockCheckDetailService.list(cond, paging);
-        return stockCheckDetails;
-     }
-
     // RPC lấy thông tin chi tiết kiểm kê tồn kho theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)

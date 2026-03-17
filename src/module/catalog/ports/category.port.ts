@@ -16,7 +16,7 @@ export interface ICategoryService {
     // Service truy vấn danh mục
     get(id: string): Promise<Category | null>; // Lấy thông tin danh mục theo ID
     list(cond: CategoryCondDTO, paging: PagingDTO): Promise<Paginated<Category>>; // Lấy danh sách danh mục theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Category>>; // Lấy danh sách danh mục theo nhiều ID
+    listByIds(ids: string[]): Promise<Category[]>; // Lấy danh sách danh mục theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà CategoryRepository phải triển khai 
@@ -24,7 +24,7 @@ export interface ICategoryRepository {
     // truy vấn
     get(id: string): Promise<Category | null>; // Lấy thông tin danh mục theo ID
     list(cond: CategoryCondDTO, paging: PagingDTO): Promise<Paginated<Category>>; // Lấy danh sách danh mục theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Category>>; // Lấy danh sách danh mục theo nhiều ID
+    listByIds(ids: string[]): Promise<Category[]>; // Lấy danh sách danh mục theo nhiều ID
 
     // thao tác dữ liệu
     insert(category: Category): Promise<void>; // Tạo mới danh mục

@@ -96,13 +96,6 @@ export class UnitConversionRpcController {
         return unitConversion;
     }
 
-    // RPC để lấy danh sách quy đổi đơn vị theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: UnitConversionCondDTO,  @Query() paging: PagingDTO) {
-        const unitConversions = await this.unitConversionService.list(cond, paging);
-        return paginatedResponse(unitConversions, paging);
-    }
 
     // RPC để lấy danh sách quy đổi đơn vị theo nhiều ID
     @Post('list-by-ids')

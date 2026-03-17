@@ -13,7 +13,7 @@ export interface IPrinterService {
     deletePrinter(requester: Requester, printerId: string, ip: string, userAgent: string): Promise<void>; // Xóa máy in
     getPrinterById(printerId: string): Promise<Printer | null>; // Lấy thông tin máy in theo ID
     getListPrinter(cond: PrinterCondDTO, paging: PagingDTO): Promise<Paginated<Printer>>; // Lấy danh sách máy in theo điều kiện lọc
-    getPrinterByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Printer>>; // Lấy danh sách máy in theo mảng IDs
+    getPrinterByIds(ids: string[]): Promise<Printer[]>; // Lấy danh sách máy in theo mảng IDs
 }
 
 // Định nghĩa kiểu dữ liệu cho Printer Repository
@@ -21,7 +21,7 @@ export interface IPrinterRepository {
     // truy vấn
     get(id: string): Promise<Printer | null>; // Lấy máy in theo ID
     list(cond: PrinterCondDTO, paging: PagingDTO): Promise<Paginated<Printer>>; // Lấy danh sách máy in theo điều kiện lọc
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Printer>>; // Lấy danh sách máy in theo mảng IDs
+    listByIds(ids: string[]): Promise<Printer[]>; // Lấy danh sách máy in theo mảng IDs
    
     // yêu cầu
     insert(printer: Printer): Promise<void>; // Thêm máy in mới

@@ -5,15 +5,20 @@ import * as swaggerUi from 'swagger-ui-express';
 import { ValidationPipe } from '@nestjs/common';
 import * as dns from 'dns';
 import { AppExceptionFilter } from './share/filter/app-exception.filter';
+import cookieParser from 'cookie-parser';
+
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 async function bootstrap() {
   // Tạo ứng dụng NestJS
   const app = await NestFactory.create(AppModule);
 
+  // Sử dụng cookie parser để xử lý cookie trong các yêu cầu
+  app.use(cookieParser());
+
   // Bật CORS cho tất cả các nguồn
   app.enableCors({
-    origin: '*', // Cho phép tất cả các nguồn
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Các phương thức được phép
+    origin: true,
+    credentials: true,
   });
 
   // Sử dụng ValidationPipe toàn cục để tự động validate các DTO

@@ -90,8 +90,8 @@ export class CategoryService implements ICategoryService {
     }
 
     // Lấy danh sách danh mục theo điều kiện
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Category>> {
-        const data = await this.categoryRepo.listByIds(ids, paging);
+    async listByIds(ids: string[]): Promise<Category[]> {
+        const data = await this.categoryRepo.listByIds(ids);
         return data;
     }   
 }

@@ -14,14 +14,14 @@ export interface IImportInvoiceService {
 
     get(id: string): Promise<ImportInvoice | null> // Lấy thông tin phiếu nhập kho theo ID  
     list(cond: ImportInvoiceCondDTO, pagingDTO: PagingDTO): Promise<Paginated<ImportInvoice>> // Lấy danh sách phiếu nhập kho có phân trang
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<ImportInvoice>> // Lấy danh sách phiếu nhập kho theo nhiều ID có phân trang
+    listByIds(ids: string[]): Promise<ImportInvoice[]> // Lấy danh sách phiếu nhập kho theo nhiều ID có phân trang
 }   
 
 // Định nghĩa các phương thức mà ImportInvoiceRepository phải triển khai    
 export interface IImportInvoiceRepository { 
     get(id: string): Promise<ImportInvoice | null> // Lấy thông tin phiếu nhập kho theo ID  
     list(cond: ImportInvoiceCondDTO, pagingDTO: PagingDTO): Promise<Paginated<ImportInvoice>> // Lấy danh sách phiếu nhập kho có phân trang
-    listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<ImportInvoice>> // Lấy danh sách phiếu nhập kho theo nhiều ID có phân trang   
+    listByIds(ids: string[]): Promise<ImportInvoice[]> // Lấy danh sách phiếu nhập kho theo nhiều ID có phân trang   
 
     insert(dto: ImportInvoice): Promise<void> // Tạo mới phiếu nhập kho
     update(id: string, dto: ImportInvoiceUpdateDTO): Promise<void> // Cập nhật thông tin phiếu nhập kho theo ID

@@ -2,8 +2,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { IProductRepository, IProductService } from "../ports/product.port";
 import { PRODUCT_REPOSITORY } from "../catalog.di-token";
 import { AppError, Paginated, PagingDTO, Requester } from "src/share";
-import { ProductCondDTO, ProductCreatedDTO, productCreatedDTOSchema, ProductUpdateDTO, productUpdateDTOSchema, VariantCondDTO, VariantDTO, variantDTOSchema, VariantUpdateDTO, variantUpdateDTOSchema } from "../dtos/product.dto";
-import { ErrProductAlreadyExists, ErrProductNotFound, Product, Variant } from "../models/product.model";
+import { ComboCreateDTO, ProductCondDTO, ProductCreatedDTO, productCreatedDTOSchema, ProductUpdateDTO, productUpdateDTOSchema, VariantCondDTO, VariantDTO, variantDTOSchema, VariantUpdateDTO, variantUpdateDTOSchema, comboCreateDTOSchema, ComboUpdateDTO, comboUpdateDTOSchema, ComboCondDTO, ComboItemCreateDTO, comboItemCreateDTOSchema, comboItemUpdateDTOSchema, ComboItemUpdateDTO, ComboItemCondDTO } from "../dtos/product.dto";
+import { Combo, ComboItem, ErrProductAlreadyExists, ErrProductNotFound, Product, Variant } from "../models/product.model";
 import { v7 } from "uuid";
 import { create } from "axios";
 
@@ -96,8 +96,8 @@ export class ProductService implements IProductService {
     }
 
     // Lấy danh sách sản phẩm theo mảng IDs
-    async getProductByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Product>> {
-        const data = await this.productRepository.listByIds(ids, paging);
+    async getProductByIds(ids: string[]): Promise<Product[]> {
+        const data = await this.productRepository.listByIds(ids);
         return data;
     }
 
@@ -241,8 +241,179 @@ export class ProductService implements IProductService {
     }
 
     // Lấy danh sách biến thể sản phẩm theo mảng IDs
-    async getVariantByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Variant>> {
-        const data = await this.productRepository.listVariantByIds(ids, paging);
+    async getVariantByIds(ids: string[]): Promise<Variant[]> {
+        const data = await this.productRepository.listVariantByIds(ids);
         return data;
     }
+
+    // ============================
+    // Phương thức cho combo sản phẩm
+    // ============================
+
+    // Tạo combo sản phẩm mới
+    async createCombo(requester: Requester, dto: ComboCreateDTO, ip: string, userAgent: string): Promise<string> {
+        // validate dữ liệu đầu vào
+        const data = comboCreateDTOSchema.parse(dto);
+
+        // Kiểm tra xem combo sản phẩm tồn tại chưa (theo tên combo sản phẩm)
+        const existingCombos = await this.productRepository.listCombo({ name: data.name }, { page: 1, limit: 1 });
+
+        if (existingCombos.data.length > 0) {
+            throw AppError.from(ErrProductAlreadyExists, 409);
+        }
+        
+        // Tạo mới combo sản phẩm
+        const id = v7();
+        const newCombo = {
+            id,
+            name: data.name,
+            price: data.price,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        }
+
+        await this.productRepository.insertCombo(newCombo);
+
+        // Ghi log tạo combo sản phẩm (có thể sử dụng một service riêng để quản lý log) 
+        return id;
+    }
+
+    // Cập nhật combo sản phẩm
+    async updateCombo(requester: Requester, comboId: string, dto: ComboUpdateDTO, ip: string, userAgent: string): Promise<void> {
+        // validate dữ liệu đầu vào
+        const data = comboUpdateDTOSchema.parse(dto);
+
+        // Kiểm tra xem combo sản phẩm tồn tại chưa
+        const existingCombo = await this.productRepository.getCombo(comboId);
+
+        if (!existingCombo) {
+            throw AppError.from(ErrProductNotFound, 404);
+        }
+
+        // Cập nhật combo sản phẩm
+        await this.productRepository.updateCombo(comboId, data);
+
+        // Ghi log cập nhật combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
+    }
+
+    // Xóa combo sản phẩm
+    async deleteCombo(requester: Requester, comboId: string, ip: string, userAgent: string): Promise<void> {
+        // Kiểm tra xem combo sản phẩm tồn tại chưa
+        const existingCombo = await this.productRepository.getCombo(comboId);
+
+        if (!existingCombo) {
+            throw AppError.from(ErrProductNotFound, 404);
+        }
+
+        // Xóa combo sản phẩm
+        await this.productRepository.deleteCombo(comboId);
+
+        // Ghi log xóa combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
+    }
+
+    // Lấy thông tin combo sản phẩm theo ID
+    async getComboById(comboId: string): Promise<Combo | null> {
+        return await this.productRepository.getCombo(comboId);
+    }
+
+    // Lấy danh sách combo sản phẩm theo điều kiện lọc
+    async getListCombo(cond: ComboCondDTO, paging: PagingDTO): Promise<Paginated<Combo>> {
+        const data = await this.productRepository.listCombo(cond, paging);
+        return data;
+    }
+
+    // Lấy danh sách combo sản phẩm theo mảng IDs
+    async getComboByIds(ids: string[]): Promise<Combo[]> {
+        const data = await this.productRepository.listComboByIds(ids);
+        return data;
+    }
+
+    // ============================
+    // Phương thức cho mục combo sản phẩm
+    // ============================
+
+    // Tạo mục combo sản phẩm mới
+    async createComboItem(requester: Requester, dto: ComboItemCreateDTO, ip: string, userAgent: string): Promise<string> { 
+        // validate dữ liệu đầu vào
+        const data = comboItemCreateDTOSchema.parse(dto);
+
+        // Kiểm tra xem combo sản phẩm chính tồn tại chưa
+        const existingCombo = await this.productRepository.getCombo(data.comboId);   
+
+        if (!existingCombo) {
+            throw AppError.from(ErrProductNotFound, 404);
+        }
+
+        // Kiểm tra xem sản phẩm trong mục combo có tồn tại không
+        const existingProduct = await this.productRepository.get(data.productId);
+        if (!existingProduct) {
+            throw AppError.from(ErrProductNotFound, 404);
+        }
+
+        // Tạo mới mục combo sản phẩm
+        const id = v7();
+        const newComboItem = {
+            id,
+            comboId: data.comboId,
+            productId: data.productId,
+            variantId: data.variantId,
+            quantity: data.quantity,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        }
+
+        await this.productRepository.insertComboItem(newComboItem);
+
+        // Ghi log tạo mục combo sản phẩm (có thể sử dụng một service riêng để quản lý log) 
+        return id;
+    }
+
+    // Cập nhật mục combo sản phẩm
+    async updateComboItem(requester: Requester, id: string, dto: ComboItemUpdateDTO, ip: string, userAgent: string): Promise<void> {
+        // validate dữ liệu đầu vào
+        const data = comboItemUpdateDTOSchema.parse(dto);
+
+        // Kiểm tra xem mục combo sản phẩm cần cập nhật có tồn tại không
+        const existingComboItem = await this.productRepository.getComboItem(id);
+        if (!existingComboItem) {
+            throw AppError.from(ErrProductNotFound, 404);
+        }
+
+        // Cập nhật mục combo sản phẩm
+        await this.productRepository.updateComboItem(id, data);
+
+        // Ghi log cập nhật mục combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
+    }
+
+    // Xóa mục combo sản phẩm
+    async deleteComboItem(requester: Requester, id: string, ip: string, userAgent: string): Promise<void> {
+        // Kiểm tra xem combo sản phẩm chính tồn tại chưa
+        const existingComboItem = await this.productRepository.getComboItem(id);
+
+        if (!existingComboItem) {
+            throw AppError.from(ErrProductNotFound, 404);
+        }
+
+         // Xóa mục combo sản phẩm
+         await this.productRepository.deleteComboItem(id);
+
+        // Ghi log xóa mục combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
+    }
+
+    // Lấy thông tin mục combo sản phẩm theo ID
+    async getComboItemById( id: string): Promise<ComboItem | null> {
+        return await this.productRepository.getComboItem(id);
+    }
+
+    // Lấy danh sách mục combo sản phẩm theo điều kiện lọc
+    async getListComboItem(cond: ComboItemCondDTO, paging: PagingDTO): Promise<Paginated<ComboItem>> {
+        const data = await this.productRepository.listComboItem(cond, paging);
+        return data;
+     }
+
+    // Lấy danh sách mục combo sản phẩm theo mảng IDs
+    async getComboItemsByIds(ids: string[]): Promise<ComboItem[]> {
+        const data = await this.productRepository.listComboItemsByIds(ids);
+        return data;
+     }
 }

@@ -115,14 +115,19 @@ export class LoyaltyService implements ILoyaltyService {
     }
 
     // Lấy hạng khách hàng thân thiết theo ID
-    async getUserRankById(id: string, ip: string, userAgent: string): Promise<UserRank | null> {
+    async getUserRankById(id: string): Promise<UserRank | null> {
         return this.loyaltyRepository.getUserRank(id);
     }
 
     // Lấy danh sách hạng khách hàng thân thiết theo điều kiện
-    async getUserRanks(cond: UserRankCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<UserRank>> {
+    async getUserRanks(cond: UserRankCondDTO, paging: PagingDTO): Promise<Paginated<UserRank>> {
         return this.loyaltyRepository.listUserRank(cond, paging);
     }
+
+    // Lấy danh sách hạng khách hàng thân thiết theo mảng ID
+    async getUserRankByIds(ids: string[]): Promise<UserRank[] | null> {
+        return this.loyaltyRepository.listUserRanksByIds(ids);
+    }   
 
     // Tạo lịch sử điểm khách hàng thân thiết mới
     async createPointHistory(dto: PointHistoryDTO, ip: string, userAgent: string): Promise<void> {
@@ -143,7 +148,7 @@ export class LoyaltyService implements ILoyaltyService {
     }
 
     // Lấy danh sách lịch sử điểm khách hàng thân thiết theo điều kiện
-    async getPointHistories(cond: PointHistoryCondDTO, ip: string, userAgent: string, paging: PagingDTO): Promise<Paginated<PointHistory>> {
+    async getPointHistories(cond: PointHistoryCondDTO, paging: PagingDTO): Promise<Paginated<PointHistory>> {
         return this.loyaltyRepository.listPointHistory(cond, paging);
     }
 }

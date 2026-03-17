@@ -88,7 +88,7 @@ export class PrinterService implements IPrinterService {
     }
 
     // Lấy danh sách máy in theo điều kiện lọc
-    async getPrinterByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Printer>> {
-        return await this.printerRepo.listByIds(ids, paging);
+    async getPrinterByIds(ids: string[]): Promise<Printer[]> {
+        return await this.printerRepo.listByIds(ids);
     }
 }

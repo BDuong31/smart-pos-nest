@@ -73,25 +73,10 @@ export class InventoryBatchPrismaRepo implements IInventoryBatchRepository {
     }
 
     // Lấy danh sách tồn kho theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<InventoryBatch>> {
-        const total = await prisma.inventoryBatch.count({ where: { id: { in: ids } } });
+    async listByIds(ids: string[]): Promise<InventoryBatch[]> {
+        const result = await prisma.inventoryBatch.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.inventoryBatch.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: {
-                importDate: "desc",
-            }
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total,
-        };
+        return result.map(this._toModel);
     }
 
     // Tạo mới lô hàng tồn kho

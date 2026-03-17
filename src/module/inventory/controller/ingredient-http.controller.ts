@@ -102,12 +102,4 @@ export class IngredientRpcController {
          const ingredients = await this.ingredientService.listByIds(ids, paging);
          return paginatedResponse(ingredients, paging);
      }
-
-     // RPC lấy danh sách nguyên liệu theo điều kiện
-     @Get()
-     @HttpCode(HttpStatus.OK)
-     async list(@Query() cond: IngredientCondDTO,  @Query() paging: PagingDTO) {
-         const ingredients = await this.ingredientService.list(cond, paging);
-         return paginatedResponse(ingredients, paging);
-     }
 }

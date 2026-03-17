@@ -98,14 +98,6 @@ export class PurchaseProposalDetailRpcController {
         return purchaseProposalDetail;
      }
 
-    // RPC lấy danh sách chi tiết đề xuất mua hàng theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: PurchaseProposalDetailCondDTO, @Query() paging: PagingDTO) {
-        const purchaseProposalDetails = await this.purchaseProposalDetailService.list(cond, paging);
-        return paginatedResponse(purchaseProposalDetails, paging);
-    }
-
     // RPC lấy thông tin chi tiết đề xuất mua hàng theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)

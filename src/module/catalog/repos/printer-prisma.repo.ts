@@ -67,26 +67,11 @@ export class PrinterPrismaRepo implements IPrinterRepository {
     }
 
     // Lấy danh sách máy in theo mảng IDs
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Printer>> {
-        const page = Number(paging.page);
-        const limit = Number(paging.limit);
-
-        const total = await prisma.printer.count({ where: { id: { in: ids } } });
-
-        const skip = (page - 1) * limit;
-
-        const result = await prisma.printer.findMany({
+    async listByIds(ids: string[]): Promise<Printer[]> {
+        const data = await prisma.printer.findMany({
             where: { id: { in: ids } },
-            skip,
-            take: limit,
-            orderBy: { name: 'asc' },
         });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return data.map(this._toModel);
     }
 
     // Thêm máy in mới

@@ -81,7 +81,7 @@ export class SupplierService implements ISupplierService {
     }
 
     // Lấy danh sách nhà cung cấp theo nhiều ID
-    async listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Supplier>> {
-        return await this.supplierRepo.listByIds(ids, pagingDTO);
+    async listByIds(supplierIds: string[]): Promise<Supplier[]> {
+        return await this.supplierRepo.listByIds(supplierIds);
     }
 }

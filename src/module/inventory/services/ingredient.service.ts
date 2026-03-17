@@ -83,7 +83,7 @@ export class IngredientService implements IIngredientService {
     } 
     
     // Lấy danh sách nguyên liệu theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Ingredient>> {
-        return await this.ingredientRepo.listByIds(ids, paging);
+    async listByIds(ingredientIds: string[]): Promise<Ingredient[]> {
+        return await this.ingredientRepo.listByIds(ingredientIds);
     }
 }

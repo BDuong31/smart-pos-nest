@@ -1,3 +1,4 @@
+import { PublicIngredient } from "src/share/data-model";
 import { z } from "zod";
 
 // ============================
@@ -33,4 +34,4 @@ export const unitConversionSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type UnitConversion = z.infer<typeof unitConversionSchema>;
+export type UnitConversion = z.infer<typeof unitConversionSchema> & { ingredient?: PublicIngredient };

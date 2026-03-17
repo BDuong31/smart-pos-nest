@@ -99,7 +99,7 @@ export class RecipeService implements IRecipeService {
     }
 
     // Lấy danh sách công thức theo nhiều ID
-    async listByIds(ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Recipe>> {
-        return await this.recipeRepo.listByIds(ids, pagingDTO);
+    async listByIds(recipeIds: string[]): Promise<Recipe[]> {
+        return await this.recipeRepo.listByIds(recipeIds);
     }
 }

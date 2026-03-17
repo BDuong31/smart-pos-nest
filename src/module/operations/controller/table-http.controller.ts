@@ -97,14 +97,6 @@ export class TableRpcController {
         const data = await this.tableService.get(id);
         return { data };
     }
-
-    // RPC để lấy danh sách bàn theo điều kiện với phân trang
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Query() cond: TableCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.tableService.list(cond, paging);
-        return { data };
-    }
      
     // RPC để lấy danh sách bàn theo nhiều ID với phân trang
     @Post('list-by-ids')

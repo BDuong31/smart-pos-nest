@@ -57,23 +57,10 @@ export class SupplierPrismaRepo implements ISupplierRepository {
     }
 
     // Lấy danh sách nhà cung cấp theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Supplier>> {
-        const total = await prisma.supplier.count({ where: { id: { in: ids } } });
+    async listByIds(supplierIds: string[]): Promise<Supplier[]> {
+        const result = await prisma.supplier.findMany({ where: { id: { in: supplierIds } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.supplier.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return result.map(this._toModel);
     }
 
     // Tạo mới nhà cung cấp

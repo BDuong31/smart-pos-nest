@@ -1,5 +1,5 @@
 import { create } from 'domain';
-import { UserRole } from 'src/share';
+import { PublicImage, PublicRank, UserRole } from 'src/share';
 import { z } from 'zod';
 
 export enum UserStatus {
@@ -105,4 +105,4 @@ export const userSchema = z.object({
     updatedAt: z.date(), // Ngày cập nhật
 })
 
-export interface User extends z.infer<typeof userSchema> {}
+export type User = z.infer<typeof userSchema> & { avatar?: PublicImage, rank?: PublicRank | null}; // Kiểu dữ liệu User được suy luận từ schema

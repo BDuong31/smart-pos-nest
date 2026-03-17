@@ -99,14 +99,6 @@ export class StockCheckRpcController {
         return stockCheck;
      }
 
-    // RPC lấy danh sách kiểm kê tồn kho theo nhiều ID
-    @Post('list-by-ids')
-    @HttpCode(HttpStatus.OK)
-    async listByIds(@Body() ids: string[], @Query() paging: PagingDTO) {
-        const stockChecks = await this.stockCheckService.listByIds(ids, paging);
-        return paginatedResponse(stockChecks, paging);
-     }
-
     // RPC lấy danh sách kiểm kê tồn kho theo điều kiện
     @Get()
     @HttpCode(HttpStatus.OK)

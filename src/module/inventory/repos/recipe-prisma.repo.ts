@@ -78,23 +78,10 @@ export class RecipePrismaRepo implements IRecipeRepository {
     }
 
     // Lấy danh sách công thức theo nhiều ID
-    async listByIds(recipeIds: string[], paging: PagingDTO): Promise<Paginated<Recipe>> {
-        const total = await prisma.recipe.count({ where: { id: { in: recipeIds } } });
+    async listByIds(recipeIds: string[]): Promise<Recipe[]> {
+        const result = await prisma.recipe.findMany({ where: { id: { in: recipeIds } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-        
-        const result = await prisma.recipe.findMany({
-            where: { id: { in: recipeIds } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: "desc" },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total: result.length,
-        };
+        return result.map(this._toModel);
     }
 
     // Tạo mới công thức

@@ -149,6 +149,18 @@ export class OptionHttpController {
         return await this.optionService.setProductOptionConfig(requester, productId, dto, ip, userAgent);
      }
 
+     // API xóa cấu hình Option của sản phẩm
+    @Delete('product/:productId/config/:optionGroupId') 
+    @UseGuards(RemoteAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async removeProductOptionConfig(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('productId') productId: string, @Param('optionGroupId') optionGroupId: string) {
+        const requester = req.requester;
+        const ip = getIPv4FromReq(reqExpress);
+        const userAgent = reqExpress.headers['user-agent'] || '';
+        return await this.optionService.removeProductOptionConfig(requester, productId, optionGroupId, ip, userAgent);
+     } 
+
     // API lấy cấu hình Option của sản phẩm
     @Get('product/:productId/config')
     @HttpCode(HttpStatus.OK)
@@ -173,13 +185,6 @@ export class OptionRpcController {
         return await this.optionService.getOptionGroupById(id);
      }
 
-    // RPC lấy danh sách Option Group theo điều kiện lọc
-    @Get('group')
-    @HttpCode(HttpStatus.OK)
-    async getListOptionGroup(@Body() cond: OptionGroupCondDTO, @Query() paging: PagingDTO) {
-        return await this.optionService.getListOptionGroup(cond, paging);
-     }
-
     // RPC lấy danh sách Option Group theo mảng IDs
     @Get('group/list-by-ids')
     @HttpCode(HttpStatus.OK)
@@ -196,13 +201,6 @@ export class OptionRpcController {
     @HttpCode(HttpStatus.OK)
     async getOptionItemById(@Param('groupId') groupId: string, @Param('itemId') itemId: string) {
         return await this.optionService.getOptionItemById(groupId, itemId);
-     }
-
-    // RPC lấy danh sách Option Item theo điều kiện lọc
-    @Get('group/:groupId/item')
-    @HttpCode(HttpStatus.OK)
-    async getListOptionItem(@Body() cond: OptionItemCondDTO, @Query() paging: PagingDTO) {
-        return await this.optionService.getListOptionItem(cond, paging);
      }
 
     // RPC lấy danh sách Option Item theo mảng IDs

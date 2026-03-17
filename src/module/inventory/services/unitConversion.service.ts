@@ -82,7 +82,7 @@ export class UnitConversionService implements IUnitConversionService {
         return await this.unitConversionRepo.list(cond, paging);
     }
     // Lấy danh sách quy đổi đơn vị theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<UnitConversion>> {
-        return await this.unitConversionRepo.listByIds(ids, paging);
+    async listByIds(unitConversionIds: string[]): Promise<UnitConversion[]> {
+        return await this.unitConversionRepo.listByIds(unitConversionIds);
     }
 }

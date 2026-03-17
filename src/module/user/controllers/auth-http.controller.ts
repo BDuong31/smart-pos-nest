@@ -1,9 +1,9 @@
-import { Body, Controller, HttpCode, HttpStatus, Inject, Patch, Post, Request, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Inject, Patch, Post, Request, UseGuards, Res } from "@nestjs/common";
 import { AUTH_SERVICE } from "../user.di-token";
 import { type IAuthService } from "../ports/auth.port";
 import { ApiBadRequestResponse, ApiBody, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import type { UserChangePasswordDTO, UserLoginDTO, UserRegistrationDTO, UserResetPasswordDTO } from "../dtos/auth.dto";
-import type { Request as ExpressRequest } from "express";
+import type { Request as ExpressRequest, Response } from "express";
 import { getIPv4FromReq, type ReqWithRequester } from "src/share";
 import { RemoteAuthGuard } from "src/share/guard";
 
@@ -186,11 +186,18 @@ export class AuthHttpController {
     @ApiForbiddenResponse({ description: 'Tài khoản bị cấm hoặc chưa được kích hoạt' })
     @ApiTooManyRequestsResponse({ description: 'Quá nhiều yêu cầu đăng nhập, vui lòng thử lại sau' })
     @ApiInternalServerErrorResponse({ description: 'Lỗi máy chủ, có thể do sự cố với cơ sở dữ liệu hoặc lỗi không mong muốn khác' })
-    async login(@Body() body: UserLoginDTO, @Request() req: ExpressRequest) {
+    async login(@Body() body: UserLoginDTO, @Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
         const token = await this.authService.login(body, ip, userAgent);
-        return { token };
+
+        res.cookie('refreshToken', token.refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
+        })
+        return { accessToken: token.accessToken };
     }
 
     // API đăng nhập người dùng bằng Google
@@ -271,9 +278,19 @@ export class AuthHttpController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Làm mới token' })
     @ApiCreatedResponse({ description: 'Token được làm mới thành công' })
-    async refreshToken(@Body() body: { refreshToken: string }) {
-        const token = await this.authService.refreshToken(body.refreshToken);
-        return { token };
+    async refreshToken(@Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+        const refeshToken = req.cookies.refreshToken;
+        
+        const token = await this.authService.refreshToken(refeshToken);
+
+        res.cookie('refreshToken', token.refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày
+        })
+
+        return { accessToken: token.accessToken };
     }
 
     // API đăng xuất người dùng
@@ -282,10 +299,12 @@ export class AuthHttpController {
     @UseGuards(RemoteAuthGuard)
     @ApiOperation({ summary: 'Đăng xuất người dùng' })
     @ApiCreatedResponse({ description: 'Người dùng đăng xuất thành công' })
-    async logout(@Body() body: { accessToken: string, refreshToken: string }, @Request() req: ExpressRequest) {
+    async logout(@Body() body: { accessToken: string}, @Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
-        await this.authService.logout(body.accessToken, body.refreshToken, ip, userAgent);
+        const refreshToken = req.cookies.refreshToken;
+        await this.authService.logout(body.accessToken, refreshToken, ip, userAgent);
+        res.clearCookie('refreshToken');
         return { message: 'Logged out successfully' };
     }
 }

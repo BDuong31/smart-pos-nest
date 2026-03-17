@@ -1,3 +1,4 @@
+import { PublicUser } from 'src/share/data-model';
 import { z } from 'zod';
 
 // Lỗi chung về ca làm việc
@@ -27,4 +28,4 @@ export const shiftSchema = z.object({
     updatedAt: z.date(),
 });
 
-export interface Shift extends z.infer<typeof shiftSchema> {}
+export type Shift = z.infer<typeof shiftSchema> & { user?: PublicUser }; // Kiểu dữ liệu Shift được suy luận từ schema, có thể kèm thông tin người dùng

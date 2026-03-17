@@ -3,7 +3,7 @@ import { IOptionRepository } from '../ports/option.port';
 import { OptionGroup, OptionItem, ProductOptionConfig } from '../models/option.model';
 import prisma from 'src/share/components/prisma';
 import { OptionGroup as OptionGroupPrisma, OptionItem as OptionItemPrisma, ProductOptionConfig as ProductOptionConfigPrisma } from '@prisma/client';
-import { OptionGroupCondDTO, OptionItemCondDTO, UpdateOptionItemDTO, UpdateProductOptionConfigDTO } from '../dtos/option.dto';
+import { OptionGroupCondDTO, OptionItemCondDTO, ProductOptionConfigCondDTO, UpdateOptionItemDTO, UpdateProductOptionConfigDTO } from '../dtos/option.dto';
 import { Paginated, PagingDTO } from 'src/share';
 
 // Lớp OptionRepository triển khai IOptionRepository sử dụng Prisma
@@ -79,35 +79,9 @@ export class OptionPrismaRepository implements IOptionRepository {
     };
 
     // lấy danh sách Option Group theo mảng IDs
-    async getOptionGroupByIds(ids: string[], paging: PagingDTO): Promise<Paginated<OptionGroup>> {
-        const total = await prisma.optionGroup.count({
-            where: {
-                id: {
-                    in: ids,
-                }
-            }
-        });
-
-        const skip = (paging.page - 1) * paging.limit;
-
-        const data = await prisma.optionGroup.findMany({
-            where: {
-                id: {
-                    in: ids,
-                }
-            },
-            skip,
-            take: paging.limit,
-            orderBy: {
-                name: 'asc',
-            }
-        });
-
-        return {
-            data: data.map(this._toModelOptionGroup),
-            paging,
-            total,
-        };
+    async getOptionGroupByIds(ids: string[]): Promise<OptionGroup[]> {
+        const data = await prisma.optionGroup.findMany({ where: { id: { in: ids }}});
+        return data.map(this._toModelOptionGroup);
     }
  
     // ============================
@@ -115,36 +89,36 @@ export class OptionPrismaRepository implements IOptionRepository {
     // ============================
 
     // tạo Option Item mới
-    async insertOptionItem(optionItem: any): Promise<void> {
+    async insertOptionItem(optionItem: OptionItem): Promise<void> {
         await prisma.optionItem.create({
             data: optionItem
         });
     }
 
     // cập nhật Option Item
-    async updateOptionItem(optionGroupId: string, optionItemId: string, dto: UpdateOptionItemDTO): Promise<void> {
+    async updateOptionItem(id: string, dto: UpdateOptionItemDTO): Promise<void> {
         await prisma.optionItem.update({
             where: {
-                id: optionItemId,
+                id: id,
             },
             data: dto
         });
     }
 
     // xóa Option Item
-    async deleteOptionItem(optionGroupId: string, optionItemId: string): Promise<void> {
+    async deleteOptionItem(id: string): Promise<void> {
         await prisma.optionItem.delete({
             where: {
-                id: optionItemId,
+                id: id,
             }
         });
     }
 
     // lấy Option Item theo ID
-    async getOptionItem(optionGroupId: string, optionItemId: string): Promise<OptionItem | null> {
+    async getOptionItem(id: string): Promise<OptionItem | null> {
         const data = await prisma.optionItem.findUnique({
             where: {
-                id: optionItemId,
+                id: id,
             }
         });
         return data ? this._toModelOptionItem(data) : null;
@@ -152,10 +126,9 @@ export class OptionPrismaRepository implements IOptionRepository {
 
     // lấy danh sách Option Item theo điều kiện
     async getListOptionItem(cond: OptionItemCondDTO, paging: PagingDTO): Promise<Paginated<OptionItem>> {
-        const { groupId, name, ...rest } = cond; 
+        const { groupId, name } = cond; 
 
         let where = {   
-            ...rest,
         }
 
         if (groupId) {
@@ -192,37 +165,15 @@ export class OptionPrismaRepository implements IOptionRepository {
     }
 
     // lấy danh sách Option Item theo mảng IDs
-    async getOptionItemsByIds(optionGroupId: string, ids: string[], paging: PagingDTO): Promise<Paginated<OptionItem>> {
-        const total = await prisma.optionItem.count({
-            where: {
-                id: {
-                    in: ids,
-                },
-                groupId: optionGroupId,
-            }
-        });
-
-        const skip = (paging.page - 1) * paging.limit;
-
+    async getOptionItemsByIds(ids: string[]): Promise<OptionItem[]> {
         const data = await prisma.optionItem.findMany({
             where: {
                 id: {
                     in: ids,
-                },
-                groupId: optionGroupId,
+                }
             },
-            skip,
-            take: paging.limit,
-            orderBy: {
-                name: 'asc',
-            }
         });
-
-        return {
-            data: data.map(this._toModelOptionItem),
-            paging,
-            total,
-        };
+        return data.map(this._toModelOptionItem);
     }
 
     // ============================
@@ -237,63 +188,56 @@ export class OptionPrismaRepository implements IOptionRepository {
     }
 
     // cập nhật Product Option Config
-    async updateProductOptionConfig(productId: string, optionGroupId: string, dto: UpdateProductOptionConfigDTO): Promise<void>{
+    async updateProductOptionConfig(id: string, dto: UpdateProductOptionConfigDTO): Promise<void>{
         await prisma.productOptionConfig.update({
-            where: {
-                productId_optionGroupId: {
-                    productId,
-                    optionGroupId,
-                }
-            },
-            data: dto
+            where: { id },
+            data: dto,
         });
     }
 
     // xóa Product Option Config
-    async deleteProductOptionConfig(productId: string, optionGroupId: string): Promise<void> {
+    async deleteProductOptionConfig(id: string): Promise<void> {
         await prisma.productOptionConfig.delete({
             where: {
-                productId_optionGroupId: {
-                    productId,
-                    optionGroupId,
-                }
+                id: id,
             }
         });
     }
 
-    // lấy Product Option Config theo product ID
-    async getProductOptionConfig(productId: string): Promise<ProductOptionConfig[] | null> {
-        const data = await prisma.productOptionConfig.findMany({
-            where: {
-                productId,
+    // lấy Product Option Config theo điều kiện
+    async listProductOptionConfig(cond: ProductOptionConfigCondDTO, paging: PagingDTO): Promise<Paginated<ProductOptionConfig>> {
+        const { productId, optionGroupId } = cond;
+
+        let where = {
+        }
+
+        if (productId) {
+            where = {
+                ...where,
+                productId: productId,
             }
-        });
+        }
 
-        return data.length > 0 ? data.map(this._toModelProductOptionConfig) : null;
-    }
-
-    // lấy danh sách Product Option Config theo mảng product IDs
-    async getOptionsConfigByProductIds(productIds: string[], paging: PagingDTO): Promise<Paginated<ProductOptionConfig>> {
-        const total = await prisma.productOptionConfig.count({
-            where: {
-                productId: {
-                    in: productIds,
-                }
+        if (optionGroupId) {
+            where = {
+                ...where,
+                optionGroupId: optionGroupId,
             }
-        });
+        }
 
-        const skip = (paging.page - 1) * paging.limit;
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
+        const total = await prisma.productOptionConfig.count({ where });
+
+        const skip = (page - 1) * limit;
 
         const data = await prisma.productOptionConfig.findMany({
-            where: {
-                productId: {
-                    in: productIds,
-                }
-            },
+            where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: {
-                productId: 'asc',
+                createdAt: 'desc',
             }
         });
 
@@ -302,6 +246,30 @@ export class OptionPrismaRepository implements IOptionRepository {
             paging,
             total,
         };
+    }
+
+    // lấy Product Option Config theo product ID
+    async getProductOptionConfigById(id: string): Promise<ProductOptionConfig | null> {
+        const data = await prisma.productOptionConfig.findFirst({
+            where: {
+                id,
+            }
+        });
+
+        return data ? this._toModelProductOptionConfig(data) : null;
+    }
+
+    // lấy danh sách Product Option Config theo mảng product IDs
+    async getProductOptionConfigsByIds(ids: string[]): Promise<ProductOptionConfig[]> {
+        const data = await prisma.productOptionConfig.findMany({
+            where: {
+                id: {
+                    in: ids,
+                }
+            }
+        });
+
+        return data.map(this._toModelProductOptionConfig);
     }
 
     // Chuyển đổi dữ liệu Prisma sang mô hình OptionGroup

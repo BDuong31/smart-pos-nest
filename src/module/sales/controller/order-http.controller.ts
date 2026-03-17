@@ -83,13 +83,6 @@ export class OrderRpcController {
         return { data };
     }
     
-    // RPC để lấy danh sách đơn hàng theo điều kiện với phân trang
-    @Get()
-    async list(@Request() req: ReqWithRequester, @Query() cond: OrderCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrders(req.requester, paging, cond);
-        return { data };
-    }
-
     // RPC để lấy thông tin mục sản phẩm trong đơn hàng theo nhiều ID
     @Post('list-by-ids')
     async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
@@ -173,13 +166,6 @@ export class OrderItemRpcController {
     @Get(':id')
     async getOrderItemById(@Request() req: ReqWithRequester, @Param('id') id: string) {
         const data = await this.orderService.getOrderItemById(req.requester, id);
-        return { data };
-    }
-
-    // RPC để lấy danh sách mục sản phẩm trong đơn hàng theo điều kiện với phân trang
-    @Get()
-    async listOrderItems(@Request() req: ReqWithRequester, @Query() cond: OrderItemCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItems(req.requester, paging, cond);
         return { data };
     }
 
@@ -269,13 +255,6 @@ export class OrderItemOptionRpcController {
         return { data };
     }
 
-    // RPC để lấy danh sách tùy chọn sản phẩm trong mục đơn hàng theo điều kiện với phân trang
-    @Get()
-    async listOrderItemOptions(@Request() req: ReqWithRequester, @Query() cond: OrderItemOptionCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItemOptions(req.requester, paging, cond);
-        return { data };
-    }
-
     // RPC để lấy thông tin tùy chọn sản phẩm trong mục đơn hàng theo nhiều ID
     @Post('list-by-ids')
     async listOrderItemOptionsByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
@@ -359,13 +338,6 @@ export class OrderVoucherRpcController {
     @Get(':id')
     async getOrderVoucherById(@Request() req: ReqWithRequester, @Param('id') id: string) {
         const data = await this.orderService.getOrderVoucherById(req.requester, id);
-        return { data };
-    }
-
-    // RPC để lấy danh sách voucher cho đơn hàng theo điều kiện với phân trang
-    @Get()
-    async listOrderVouchers(@Request() req: ReqWithRequester, @Query() cond: OrderVoucherCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderVouchers(req.requester, paging, cond);
         return { data };
     }
 
@@ -455,13 +427,6 @@ export class OrderTableRpcController {
         return { data };
     }
 
-    // RPC để lấy danh sách đơn hàng cho bàn theo điều kiện với phân trang
-    @Get()
-    async listOrdersForTable(@Request() req: ReqWithRequester, @Query() cond: OrderTableCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderTables(req.requester, paging, cond);
-        return { data };
-    }
-
     // RPC để lấy thông tin đơn hàng cho bàn theo nhiều ID
     @Post('list-by-ids')
     async listOrdersForTableByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
@@ -545,13 +510,6 @@ export class InvoiceRpcController {
     @Get(':id')
     async getInvoiceForOrderById(@Request() req: ReqWithRequester, @Param('id') id: string) {
         const data = await this.orderService.getInvoiceById(req.requester, id);
-        return { data };
-    }
-
-    // RPC để lấy danh sách hóa đơn công ty cho đơn hàng theo điều kiện với phân trang
-    @Get()
-    async listInvoicesForOrder(@Request() req: ReqWithRequester, @Query() cond: InvoiceCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listInvoices(req.requester, paging, cond);
         return { data };
     }
 

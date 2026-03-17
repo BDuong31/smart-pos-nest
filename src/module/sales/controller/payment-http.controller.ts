@@ -174,14 +174,6 @@ export class PaymentRpcController {
         return { data };
     }
 
-    // RPC lấy danh sách giao dịch thanh toán theo điều kiện với phân trang
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Query() cond: PaymentCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.paymentService.listPayments(req.requester, paging, cond);
-        return { data };
-    }
-
     // RPC lấy danh sách giao dịch thanh toán theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)

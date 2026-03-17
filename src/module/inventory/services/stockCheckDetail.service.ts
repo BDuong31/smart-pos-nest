@@ -85,7 +85,7 @@ export class StockCheckDetailService implements IStockCheckDetailService {
     }
 
     // Lấy danh sách chi tiết kiểm kê tồn kho theo nhiều ID
-    async listByIds(stockCheckDetailIds: string[], paging: PagingDTO): Promise<Paginated<StockCheckDetail>> {
-        return await this.stockCheckDetailRepo.listByIds(stockCheckDetailIds, paging);
+    async listByIds(stockCheckDetailIds: string[]): Promise<StockCheckDetail[]> {
+        return await this.stockCheckDetailRepo.listByIds(stockCheckDetailIds);
     }
 }
