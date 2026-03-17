@@ -3,9 +3,9 @@ import { ZONE_SERVICE } from "../operations.di-token";
 import {type IZoneService } from "../ports/zone.port";
 import { RolesGuard } from "src/share/guard/roles";
 import { RemoteAuthGuard, Roles } from "src/share/guard";
-import { getIPv4FromReq,type PagingDTO, type ReqWithRequester, UserRole } from "src/share";
+import { getIPv4FromReq,paginatedResponse,type PagingDTO, pagingDTOSchema, type ReqWithRequester, UserRole } from "src/share";
 import {type Request as ExpressRequest } from "express";
-import type {ZoneUpdateDTO, ZoneCreatedDTO, ZoneCondDTO } from "../dtos/zone.dto";
+import {type ZoneUpdateDTO, type ZoneCreatedDTO, type ZoneCondDTO, zoneCondDTOSchema } from "../dtos/zone.dto";
 
 @Controller('v1/zones')
 export class ZoneHttpController {
@@ -62,15 +62,19 @@ export class ZoneHttpController {
     @Get()
     @HttpCode(HttpStatus.OK)
     async list(@Request() req: ReqWithRequester, @Query() cond: ZoneCondDTO, @Query() paging: PagingDTO) {
+        paging = pagingDTOSchema.parse(paging);
+        cond = zoneCondDTOSchema.parse(cond);
+        
         const data = await this.zoneService.list(cond, paging);
-        return { data };
+        
+        return paginatedResponse(data, paging);
     }
     
     // API để lấy danh sách khu vực theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.zoneService.listByIds(ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
+        const data = await this.zoneService.listByIds(ids);
         return { data };
     }
 }
@@ -92,8 +96,8 @@ export class ZoneRpcController {
     // RPC để lấy danh sách khu vực theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.zoneService.listByIds(ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
+        const data = await this.zoneService.listByIds(ids);
         return { data };
     }
 }

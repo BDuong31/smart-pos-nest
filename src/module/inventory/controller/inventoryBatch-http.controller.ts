@@ -2,14 +2,16 @@ import { Inject, Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, H
 import { INVENTORYBATCH_SERVICE } from '../inventory.di-token';
 import type { IInventoryBatchService } from '../ports/inventoryBatch.port';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
-import type { InventoryBatchCreateDTO, InventoryBatchUpdateDTO, InventoryBatchCondDTO } from '../dtos/inventoryBatch.dto';
-import { getIPv4FromReq, paginatedResponse, type PagingDTO, type ReqWithRequester, UserRole } from 'src/share';
+import { type InventoryBatchCreateDTO, type InventoryBatchUpdateDTO, type InventoryBatchCondDTO, inventoryBatchCondDTOSchema } from '../dtos/inventoryBatch.dto';
+import { AppError, getIPv4FromReq, INGREDIENT_RPC,type IPublicIngredientRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicIngredient, type ReqWithRequester, UserRole } from 'src/share';
 import type { Request as ExpressRequest } from 'express';
+import { ErrInventoryBatchNotFound, InventoryBatch } from '../models/inventoryBatch.model';
 
 @Controller('v1/inventory-batches')
 export class InventoryBatchHttpController {
     constructor(
         @Inject(INVENTORYBATCH_SERVICE) private readonly inventoryBatchService: IInventoryBatchService,
+        @Inject(INGREDIENT_RPC) private readonly ingredientRpc: IPublicIngredientRpc,
     ){}
     
     // API để tạo mới lô hàng tồn kho
@@ -21,8 +23,8 @@ export class InventoryBatchHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const inventoryBatch = await this.inventoryBatchService.create(requester, dto, ip, userAgent);
-        return inventoryBatch;
+        const data = await this.inventoryBatchService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API để cập nhật thông tin lô hàng tồn kho theo ID
@@ -34,8 +36,8 @@ export class InventoryBatchHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const updatedInventoryBatch = await this.inventoryBatchService.update(requester, inventoryBatchId, dto, ip, userAgent);
-        return updatedInventoryBatch;
+        const data = await this.inventoryBatchService.update(requester, inventoryBatchId, dto, ip, userAgent);
+        return { data };
     }
 
      // API để xóa lô hàng tồn kho theo ID
@@ -56,8 +58,32 @@ export class InventoryBatchHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: InventoryBatchCondDTO,  @Query() paging: PagingDTO) {
-        const inventoryBatches = await this.inventoryBatchService.list(cond, paging);
-        return paginatedResponse(inventoryBatches, paging);
+        paging = pagingDTOSchema.parse(paging);
+        cond = inventoryBatchCondDTOSchema.parse(cond);
+
+        const result = await this.inventoryBatchService.list(cond, paging);
+
+        const ingredientIds = result.data.map(batch => batch.ingredientId);
+
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.forEach(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            });
+        }
+
+        result.data = result.data.map(batch => {
+            const ingredient = ingredientMap[batch.ingredientId];
+            return {
+                ...batch,
+                ingredient,
+            } as InventoryBatch
+        })
+
+        return paginatedResponse(result, paging);
     }
 
     // API để lấy thông tin lô hàng tồn kho theo ID
@@ -66,8 +92,17 @@ export class InventoryBatchHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') inventoryBatchId: string) {
-        const inventoryBatch = await this.inventoryBatchService.get(inventoryBatchId);
-        return inventoryBatch;
+        const result = await this.inventoryBatchService.get(inventoryBatchId);
+        
+        if (!result) {
+            throw AppError.from(ErrInventoryBatchNotFound, 404);
+        }
+
+        const ingredient = await this.ingredientRpc.findById(result.ingredientId);
+
+        const data = { ...result, ingredient } as InventoryBatch;
+
+        return { data };
     }
 
     // API để lấy thông tin lô hàng tồn kho theo nhiều ID
@@ -75,9 +110,9 @@ export class InventoryBatchHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[],  @Query() paging: PagingDTO) {
-        const inventoryBatches = await this.inventoryBatchService.listByIds(ids, paging);
-        return paginatedResponse(inventoryBatches, paging); 
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.inventoryBatchService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -91,15 +126,15 @@ export class InventoryBatchRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') inventoryBatchId: string) {
-        const inventoryBatch = await this.inventoryBatchService.get(inventoryBatchId);
-        return inventoryBatch;
+        const data = await this.inventoryBatchService.get(inventoryBatchId);
+        return { data };
     }
 
     // RPC để lấy thông tin lô hàng tồn kho theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[],  @Query() paging: PagingDTO) {
-        const inventoryBatches = await this.inventoryBatchService.listByIds(ids, paging);
-        return paginatedResponse(inventoryBatches, paging); 
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.inventoryBatchService.listByIds(ids);
+        return { data };
     }
 }

@@ -86,8 +86,7 @@ export class ReservationService implements IReservationService {
     }
     
     // Lấy danh sách đặt bàn theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Reservation>> {
-        const reservation = await this.reservationRepo.listByIds(ids, paging);
-        return reservation;
+    async listByIds(ids: string[]): Promise<Reservation[]> {
+        return await this.reservationRepo.listByIds(ids);
     }
 }

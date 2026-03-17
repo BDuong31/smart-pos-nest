@@ -20,8 +20,8 @@ export class SupplierHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const supplier = await this.supplierService.create(requester, dto, ip, userAgent);
-        return supplier;
+        const data = await this.supplierService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API để cập nhật thông tin nhà cung cấp theo ID
@@ -33,8 +33,8 @@ export class SupplierHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const updatedSupplier = await this.supplierService.update(requester, supplierId, dto, ip, userAgent);
-        return updatedSupplier;
+        const data = await this.supplierService.update(requester, supplierId, dto, ip, userAgent);
+        return { data };
     }
 
     // API để xóa nhà cung cấp theo ID
@@ -55,8 +55,8 @@ export class SupplierHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: SupplierCondDTO,  @Query() paging: PagingDTO) {
-        const suppliers = await this.supplierService.list(cond, paging);
-        return paginatedResponse(suppliers, paging);
+        const result = await this.supplierService.list(cond, paging);
+        return paginatedResponse(result, paging);
     }
 
     // API để lấy thông tin nhà cung cấp theo ID
@@ -65,8 +65,8 @@ export class SupplierHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') supplierId: string) {
-        const supplier = await this.supplierService.get(supplierId);
-        return supplier;
+        const data = await this.supplierService.get(supplierId);
+        return { data };
     }   
 
     // API để lấy danh sách nhà cung cấp theo nhiều ID  
@@ -74,9 +74,9 @@ export class SupplierHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const suppliers = await this.supplierService.listByIds(ids, paging);
-        return paginatedResponse(suppliers, paging);    
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.supplierService.listByIds(ids);
+        return { data };
     }   
 }
 
@@ -97,8 +97,8 @@ export class SupplierRpcController {
     // RPC để lấy danh sách nhà cung cấp theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const suppliers = await this.supplierService.listByIds(ids, paging);
-        return paginatedResponse(suppliers, paging);    
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.supplierService.listByIds(ids);
+        return { data };
     }
 }

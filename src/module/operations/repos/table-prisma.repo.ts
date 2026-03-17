@@ -88,78 +88,84 @@ export class TablePrismaRepo implements ITableRepository {
     }
 
     // Lấy danh sách bàn theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Table>> {
-        const total = await prisma.table.count({ where: { id: { in: ids } } });
+    async listByIds(ids: string[]): Promise<Table[]> {
+        const data = await prisma.table.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.table.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+       return data.map(this._toModel);
     }
 
     // Lấy danh sách bàn trống theo thời gian và điều kiện
-    async listAvailable(reservations: Reservation[], cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>> {
-        // Lấy danh sách bàn đã được đặt trong khoảng thời gian
-        const reservedTableIds = reservations.map(r => r.tableId);
+    async listAvailable(reservations: Reservation[], time: Date, cond: TableCondDTO): Promise<Table[]> {
+        const { name, zoneId, qrCode, capacity, isActive, status} = cond;
 
-        const { name, zoneId, qrCode, capacity, isActive, status, ...rest} = cond;
-        
-        const where: Prisma.TableWhereInput = {};
-
-        if (reservedTableIds.length > 0) {
-            where.id = { notIn: reservedTableIds };
-        }
+        let where = {}
 
         if (name) {
-            where.name = name;
+            where = {
+                ...where,
+                name: name,
+            }
         }
 
         if (zoneId) {
-            where.zoneId = zoneId;
+            where = {
+                ...where,
+                zoneId: zoneId,
+            }
         }
 
         if (qrCode) {
-            where.qrCode = qrCode;
+            where = {
+                ...where,
+                qrCode: qrCode,
+            }
         }
 
         if (capacity) {
-            where.capacity = capacity;
+            where = {
+                ...where,
+                capacity: capacity,
+            }
         }
 
         if (isActive !== undefined) {
-            where.isActive = isActive;
+            where = {
+                ...where,
+                isActive: isActive,
+            }
         }
 
         if (status) {
-            where.status = status;
+            where = {
+                ...where,
+                status: status,
+            }
         }
 
-        const total = await prisma.table.count({ where });
+        let reservedTableIds: string[] = [];
 
-        const skip = (paging.page - 1) * paging.limit;
+        if (time) {
+            const buffer = 30 * 60 * 1000;
 
-        const result = await prisma.table.findMany({
-            where,
-            skip,
-            take: paging.limit,
+            reservedTableIds = reservations
+                .filter(r => {
+                    return !(
+                    r.time.getTime() + buffer <= time.getTime() ||
+                    r.time.getTime() - buffer >= time.getTime()
+                    );
+                })
+            .map(r => r.tableId);
+        }
+
+        const data = await prisma.table.findMany({
+            where: {
+                ...where,
+                id: { notIn: reservedTableIds },
+            },
             orderBy: { name: 'asc' },
         });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        
+        return data.map(this._toModel);
     }
 
     // Tạo mới bàn

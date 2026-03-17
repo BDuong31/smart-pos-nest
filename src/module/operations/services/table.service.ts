@@ -90,14 +90,13 @@ export class TableService implements ITableService {
     }
 
     // Lấy danh sách bàn theo điều kiện
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Table>> {
-        const table = await this.tableRepo.listByIds(ids, paging);
-
-        return table;
+    async listByIds(ids: string[]): Promise<Table[]> {
+        const tables = await this.tableRepo.listByIds(ids);
+        return tables;
     }
 
     // Lấy danh sách bàn trống theo thời gian và điều kiện
-    async listByAvailable(time: Date, cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>> {
+    async listByAvailable(time: Date, cond: TableCondDTO): Promise<Table[]> {
         // Lấy Time trước giờ đặt bàn và Time sau giờ đặt bàn
         const timeStart = new Date(time);
         timeStart.setHours(timeStart.getHours() - 2); // Giả sử thời gian đặt bàn là 2 giờ
@@ -109,7 +108,7 @@ export class TableService implements ITableService {
         const reservations = await this.reservationRepo.listByTime(timeStart, timeEnd);
 
         // Lấy danh sách bàn trống theo thời gian và điều kiện
-        const tables = await this.tableRepo.listAvailable(reservations, cond, paging);
+        const tables = await this.tableRepo.listAvailable(reservations,time, cond);
 
         return tables;
     }

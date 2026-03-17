@@ -66,23 +66,10 @@ export class ZonePrismaRepo implements IZoneRepository {
     }
 
     // Lấy danh sách khu vực theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Zone>> {
-        const total = await prisma.zone.count({ where: { id: { in: ids } } });
+    async listByIds(ids: string[]): Promise<Zone[]> {
+        const data = await prisma.zone.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.zone.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return data.map(this._toModel);
     }
 
     // Tạo mới khu vực

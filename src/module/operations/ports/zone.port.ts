@@ -16,7 +16,7 @@ export interface IZoneService {
     // Service truy vấn khu vực
     get(id: string): Promise<Zone | null>; // Lấy thông tin khu vực theo ID
     list(cond: ZoneCondDTO, paging: PagingDTO): Promise<Paginated<Zone>>; // Lấy danh sách khu vực theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Zone>>; // Lấy danh sách khu vực theo nhiều ID
+    listByIds(ids: string[]): Promise<Zone[]>; // Lấy danh sách khu vực theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà ZoneRepository phải triển khai
@@ -24,8 +24,8 @@ export interface IZoneRepository {
     // truy vấn
     get(id: string): Promise<Zone | null>; // Lấy thông tin khu vực theo ID
     list(cond: ZoneCondDTO, paging: PagingDTO): Promise<Paginated<Zone>>; // Lấy danh sách khu vực theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Zone>>; // Lấy danh sách khu vực theo nhiều ID
-
+    listByIds(ids: string[]): Promise<Zone[]>; // Lấy danh sách khu vực theo nhiều ID
+    
     // thao tác dữ liệu
     insert(zone: Zone): Promise<void>; // Tạo mới khu vực
     update(id: string, dto: ZoneUpdateDTO): Promise<void>; // Cập nhật thông tin khu vực

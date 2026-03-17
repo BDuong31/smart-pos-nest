@@ -3,14 +3,17 @@ import { RESERVATION_SERVICE } from "../operations.di-token";
 import {type IReservationService } from "../ports/reservation.port";
 import { RolesGuard } from "src/share/guard/roles";
 import { RemoteAuthGuard, Roles } from "src/share/guard";
-import { getIPv4FromReq,type PagingDTO, type ReqWithRequester, UserRole } from "src/share";
+import { AppError, getIPv4FromReq,type IPublicTableRpc,type IPublicUserRpc,type PagingDTO, type ReqWithRequester, TABLE_RPC, USER_RPC, UserRole } from "src/share";
 import {type Request as ExpressRequest } from "express";
 import type { ReservationUpdateDTO, ReservationCreatedDTO, ReservationCondDTO } from "../dtos/reservation.dto";
+import { ErrReservationNotFound, Reservation } from "../models/reservation.model";
 
 @Controller('v1/reservations')
 export class ReservationHttpController {
     constructor(
-        @Inject(RESERVATION_SERVICE) private readonly reservationService: IReservationService
+        @Inject(RESERVATION_SERVICE) private readonly reservationService: IReservationService,
+        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
+        @Inject(TABLE_RPC) private readonly tableRpc: IPublicTableRpc,
     ){}
     
     // API để tạo mới đặt bàn
@@ -48,7 +51,19 @@ export class ReservationHttpController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') id: string) {
-        const data = await this.reservationService.get(id);
+        const result = await this.reservationService.get(id);
+
+        if (!result) {
+            throw AppError.from(ErrReservationNotFound, 404);
+        }
+        let user;
+        if (result.userId) {
+            user = await this.userRpc.getUserById(result.userId);
+        }
+        const table = await this.tableRpc.findById(result.tableId);
+
+        const data = { ...result, user, table } as Reservation;
+
         return { data };
     }
 
@@ -63,8 +78,8 @@ export class ReservationHttpController {
     // API để lấy danh sách đặt bàn theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.reservationService.listByIds(ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
+        const data = await this.reservationService.listByIds(ids);
         return { data };
     }
 }
@@ -86,8 +101,8 @@ export class ReservationRpcController {
     // RPC để lấy danh sách đặt bàn theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.reservationService.listByIds(ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.reservationService.listByIds(ids);
         return { data };
     }
 }

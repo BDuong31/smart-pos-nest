@@ -15,7 +15,7 @@ export interface ICartService {
 
     getCart(userId: string): Promise<Cart | null>; // Lấy thông tin giỏ hàng theo ID người dùng
     listCart(cond: CartCondDTO, paging: PagingDTO): Promise<Paginated<Cart>>; // Lấy danh sách giỏ hàng theo điều kiện
-    listCartByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Cart>>; // Lấy danh sách giỏ hàng theo nhiều ID
+    listCartByIds(ids: string[]): Promise<Cart[]>; // Lấy danh sách giỏ hàng theo nhiều ID
 
     // Cart Item
     createCartItem(requester: Requester, dto: CartItemCreateDTO, ip: string, userAgent: string): Promise<string>; // Tạo mục sản phẩm mới trong giỏ hàng
@@ -24,7 +24,7 @@ export interface ICartService {
 
     getCartItem(id: string): Promise<CartItem | null>; // Lấy thông tin mục sản phẩm trong giỏ hàng theo ID
     listCartItem(cond: CartItemCondDTO, paging: PagingDTO): Promise<Paginated<CartItem>>; // Lấy danh sách mục sản phẩm trong giỏ hàng theo điều kiện
-    listCartItemByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItem>>; // Lấy danh sách mục sản phẩm trong giỏ hàng theo nhiều ID
+    listCartItemByIds(ids: string[]): Promise<CartItem[]>; // Lấy danh sách mục sản phẩm trong giỏ hàng theo nhiều ID
 
     // Cart Item Option
     createCartItemOption(requester: Requester, dto: CartItemOptionCreateDTO, ip: string, userAgent: string): Promise<string>; // Tạo tùy chọn sản phẩm mới trong mục giỏ hàng
@@ -33,7 +33,7 @@ export interface ICartService {
 
     getCartItemOption(id: string): Promise<CartItemOption | null>; // Lấy thông tin tùy chọn sản phẩm trong mục giỏ hàng theo ID
     listCartItemOption(cond: CartItemOptionCondDTO, paging: PagingDTO): Promise<Paginated<CartItemOption>>; // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo điều kiện
-    listCartItemOptionByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItemOption>>; // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo nhiều ID
+    listCartItemOptionByIds(ids: string[]): Promise<CartItemOption[]>; // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo nhiều ID
 }
 
 // Định nghĩa các phương thức mà CartRepository phải triển khai
@@ -41,8 +41,8 @@ export interface ICartRepository {
     // Cart
     getCart(userId: string): Promise<Cart | null>; // Lấy thông tin giỏ hàng theo ID người dùng
     listCart(cond: CartCondDTO, paging: PagingDTO): Promise<Paginated<Cart>>; // Lấy danh sách giỏ hàng theo điều kiện
-    listCartByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Cart>>; // Lấy danh sách giỏ hàng theo nhiều ID
-
+    listCartByIds(ids: string[]): Promise<Cart[]>; // Lấy danh sách giỏ hàng theo nhiều ID
+    
     insertCart(cart: Cart): Promise<void>; // Tạo mới giỏ hàng
     updateCart(userId: string, dto: CartUpdateDTO): Promise<void>; // Cập nhật thông tin giỏ hàng theo ID người dùng
     deleteCart(userId: string): Promise<void>; // Xóa giỏ hàng theo ID người dùng
@@ -50,7 +50,7 @@ export interface ICartRepository {
     // Cart Item
     getCartItem(id: string): Promise<CartItem | null>; // Lấy thông tin mục sản phẩm trong giỏ hàng theo ID
     listCartItem(cond: CartItemCondDTO, paging: PagingDTO): Promise<Paginated<CartItem>>; // Lấy danh sách mục sản phẩm trong giỏ hàng theo điều kiện
-    listCartItemByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItem>>; // Lấy danh sách mục sản phẩm trong giỏ hàng theo nhiều ID
+    listCartItemByIds(ids: string[]): Promise<CartItem[]>; // Lấy danh sách mục sản phẩm trong giỏ hàng theo nhiều ID
 
     insertCartItem(cartItem: CartItem): Promise<void>; // Tạo mới mục sản phẩm trong giỏ hàng
     updateCartItem(id: string, dto: CartItemUpdateDTO): Promise<void>; // Cập nhật thông tin mục sản phẩm trong giỏ hàng theo ID
@@ -59,7 +59,7 @@ export interface ICartRepository {
     // Cart Item Option
     getCartItemOption(id: string): Promise<CartItemOption | null>; // Lấy thông tin tùy chọn sản phẩm trong mục giỏ hàng theo ID
     listCartItemOption(cond: CartItemOptionCondDTO, paging: PagingDTO): Promise<Paginated<CartItemOption>>; // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo điều kiện
-    listCartItemOptionByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItemOption>>; // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo nhiều ID
+    listCartItemOptionByIds(ids: string[]): Promise<CartItemOption[]>; // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo nhiều ID
 
     insertCartItemOption(cartItemOption: CartItemOption): Promise<void>; // Tạo mới tùy chọn sản phẩm trong mục giỏ hàng
     updateCartItemOption(id: string, dto: CartItemOptionUpdateDTO): Promise<void>; // Cập nhật thông tin tùy chọn sản phẩm trong mục giỏ hàng theo ID

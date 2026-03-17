@@ -101,23 +101,10 @@ export class VoucherPrismaRepo implements IVoucherRepository {
     }
 
     // Lấy danh sách voucher theo nhiều ID  
-    async listVouchersByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Voucher>> {
-        const total = await prisma.voucher.count({ where: { id: { in: ids } } });
+    async listVouchersByIds(ids: string[]): Promise<Voucher[]> {
+        const data = await prisma.voucher.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.voucher.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return data.map(this._toModel);
     }
 
     // Tạo mới voucher

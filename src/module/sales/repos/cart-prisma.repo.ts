@@ -60,23 +60,10 @@ export class CartPrismaRepo implements ICartRepository {
     }
 
     // Lấy danh sách giỏ hàng theo nhiều ID
-    async listCartByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Cart>> {
-        const total = await prisma.cart.count({ where: { userId: { in: ids } } });
+    async listCartByIds(ids: string[]): Promise<Cart[]> {
+        const result = await prisma.cart.findMany({ where: { id: { in: ids } },});
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.cart.findMany({
-            where: { userId: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toCartModel),
-            paging,
-            total
-        };
+        return result.map(this._toCartModel);
     }
 
     // Tạo mới giỏ hàng
@@ -153,23 +140,10 @@ export class CartPrismaRepo implements ICartRepository {
 
 
     // Lấy danh sách mục sản phẩm trong giỏ hàng theo nhiều ID
-    async listCartItemByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItem>> {
-        const total = await prisma.cartItem.count({ where: { id: { in: ids } } });
+    async listCartItemByIds(ids: string[]): Promise<CartItem[]> {
+        const data = await prisma.cartItem.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.cartItem.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });  
-
-        return {
-            data: result.map(this._toCartItemModel),
-            paging,
-            total
-        }
+        return data.map(this._toCartItemModel);
     }
 
     // Tạo mới mục sản phẩm trong giỏ hàng
@@ -238,23 +212,10 @@ export class CartPrismaRepo implements ICartRepository {
     }
 
     // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo nhiều ID
-    async listCartItemOptionByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItemOption>> {
-        const total = await prisma.cartItemOption.count({ where: { id: { in: ids } } });
+    async listCartItemOptionByIds(ids: string[]): Promise<CartItemOption[]> {
+        const data = await prisma.cartItemOption.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.cartItemOption.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toCartItemOptionModel),
-            paging,
-            total
-        }
+        return data.map(this._toCartItemOptionModel);
     }
 
     // Tạo mới tùy chọn sản phẩm trong mục giỏ hàng

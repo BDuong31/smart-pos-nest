@@ -1,3 +1,4 @@
+import { PublicOptionItem, PublicOrder, PublicProduct, PublicTable, PublicUser, PublicVariant } from "src/share/data-model";
 import { z } from "zod";
 
 // ============================
@@ -85,7 +86,7 @@ export const orderSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type Order = z.infer<typeof orderSchema>;
+export type Order = z.infer<typeof orderSchema> & { user?: PublicUser };
 
 // Mô hình dữ liệu cho OrderItem
 export const orderItemSchema = z.object({
@@ -100,7 +101,7 @@ export const orderItemSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type OrderItem = z.infer<typeof orderItemSchema>;
+export type OrderItem = z.infer<typeof orderItemSchema> & { product?: PublicProduct, variant?: PublicVariant };
 
 // Mô hình dữ liệu cho OrderItemOption
 export const orderItemOptionSchema = z.object({
@@ -113,7 +114,7 @@ export const orderItemOptionSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type OrderItemOption = z.infer<typeof orderItemOptionSchema>;
+export type OrderItemOption = z.infer<typeof orderItemOptionSchema> & { optionItem?: PublicOptionItem };
 
 // Mô hình dữ liệu cho OrderVoucher
 export const orderVoucherSchema = z.object({
@@ -136,7 +137,7 @@ export const orderTableSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type OrderTable = z.infer<typeof orderTableSchema>;
+export type OrderTable = z.infer<typeof orderTableSchema> & { table?: PublicTable };
 
 // Mô hình dữ liệu cho hoá đơn công ty (Invoice)
 export const invoiceSchema = z.object({
@@ -148,4 +149,4 @@ export const invoiceSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type Invoice = z.infer<typeof invoiceSchema>;
+export type Invoice = z.infer<typeof invoiceSchema> & { order?: PublicOrder };

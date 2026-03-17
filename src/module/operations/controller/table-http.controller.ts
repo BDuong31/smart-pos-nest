@@ -3,14 +3,16 @@ import { TABLE_SERVICE } from "../operations.di-token";
 import { type ITableService } from "../ports/table.port";
 import { RolesGuard } from "src/share/guard/roles";
 import { RemoteAuthGuard, Roles } from "src/share/guard";
-import { getIPv4FromReq,type PagingDTO, type ReqWithRequester, UserRole } from "src/share";
+import { AppError, getIPv4FromReq,type IPublicZoneRpc,type PagingDTO, type ReqWithRequester, UserRole, ZONE_RPC } from "src/share";
 import {type Request as ExpressRequest } from "express";
 import type { TableUpdateDTO, TableCreatedDTO, TableCondDTO } from "../dtos/table.dto";
+import { ErrTableNotFound, Table } from "../models/table.model";
 
 @Controller('v1/tables')
 export class TableHttpController {
     constructor(
-        @Inject(TABLE_SERVICE) private readonly tableService: ITableService
+        @Inject(TABLE_SERVICE) private readonly tableService: ITableService,
+        @Inject(ZONE_RPC) private readonly zoneRpc: IPublicZoneRpc,
     ){}
 
     // API để tạo mới bàn
@@ -54,7 +56,15 @@ export class TableHttpController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') id: string) {
-        const data = await this.tableService.get(id);
+        const result = await this.tableService.get(id);
+
+        if (!result) {
+            throw AppError.from(ErrTableNotFound, 404);
+        }
+
+        const zone = await this.zoneRpc.findById(result.zoneId);
+        
+        const data = { ...result, zone } as Table;
         return { data };
     }
 
@@ -69,17 +79,17 @@ export class TableHttpController {
     // API để lấy danh sách bàn theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.tableService.listByIds(ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
+        const data = await this.tableService.listByIds(ids);
         return { data };
     }
 
     // API để lấy danh sách bàn trống theo thời gian và điều kiện với phân trang
     @Get('available')
     @HttpCode(HttpStatus.OK)
-    async listByAvailable(@Request() req: ReqWithRequester, @Query('time') time: string, @Query() cond: TableCondDTO, @Query() paging: PagingDTO) {
+    async listByAvailable(@Request() req: ReqWithRequester, @Query('time') time: string, @Query() cond: TableCondDTO) {
         const timeDate = new Date(time);
-        const data = await this.tableService.listByAvailable(timeDate, cond, paging);
+        const data = await this.tableService.listByAvailable(timeDate, cond);
         return { data };
     }
 }
@@ -101,17 +111,17 @@ export class TableRpcController {
     // RPC để lấy danh sách bàn theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.tableService.listByIds(ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
+        const data = await this.tableService.listByIds(ids);
         return { data };
     }
 
     // RPC để lấy danh sách bàn trống theo thời gian và điều kiện với phân trang
     @Get('available')
     @HttpCode(HttpStatus.OK)
-    async listByAvailable(@Request() req: ReqWithRequester, @Query('time') time: string, @Query() cond: TableCondDTO, @Query() paging: PagingDTO) {
+    async listByAvailable(@Request() req: ReqWithRequester, @Query('time') time: string, @Query() cond: TableCondDTO) {
         const timeDate = new Date(time);
-        const data = await this.tableService.listByAvailable(timeDate, cond, paging);
+        const data = await this.tableService.listByAvailable(timeDate, cond);
         return { data };
     }
 }

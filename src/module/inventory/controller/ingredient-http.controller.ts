@@ -21,8 +21,8 @@ export class IngredientHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const ingredient = await this.ingredientService.create(requester, dto, ip, userAgent);
-        return ingredient;
+        const data = await this.ingredientService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API để cập nhật thông tin nguyên liệu theo ID
@@ -34,8 +34,8 @@ export class IngredientHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const updatedIngredient = await this.ingredientService.update(requester, ingredientId, dto, ip, userAgent);
-        return updatedIngredient;
+        const data = await this.ingredientService.update(requester, ingredientId, dto, ip, userAgent);
+        return { data };
     }   
 
     // API để xóa nguyên liệu theo ID
@@ -56,8 +56,8 @@ export class IngredientHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: IngredientCondDTO,  @Query() paging: PagingDTO) {
-        const ingredients = await this.ingredientService.list(cond, paging);
-        return paginatedResponse(ingredients, paging);
+        const result = await this.ingredientService.list(cond, paging);
+        return paginatedResponse(result, paging);
     }
 
     // API để lấy thông tin nguyên liệu theo ID
@@ -66,8 +66,8 @@ export class IngredientHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') ingredientId: string) {
-        const ingredient = await this.ingredientService.get(ingredientId);
-        return ingredient;
+        const data = await this.ingredientService.get(ingredientId);
+        return { data };
     }
 
     // API để lấy thông tin nguyên liệu theo nhiều ID
@@ -75,9 +75,9 @@ export class IngredientHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const ingredients = await this.ingredientService.listByIds(ids, paging);
-        return paginatedResponse(ingredients, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.ingredientService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -91,15 +91,15 @@ export class IngredientRpcController {
      @Get(':id')
      @HttpCode(HttpStatus.OK)
      async get(@Param('id') ingredientId: string) {
-         const ingredient = await this.ingredientService.get(ingredientId);
-         return ingredient;
+         const data = await this.ingredientService.get(ingredientId);
+         return { data };
      }
 
      // RPC lấy danh sách nguyên liệu theo nhiều ID
      @Post('list-by-ids')
      @HttpCode(HttpStatus.OK)
-     async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-         const ingredients = await this.ingredientService.listByIds(ids, paging);
-         return paginatedResponse(ingredients, paging);
+     async listByIds(@Body('ids') ids: string[]) {
+         const data = await this.ingredientService.listByIds(ids);
+         return { data };
      }
 }

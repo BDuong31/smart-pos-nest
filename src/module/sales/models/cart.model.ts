@@ -1,4 +1,5 @@
 import { create } from 'axios';
+import { PublicProduct, PublicVariant } from 'src/share';
 import { z } from 'zod';
 
 // ============================
@@ -42,12 +43,14 @@ export const cartItemSchema = z.object({
     id: z.string().uuid(),
     cartId: z.string().uuid(),
     productId: z.string().uuid(),
+    variantId: z.string().uuid().nullable(),
     quantity: z.number().min(0, ErrCartItemQuantityNegative),
+    note: z.string().max(500).nullable(),
     createdAt: z.date(),
     updatedAt: z.date(),
 })
 
-export type CartItem = z.infer<typeof cartItemSchema>;
+export type CartItem = z.infer<typeof cartItemSchema> & { product?: PublicProduct, variant?: PublicVariant };
 
 // Mô hình dữ liệu cho CartItemOption
 export const cartItemOptionSchema = z.object({
@@ -58,4 +61,4 @@ export const cartItemOptionSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type CartItemOption = z.infer<typeof cartItemOptionSchema>;
+export type CartItemOption = z.infer<typeof cartItemOptionSchema> & { optionItem?: PublicVariant };

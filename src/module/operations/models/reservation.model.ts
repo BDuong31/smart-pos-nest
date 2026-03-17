@@ -1,3 +1,4 @@
+import { PublicTable, PublicUser } from 'src/share';
 import { z } from 'zod';
 
 // Định nghĩa lỗi về đặt bàn
@@ -47,4 +48,4 @@ export const reservationSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type Reservation = z.infer<typeof reservationSchema>;
+export type Reservation = z.infer<typeof reservationSchema> & { user?: PublicUser, table?: PublicTable};

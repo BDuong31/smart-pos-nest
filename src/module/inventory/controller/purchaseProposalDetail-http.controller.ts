@@ -1,18 +1,21 @@
 import { Inject, Controller, Get, Query, HttpCode, HttpStatus, UseGuards, Post, Body, Patch, Delete, Param } from '@nestjs/common';
 import { PURCHASEPROPOSALDETAIL_SERVICE } from '../inventory.di-token';
 import type { IPurchaseProposalDetailService } from '../ports/purchaseProposalDetail.port';
-import type { PurchaseProposalDetailCreateDTO, PurchaseProposalDetailUpdateDTO } from '../dtos/purchaseProposalDetail.dto';
+import { purchaseProposalDetailCondDTOSchema, type PurchaseProposalDetailCreateDTO, type PurchaseProposalDetailUpdateDTO } from '../dtos/purchaseProposalDetail.dto';
 import { Request } from '@nestjs/common';
 import { type Request as ExpressRequest } from 'express';
-import { getIPv4FromReq, type ReqWithRequester } from 'src/share';
+import { AppError, getIPv4FromReq, INGREDIENT_RPC,pagingDTOSchema,PublicIngredient,type IPublicIngredientRpc, type ReqWithRequester } from 'src/share';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
 import type { PurchaseProposalDetailCondDTO } from '../dtos/purchaseProposalDetail.dto';
 import { paginatedResponse, type PagingDTO, UserRole } from 'src/share';
+import { ErrPurchaseProposalNotFound } from '../models/purchaseProposal.model';
+import { PurchaseProposalDetail } from '../models/purchaseProposalDetail.model';
 
 @Controller('v1/purchase-proposal-details') 
 export class PurchaseProposalDetailHttpController {
     constructor(
         @Inject(PURCHASEPROPOSALDETAIL_SERVICE) private readonly purchaseProposalDetailService: IPurchaseProposalDetailService,
+        @Inject(INGREDIENT_RPC) private readonly ingredientRpc: IPublicIngredientRpc,
     ){} 
 
     // API tạo mới chi tiết đề xuất mua hàng
@@ -24,8 +27,8 @@ export class PurchaseProposalDetailHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const purchaseProposalDetail = await this.purchaseProposalDetailService.create(requester, dto, ip, userAgent);
-        return purchaseProposalDetail;
+        const data = await this.purchaseProposalDetailService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API cập nhật chi tiết đề xuất mua hàng theo ID
@@ -37,8 +40,8 @@ export class PurchaseProposalDetailHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const purchaseProposalDetail = await this.purchaseProposalDetailService.update(requester, id, dto, ip, userAgent);
-        return purchaseProposalDetail;
+        const data = await this.purchaseProposalDetailService.update(requester, id, dto, ip, userAgent);
+        return { data };
     }
 
     // API xóa chi tiết đề xuất mua hàng theo ID
@@ -59,8 +62,16 @@ export class PurchaseProposalDetailHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const purchaseProposalDetail = await this.purchaseProposalDetailService.get(id);
-        return purchaseProposalDetail;
+        const result = await this.purchaseProposalDetailService.get(id);
+
+        if (!result) {
+            throw AppError.from(ErrPurchaseProposalNotFound, 404);
+        }
+
+        const ingredient = await this.ingredientRpc.findById(result.ingredientId);
+
+        const data = { ...result, ingredient } as PurchaseProposalDetail;
+        return { data };
     }
 
     // API lấy danh sách chi tiết đề xuất mua hàng theo điều kiện
@@ -69,8 +80,29 @@ export class PurchaseProposalDetailHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: PurchaseProposalDetailCondDTO, @Query() paging: PagingDTO) {
-        const purchaseProposalDetails = await this.purchaseProposalDetailService.list(cond, paging);
-        return paginatedResponse(purchaseProposalDetails, paging);
+        paging = pagingDTOSchema.parse(paging);
+        cond = purchaseProposalDetailCondDTOSchema.parse(cond);
+
+        const result = await this.purchaseProposalDetailService.list(cond, paging);
+        
+        const ingredientIds = result.data.map(item => item.ingredientId);
+
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.map(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            })
+        }
+
+        result.data = result.data.map(item => {
+            const ingredient = ingredientMap[item.ingredientId];
+            return { ...item, ingredient } as PurchaseProposalDetail
+        })
+
+        return paginatedResponse(result, paging);
     }
 
     // API lấy thông tin chi tiết đề xuất mua hàng theo nhiều ID
@@ -78,9 +110,9 @@ export class PurchaseProposalDetailHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const purchaseProposalDetails = await this.purchaseProposalDetailService.listByIds(ids, paging);
-        return paginatedResponse(purchaseProposalDetails, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.purchaseProposalDetailService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -94,15 +126,15 @@ export class PurchaseProposalDetailRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const purchaseProposalDetail = await this.purchaseProposalDetailService.get(id);
-        return purchaseProposalDetail;
+        const data = await this.purchaseProposalDetailService.get(id);
+        return { data };
      }
 
     // RPC lấy thông tin chi tiết đề xuất mua hàng theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const purchaseProposalDetails = await this.purchaseProposalDetailService.listByIds(ids, paging);
-        return paginatedResponse(purchaseProposalDetails, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.purchaseProposalDetailService.listByIds(ids);
+        return { data };
     }
 }

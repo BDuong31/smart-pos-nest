@@ -80,23 +80,10 @@ export class PaymentPrismaRepo implements IPaymentRepository {
     }
 
     // Lấy danh sách giao dịch thanh toán theo nhiều ID
-    async listPaymentsByIds(paymentIds: string[], paging: PagingDTO): Promise<Paginated<PaymentTransaction>> {
-        const total = await prisma.paymentTransaction.count({ where: { id: { in: paymentIds } } }); 
+    async listPaymentsByIds(ids: string[]): Promise<PaymentTransaction[]> {
+        const data = await prisma.paymentTransaction.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.paymentTransaction.findMany({
-            where: { id: { in: paymentIds } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        };
+        return data.map(this._toModel);
     }
 
     // Tạo mới giao dịch thanh toán

@@ -1,18 +1,20 @@
 import { Inject, Controller, Get, Query, HttpCode, HttpStatus, UseGuards, Post, Body, Patch, Delete, Param } from '@nestjs/common';
 import { STOCKCHECK_SERVICE } from '../inventory.di-token';
 import type { IStockCheckService } from '../ports/stockCheck.port';
-import type { StockCheckCreateDTO, StockCheckUpdateDTO } from '../dtos/stockCheck.dto';
+import { stockCheckCondDTOSchema, type StockCheckCreateDTO, type StockCheckUpdateDTO } from '../dtos/stockCheck.dto';
 import { Request } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
-import { getIPv4FromReq, type ReqWithRequester } from 'src/share';
+import { getIPv4FromReq, USER_RPC, type ReqWithRequester, type IPublicUserRpc, AppError, pagingDTOSchema, PublicUser } from 'src/share';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
 import type { StockCheckCondDTO } from '../dtos/stockCheck.dto';
 import { paginatedResponse, type PagingDTO, UserRole } from 'src/share';
+import { ErrStockCheckNotFound, StockCheck } from '../models/stockCheck.model';
 
 @Controller('v1/stock-checks')
 export class StockCheckHttpController {
     constructor(
         @Inject(STOCKCHECK_SERVICE) private readonly stockCheckService: IStockCheckService,
+        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
     ){}
 
     // API tạo mới kiểm kê tồn kho
@@ -24,8 +26,8 @@ export class StockCheckHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const stockCheck = await this.stockCheckService.create(requester, dto, ip, userAgent);
-        return stockCheck;
+        const data = await this.stockCheckService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API cập nhật kiểm kê tồn kho theo ID
@@ -37,8 +39,8 @@ export class StockCheckHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const stockCheck = await this.stockCheckService.update(requester, id, dto, ip, userAgent);
-        return stockCheck;
+        const data = await this.stockCheckService.update(requester, id, dto, ip, userAgent);
+        return { data };
     }
 
     // API xóa kiểm kê tồn kho theo ID
@@ -59,8 +61,16 @@ export class StockCheckHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const stockCheck = await this.stockCheckService.get(id);
-        return stockCheck;
+        const result = await this.stockCheckService.get(id);
+
+        if (!result) {
+            throw AppError.from(ErrStockCheckNotFound, 404);
+        }
+
+        const user = await this.userRpc.getUserById(result.userId);
+
+        const data = { ...result, user } as StockCheck;
+        return { data };
     }
 
     // API lấy danh sách kiểm kê tồn kho theo điều kiện
@@ -69,8 +79,28 @@ export class StockCheckHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: StockCheckCondDTO, @Query() paging: PagingDTO) {
-        const stockChecks = await this.stockCheckService.list(cond, paging);
-        return paginatedResponse(stockChecks, paging);
+        paging = pagingDTOSchema.parse(paging);
+        cond = stockCheckCondDTOSchema.parse(cond);
+
+        const result = await this.stockCheckService.list(cond, paging);
+
+        const userIds = result.data.map(stockCheck => stockCheck.userId).filter(userId => !!userId);
+        const users = await this.userRpc.getUsersByIds(userIds);
+
+        const userMap: Record<string, PublicUser> = {};
+
+        if (users) {
+            users.map(user => {
+                userMap[user.id] = user;
+            })
+        }
+
+        result.data.map(stockCheck => {
+            const user = userMap[stockCheck.userId];
+            return { ...stockCheck, user } as StockCheck;
+        })
+
+        return paginatedResponse(result, paging);
      }
 
     // API lấy danh sách kiểm kê tồn kho theo nhiều ID
@@ -78,9 +108,9 @@ export class StockCheckHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body() ids: string[], @Query() paging: PagingDTO) {
-        const stockChecks = await this.stockCheckService.listByIds(ids, paging);
-        return paginatedResponse(stockChecks, paging);
+    async listByIds(@Body() ids: string[]) {
+        const data = await this.stockCheckService.listByIds(ids);
+        return { data };
     }
 
 }
@@ -100,10 +130,10 @@ export class StockCheckRpcController {
      }
 
     // RPC lấy danh sách kiểm kê tồn kho theo điều kiện
-    @Get()
+    @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: StockCheckCondDTO, @Query() paging: PagingDTO) {
-        const stockChecks = await this.stockCheckService.list(cond, paging);
-        return paginatedResponse(stockChecks, paging);
-     }
+    async listByIds(@Body() ids: string[]) {
+        const data = await this.stockCheckService.listByIds(ids);
+        return { data };    
+    }
 }

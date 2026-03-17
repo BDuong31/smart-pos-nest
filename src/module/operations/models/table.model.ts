@@ -1,3 +1,4 @@
+import { PublicTable, PublicZone } from 'src/share';
 import { z } from 'zod';
 import { ca } from 'zod/v4/locales';
 
@@ -34,4 +35,4 @@ export const tableSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type Table = z.infer<typeof tableSchema>;
+export type Table = z.infer<typeof tableSchema> & { zone?: PublicZone};

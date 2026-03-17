@@ -17,8 +17,8 @@ export interface ITableService {
     // Service truy vấn bàn
     get(id: string): Promise<Table | null>; // Lấy thông tin bàn theo ID
     list(cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>>; // Lấy danh sách bàn theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Table>>; // Lấy danh sách bàn theo nhiều ID
-    listByAvailable(time: Date, cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>>; // Lấy danh sách bàn trống
+    listByIds(ids: string[]): Promise<Table[]>; // Lấy danh sách bàn theo nhiều ID
+    listByAvailable(time: Date, cond: TableCondDTO): Promise<Table[]>; // Lấy danh sách bàn trống
 }
 
 // Định nghĩa các phương thức mà TableRepository phải triển khai
@@ -26,8 +26,8 @@ export interface ITableRepository {
     // truy vấn
     get(id: string): Promise<Table | null>; // Lấy thông tin bàn theo ID
     list(cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>>; // Lấy danh sách bàn theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Table>>; // Lấy danh sách bàn theo nhiều 
-    listAvailable(reservations: Reservation[], cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>>; // Lấy danh sách bàn trống theo thời gian và điều kiện
+    listByIds(ids: string[]): Promise<Table[]>; // Lấy danh sách bàn theo nhiều ID
+    listAvailable(reservations: Reservation[], time: Date, cond: TableCondDTO): Promise<Table[]>; // Lấy danh sách bàn trống theo thời gian và điều kiện
     
     // thao tác dữ liệu
     insert(table: Table): Promise<void>; // Tạo mới bàn

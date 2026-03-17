@@ -94,23 +94,10 @@ export class ReservationPrismaRepo implements IReservationRepository {
     }
 
     // Lấy danh sách đặt bàn theo nhiều ID
-    async listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Reservation>> {
-        const total = await prisma.reservation.count({ where: { id: { in: ids } } });
+    async listByIds(ids: string[]): Promise<Reservation[]> {
+        const data = await prisma.reservation.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.reservation.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { time: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+        return data.map(this._toModel);
     }
 
     // Lấy danh sách đặt bàn theo khoảng thời gian

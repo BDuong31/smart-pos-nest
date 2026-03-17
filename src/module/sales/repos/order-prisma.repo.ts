@@ -67,23 +67,10 @@ export class OrderPrismaRepo implements IOrderRepository {
     }
 
     // Lấy danh sách đơn hàng theo nhiều ID
-    async listOrdersByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Order>> {
-        const total = await prisma.order.count({ where: { id: { in: ids } } });
+    async listOrdersByIds(ids: string[]): Promise<Order[]> {
+        const data = await prisma.order.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.order.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toOrderModel),
-            paging,
-            total
-        };
+        return data.map(this._toOrderModel);
     }
 
     // Tạo mới đơn hàng
@@ -180,23 +167,10 @@ export class OrderPrismaRepo implements IOrderRepository {
     }
 
     // Lấy danh sách mục sản phẩm trong đơn hàng theo nhiều ID
-    async listOrderItemsByIds(ids: string[], paging: PagingDTO): Promise<Paginated<OrderItem>> {
-        const total = await prisma.orderItem.count({ where: { id: { in: ids } } });
+    async listOrderItemsByIds(ids: string[]): Promise<OrderItem[]> {
+        const data = await prisma.orderItem.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.orderItem.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { productName: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toOrderItemModel),
-            paging,
-            total
-        };
+        return data.map(this._toOrderItemModel);
     }
 
     // Tạo mới mục sản phẩm trong đơn hàng
@@ -279,25 +253,12 @@ export class OrderPrismaRepo implements IOrderRepository {
     }
 
     // Lấy danh sách tùy chọn sản phẩm trong mục đơn hàng theo nhiều ID
-    async listOrderItemOptionsByIds(ids: string[], paging: PagingDTO): Promise<Paginated<OrderItemOption>> {
-        const total = await prisma.orderItemOption.count({ where: { id: { in: ids } } });
+    async listOrderItemOptionsByIds(ids: string[]): Promise<OrderItemOption[]> {
+        const data = await prisma.orderItemOption.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.orderItemOption.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { optionName: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toOrderItemOptionModel),
-            paging,
-            total
-        };
+        return data.map(this._toOrderItemOptionModel);
     }
-
+   
     // Tạo mới tùy chọn sản phẩm trong mục đơn hàng
     async insertOrderItemOption(orderItemOption: OrderItemOption): Promise<void> {
         await prisma.orderItemOption.create({ data: orderItemOption });
@@ -371,23 +332,10 @@ export class OrderPrismaRepo implements IOrderRepository {
     }
 
     // Lấy danh sách voucher trong đơn hàng theo nhiều ID
-    async listOrderVouchersByIds(ids: string[], paging: PagingDTO): Promise<Paginated<OrderVoucher>> {
-        const total = await prisma.orderVoucher.count({ where: { id: { in: ids } } });
+    async listOrderVouchersByIds(ids: string[]): Promise<OrderVoucher[]> {
+        const data = await prisma.orderVoucher.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.orderVoucher.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toOrderVoucherModel),
-            paging,
-            total
-        };
+        return data.map(this._toOrderVoucherModel);
     }
 
     // Tạo mới voucher trong đơn hàng
@@ -456,23 +404,10 @@ export class OrderPrismaRepo implements IOrderRepository {
     }
 
     // Lấy danh sách bàn trong đơn hàng theo nhiều ID
-    async listOrderTablesByIds(ids: string[], paging: PagingDTO): Promise<Paginated<OrderTable>> {
-        const total = await prisma.orderTable.count({ where: { id: { in: ids } } });
+    async listOrderTablesByIds(ids: string[]): Promise<OrderTable[]> {
+        const data = await prisma.orderTable.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.orderTable.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { createdAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toOrderTableModel),
-            paging,
-            total
-        };
+        return data.map(this._toOrderTableModel);
     }
 
     // Tạo mới bàn trong đơn hàng
@@ -547,23 +482,10 @@ export class OrderPrismaRepo implements IOrderRepository {
     }
 
     // Lấy danh sách hoá đơn công ty theo nhiều ID
-    async listInvoicesByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Invoice>> {
-        const total = await prisma.invoice.count({ where: { id: { in: ids } } });
+    async listInvoicesByIds(ids: string[]): Promise<Invoice[]> {
+        const data = await prisma.invoice.findMany({ where: { id: { in: ids } } });
 
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.invoice.findMany({
-            where: { id: { in: ids } },
-            skip,
-            take: paging.limit,
-            orderBy: { issuedAt: 'desc' },
-        });
-
-        return {
-            data: result.map(this._toInvoiceModel),
-            paging,
-            total
-        };
+        return data.map(this._toInvoiceModel);
     }
 
     // Tạo mới hoá đơn công ty

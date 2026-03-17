@@ -21,8 +21,8 @@ export class ImportInvoiceHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const importInvoice = await this.importInvoiceService.create(requester, dto, ip, userAgent);
-        return importInvoice;
+        const data = await this.importInvoiceService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API để cập nhật thông tin phiếu nhập hàng theo ID
@@ -34,8 +34,8 @@ export class ImportInvoiceHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const importInvoice = await this.importInvoiceService.update(requester, id, dto, ip, userAgent);
-        return importInvoice;
+        const data = await this.importInvoiceService.update(requester, id, dto, ip, userAgent);
+        return { data };
     }
 
     // API để xóa phiếu nhập hàng theo ID
@@ -58,8 +58,8 @@ export class ImportInvoiceHttpController {
     async list(@Query() cond: ImportInvoiceCondDTO, @Query() paging: PagingDTO) {
         paging = pagingDTOSchema.parse(paging);
         cond = importInvoiceCondDTOSchema.parse(cond);
-        const importInvoices = await this.importInvoiceService.list(cond, paging);
-        return paginatedResponse(importInvoices, paging);
+        const result = await this.importInvoiceService.list(cond, paging);
+        return paginatedResponse(result, paging);
     }
 
     // API để lấy chi tiết phiếu nhập hàng theo ID
@@ -94,15 +94,15 @@ export class ImportInvoiceRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const importInvoice = await this.importInvoiceService.get(id);
-        return importInvoice;
+        const data = await this.importInvoiceService.get(id);
+        return { data };
     }
 
     // RPC lấy danh sách phiếu nhập hàng theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const importInvoices = await this.importInvoiceService.listByIds(ids, paging);
-        return importInvoices;
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.importInvoiceService.listByIds(ids);
+        return { data };
     }
 }

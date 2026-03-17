@@ -2,14 +2,16 @@ import { Inject, Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, H
 import { UNITCONVERSION_SERVICE } from '../inventory.di-token';
 import type { IUnitConversionService } from '../ports/unitConversion.port'; 
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
-import type { UnitConversionCreateDTO, UnitConversionUpdateDTO, UnitConversionCondDTO } from '../dtos/unitConversion.dto';
-import { getIPv4FromReq, paginatedResponse, type PagingDTO, type ReqWithRequester, UserRole } from 'src/share';
+import { type UnitConversionCreateDTO, type UnitConversionUpdateDTO, type UnitConversionCondDTO, unitConversionCondDTOSchema } from '../dtos/unitConversion.dto';
+import { getIPv4FromReq, INGREDIENT_RPC,type IPublicIngredientRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicIngredient, type ReqWithRequester, UserRole } from 'src/share';
 import type { Request as ExpressRequest } from 'express';
+import { UnitConversion } from '../models/unitConversion.model';
 
 @Controller('v1/unit-conversions')
 export class UnitConversionHttpController {
     constructor(
         @Inject(UNITCONVERSION_SERVICE) private readonly unitConversionService: IUnitConversionService,
+        @Inject(INGREDIENT_RPC) private readonly ingredientRpc: IPublicIngredientRpc,
     ){}
 
     // API để tạo mới quy đổi đơn vị
@@ -21,8 +23,8 @@ export class UnitConversionHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const unitConversion = await this.unitConversionService.create(requester, dto, ip, userAgent);
-        return unitConversion;
+        const data = await this.unitConversionService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API để cập nhật thông tin quy đổi đơn vị theo ID
@@ -34,8 +36,8 @@ export class UnitConversionHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const updatedUnitConversion = await this.unitConversionService.update(requester, unitConversionId, dto, ip, userAgent);
-        return updatedUnitConversion;
+        const data = await this.unitConversionService.update(requester, unitConversionId, dto, ip, userAgent);
+        return { data };
     }
 
      // API để xóa quy đổi đơn vị theo ID
@@ -56,9 +58,27 @@ export class UnitConversionHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Request() req: ReqWithRequester, @Query() cond: UnitConversionCondDTO,  @Query() paging: PagingDTO) {
-        const requester = req.requester;
-        const unitConversions = await this.unitConversionService.list(cond, paging);
-        return paginatedResponse(unitConversions, paging);
+        paging = pagingDTOSchema.parse(paging);
+        cond = unitConversionCondDTOSchema.parse(cond);
+
+        const result = await this.unitConversionService.list(cond, paging);
+
+        const ingredientIds = result.data.map(uc => uc.ingredientId);
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.map(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            })
+        }
+
+        result.data = result.data.map(uc => {
+            const ingredient = ingredientMap[uc.ingredientId];
+            return { ...uc, ingredient } as UnitConversion;
+        })
+
+        return paginatedResponse(result, paging);
     }   
 
     // API để lấy thông tin quy đổi đơn vị theo ID
@@ -67,8 +87,8 @@ export class UnitConversionHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') unitConversionId: string) {
-        const unitConversion = await this.unitConversionService.get(unitConversionId);
-        return unitConversion;
+        const data = await this.unitConversionService.get(unitConversionId);
+        return {data};
     }
 
     // API để lấy danh sách quy đổi đơn vị theo nhiều ID    
@@ -76,9 +96,9 @@ export class UnitConversionHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const unitConversions = await this.unitConversionService.listByIds(ids, paging);
-        return paginatedResponse(unitConversions, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.unitConversionService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -92,16 +112,16 @@ export class UnitConversionRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') unitConversionId: string) {
-        const unitConversion = await this.unitConversionService.get(unitConversionId);
-        return unitConversion;
+        const data = await this.unitConversionService.get(unitConversionId);
+        return { data };
     }
 
 
     // RPC để lấy danh sách quy đổi đơn vị theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const unitConversions = await this.unitConversionService.listByIds(ids, paging);
-        return paginatedResponse(unitConversions, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.unitConversionService.listByIds(ids);
+        return { data };
     }  
 }

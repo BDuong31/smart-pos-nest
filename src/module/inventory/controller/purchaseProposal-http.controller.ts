@@ -1,18 +1,20 @@
 import { Inject, Controller, Get, Query, HttpCode, HttpStatus, UseGuards, Post, Body, Patch, Delete, Param } from '@nestjs/common';
 import { PURCHASEPROPOSAL_SERVICE } from '../inventory.di-token';
 import type { IPurchaseProposalService } from '../ports/purchaseProposal.port';
-import type { PurchaseProposalCreateDTO, PurchaseProposalUpdateDTO } from '../dtos/purchaseProposal.dto';
+import { purchaseProposalCondDTOSchema, type PurchaseProposalCreateDTO, type PurchaseProposalUpdateDTO } from '../dtos/purchaseProposal.dto';
 import { Request } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
-import { getIPv4FromReq, type ReqWithRequester } from 'src/share';
+import { getIPv4FromReq, type IPublicUserRpc, USER_RPC, type ReqWithRequester, AppError, pagingDTOSchema, PublicUser } from 'src/share';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
 import type { PurchaseProposalCondDTO } from '../dtos/purchaseProposal.dto';
 import { paginatedResponse, type PagingDTO, UserRole } from 'src/share';
+import { ErrPurchaseProposalNotFound, PurchaseProposal } from '../models/purchaseProposal.model';
 
 @Controller('v1/purchase-proposals')
 export class PurchaseProposalHttpController {
     constructor(
         @Inject(PURCHASEPROPOSAL_SERVICE) private readonly purchaseProposalService: IPurchaseProposalService,
+        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
     ){}
 
     // API tạo mới đề xuất mua hàng
@@ -24,8 +26,8 @@ export class PurchaseProposalHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const purchaseProposal = await this.purchaseProposalService.create(requester, dto, ip, userAgent);
-        return purchaseProposal;
+        const data = await this.purchaseProposalService.create(requester, dto, ip, userAgent);
+        return { data };
     }
 
     // API cập nhật đề xuất mua hàng theo ID
@@ -37,8 +39,8 @@ export class PurchaseProposalHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const purchaseProposal = await this.purchaseProposalService.update(requester, id, dto, ip, userAgent);
-        return purchaseProposal;
+        const data = await this.purchaseProposalService.update(requester, id, dto, ip, userAgent);
+        return { data };
      }
 
     // API xóa đề xuất mua hàng theo ID
@@ -59,8 +61,22 @@ export class PurchaseProposalHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const purchaseProposal = await this.purchaseProposalService.get(id);
-        return purchaseProposal;
+        const result = await this.purchaseProposalService.get(id);
+
+        if (!result) {
+            throw AppError.from(ErrPurchaseProposalNotFound, 404);
+        }
+
+        let data;
+
+        if (result.creatorId) {
+            const creator = await this.userRpc.getUserById(result.creatorId);
+            data = { ...result, creator };
+        } else {
+            data = result;
+        }
+
+        return { data };
      }
 
     // API lấy danh sách đề xuất mua hàng theo điều kiện
@@ -69,8 +85,29 @@ export class PurchaseProposalHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: PurchaseProposalCondDTO, @Query() paging: PagingDTO) {
-        const purchaseProposals = await this.purchaseProposalService.list(cond, paging);
-        return paginatedResponse(purchaseProposals, paging);
+        paging = pagingDTOSchema.parse(paging);
+        cond = purchaseProposalCondDTOSchema.parse(cond);
+
+        const result = await this.purchaseProposalService.list(cond, paging);
+
+        const creatorIds = result.data.map(item => item.creatorId).filter(id => id) as string[];
+
+        const creators = await this.userRpc.getUsersByIds(creatorIds);
+
+        const creatorMap: Record<string, PublicUser> = {};
+
+        if (creators) {
+            creators.forEach(creator => {
+                creatorMap[creator.id] = creator;
+            })
+        }
+
+        result.data = result.data.map(item => {
+            const creator = item.creatorId ? creatorMap[item.creatorId] : null;
+            return { ...item, creator } as PurchaseProposal;
+        });
+        
+        return paginatedResponse(result, paging);
      }
 
     // API lấy danh sách đề xuất mua hàng theo nhiều ID
@@ -78,9 +115,9 @@ export class PurchaseProposalHttpController {
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const purchaseProposals = await this.purchaseProposalService.listByIds(ids, paging);
-        return paginatedResponse(purchaseProposals, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.purchaseProposalService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -97,8 +134,8 @@ export class PurchaseProposalRpcController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const purchaseProposal = await this.purchaseProposalService.create(requester, dto, ip, userAgent);
-        return purchaseProposal;
+        const data = await this.purchaseProposalService.create(requester, dto, ip, userAgent);
+        return { data };
     }
     
     // RPC cập nhật đề xuất mua hàng cho AI agent
@@ -108,8 +145,8 @@ export class PurchaseProposalRpcController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        const purchaseProposal = await this.purchaseProposalService.update(requester, id, dto, ip, userAgent);
-        return purchaseProposal;
+        const data = await this.purchaseProposalService.update(requester, id, dto, ip, userAgent);
+        return { data };
      }
 
     // RPC xóa đề xuất mua hàng cho AI agent
@@ -126,15 +163,15 @@ export class PurchaseProposalRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const purchaseProposal = await this.purchaseProposalService.get(id);
-        return purchaseProposal;
+        const data = await this.purchaseProposalService.get(id);
+        return { data };
      }
 
     // RPC lấy danh sách đề xuất mua hàng theo nhiều ID
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const purchaseProposals = await this.purchaseProposalService.listByIds(ids, paging);
-        return paginatedResponse(purchaseProposals, paging);
+    async listByIds(@Body('ids') ids: string[]) {
+        const data = await this.purchaseProposalService.listByIds(ids);
+        return { data };
     }
 }

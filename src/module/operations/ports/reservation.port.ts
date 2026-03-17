@@ -16,7 +16,8 @@ export interface IReservationService {
     // Service truy vấn đặt bàn
     get(id: string): Promise<Reservation | null>; // Lấy thông tin đặt bàn theo ID
     list(cond: ReservationCondDTO, paging: PagingDTO): Promise<Paginated<Reservation>>; // Lấy danh sách đặt bàn theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Reservation>>; // Lấy danh sách đặt bàn theo nhiều ID
+    listByIds(ids: string[]): Promise<Reservation[]>; // Lấy danh sách đặt bàn theo nhiều ID
+    listByTime(timeStart: Date, timeEnd: Date): Promise<Reservation[]>; // Lấy danh sách đặt bàn theo khoảng thời gian
 }
 
 // Định nghĩa các phương thức mà ReservationRepository phải triển khai
@@ -24,7 +25,7 @@ export interface IReservationRepository {
     // truy vấn
     get(id: string): Promise<Reservation | null>; // Lấy thông tin đặt bàn theo ID
     list(cond: ReservationCondDTO, paging: PagingDTO): Promise<Paginated<Reservation>>; // Lấy danh sách đặt bàn theo điều kiện
-    listByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Reservation>>; // Lấy danh sách đặt bàn theo nhiều 
+    listByIds(ids: string[]): Promise<Reservation[]>; // Lấy danh sách đặt bàn theo nhiều ID
     listByTime(timeStart: Date, timeEnd: Date): Promise<Reservation[]>; // Lấy danh sách đặt bàn theo khoảng thời gian
 
     // thao tác dữ liệu

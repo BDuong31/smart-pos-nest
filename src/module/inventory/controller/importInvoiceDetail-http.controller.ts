@@ -109,8 +109,8 @@ export class ImportInvoiceDetailHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const importInvoiceDetails = await this.importInvoiceDetailService.listByIds(ids);
-        return importInvoiceDetails;
+        const data = await this.importInvoiceDetailService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -124,15 +124,15 @@ export class ImportInvoiceDetailRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const importInvoiceDetail = await this.importInvoiceDetailService.get(id);
-        return importInvoiceDetail;
+        const data = await this.importInvoiceDetailService.get(id);
+        return { data };
     }
 
     // RPC để lấy danh sách chi tiết phiếu nhập hàng theo nhiều ID cho AI agent
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const importInvoiceDetails = await this.importInvoiceDetailService.listByIds(ids);
-        return importInvoiceDetails;
+        const data = await this.importInvoiceDetailService.listByIds(ids);
+        return { data };
     }
 }
