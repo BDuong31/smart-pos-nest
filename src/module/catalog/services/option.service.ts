@@ -108,12 +108,12 @@ export class OptionService implements IOptionService {
     // ===========================
 
     // tạo Option Item mới
-    async createOptionItem(requester: Requester, optionGroupId: string, dto: CreateOptionItemDTO, ip: string, userAgent: string): Promise<OptionItem | null> {
+    async createOptionItem(requester: Requester, dto: CreateOptionItemDTO, ip: string, userAgent: string): Promise<OptionItem | null> {
         // 1. Kiểm tra dữ liệu đầu vào
         const data = createOptionItemDTOSchema.parse(dto);
 
         // 2. Kiểm tra xem Option Group có tồn tại không
-        const optionGroup = await this.optionRepository.getOptionGroup(optionGroupId);
+        const optionGroup = await this.optionRepository.getOptionGroup(data.groupId);
 
         if (!optionGroup) {
             throw AppError.from(ErrOptionGroupNotFound, 404);
@@ -123,7 +123,7 @@ export class OptionService implements IOptionService {
         const newId = v7();
         const newOptionItem = {
             id: newId,
-            groupId: optionGroupId,
+            groupId: data.groupId,
             name: data.name,
             priceExtra: data.priceExtra,
             createdAt: new Date(),

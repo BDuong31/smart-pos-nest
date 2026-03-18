@@ -106,7 +106,24 @@ export class RecipeHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') recipeIds: string[]) {
-        const data = await this.recipeService.listByIds(recipeIds);
+        const result = await this.recipeService.listByIds(recipeIds);
+
+        const ingredientIds = result.map(item => item.ingredientId);
+
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.map(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            })
+        }
+
+        const data = result.map(item => {
+            const ingredient = ingredientMap[item.ingredientId];
+            return { ...item, ingredient } as Recipe;
+        });
         return { data };
     }
 }   

@@ -56,7 +56,7 @@ export class PaymentHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
-        const data = await this.paymentService.getPaymentById(requester, id);
+        const data = await this.paymentService.getPaymentById(id);
         return { data };
     }
 
@@ -68,7 +68,7 @@ export class PaymentHttpController {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
-        const data = await this.paymentService.listPayments(requester, paging, cond);
+        const data = await this.paymentService.listPayments(paging, cond);
         return { data };
     }
     
@@ -76,11 +76,11 @@ export class PaymentHttpController {
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
+    async listByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
-        const data = await this.paymentService.listPaymentsByIds(requester, ids, paging);
+        const data = await this.paymentService.listPaymentsByIds(ids);
         return { data };
      }
 
@@ -170,15 +170,15 @@ export class PaymentRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.paymentService.getPaymentById(req.requester, id);
+        const data = await this.paymentService.getPaymentById(id);
         return { data };
     }
 
     // RPC lấy danh sách giao dịch thanh toán theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.paymentService.listPaymentsByIds(req.requester, ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.paymentService.listPaymentsByIds(ids);
         return { data };
      }
 }

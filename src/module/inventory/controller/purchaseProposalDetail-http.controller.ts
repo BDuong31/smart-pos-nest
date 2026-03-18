@@ -111,7 +111,25 @@ export class PurchaseProposalDetailHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const data = await this.purchaseProposalDetailService.listByIds(ids);
+        const result = await this.purchaseProposalDetailService.listByIds(ids);
+
+        const ingredientIds = result.map(item => item.ingredientId);
+
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.map(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            }) 
+        }
+
+        const data = result.map(item => {
+            const ingredient = ingredientMap[item.ingredientId];
+            return { ...item, ingredient } as PurchaseProposalDetail
+        });
+        
         return { data };
     }
 }

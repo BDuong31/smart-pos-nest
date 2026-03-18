@@ -80,10 +80,9 @@ export class CategoryHttpController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Lấy danh sách danh mục sản phẩm theo nhiều ID' })
     @ApiCreatedResponse({ description: 'Danh sách danh mục sản phẩm được lấy thành công' })
-    async listCategoryByIds(@Request() req: ReqWithRequester, @Body() dto: { ids: string[] }, @Query() paging: PagingDTO){
-        paging = pagingDTOSchema.parse(paging);
-        const data = await this.categoryService.listByIds(dto.ids, paging);
-        return paginatedResponse(data, dto);
+    async listCategoryByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]){
+        const data = await this.categoryService.listByIds(ids);
+        return { data };
     }
 }
 
@@ -109,9 +108,8 @@ export class CategoryRpcController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'RPC: Lấy danh sách danh mục sản phẩm theo nhiều ID' })
     @ApiCreatedResponse({ description: 'Danh sách danh mục sản phẩm được lấy thành công' })
-    async listByIds(@Body() dto: { ids: string[] }, @Query() paging: PagingDTO){
-        paging = pagingDTOSchema.parse(paging);
-        const data = await this.categoryService.listByIds(dto.ids, paging);
-        return paginatedResponse(data, dto);
+    async listByIds(@Body('ids') ids: string[]){
+        const data = await this.categoryService.listByIds(ids);
+        return { data };
     }
 }

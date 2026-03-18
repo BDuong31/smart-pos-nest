@@ -111,7 +111,27 @@ export class InventoryBatchHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const data = await this.inventoryBatchService.listByIds(ids);
+        const result = await this.inventoryBatchService.listByIds(ids);
+
+        const ingredientIds = result.map(batch => batch.ingredientId);
+
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.forEach(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            });
+        }
+
+        const data = result.map(batch => {
+            const ingredient = ingredientMap[batch.ingredientId];
+            return {
+                ...batch,
+                ingredient,
+            } as InventoryBatch
+        })
         return { data };
     }
 }

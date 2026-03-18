@@ -90,8 +90,8 @@ export class SupplierRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') supplierId: string) {
-        const supplier = await this.supplierService.get(supplierId);
-        return supplier;
+        const data = await this.supplierService.get(supplierId);
+        return { data };
     }   
 
     // RPC để lấy danh sách nhà cung cấp theo nhiều ID

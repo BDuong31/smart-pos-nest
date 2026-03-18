@@ -3,7 +3,7 @@ import { TABLE_SERVICE } from "../operations.di-token";
 import { type ITableService } from "../ports/table.port";
 import { RolesGuard } from "src/share/guard/roles";
 import { RemoteAuthGuard, Roles } from "src/share/guard";
-import { AppError, getIPv4FromReq,type IPublicZoneRpc,type PagingDTO, type ReqWithRequester, UserRole, ZONE_RPC } from "src/share";
+import { AppError, getIPv4FromReq,type IPublicZoneRpc,type PagingDTO, PublicZone, type ReqWithRequester, UserRole, ZONE_RPC } from "src/share";
 import {type Request as ExpressRequest } from "express";
 import type { TableUpdateDTO, TableCreatedDTO, TableCondDTO } from "../dtos/table.dto";
 import { ErrTableNotFound, Table } from "../models/table.model";
@@ -72,7 +72,25 @@ export class TableHttpController {
     @Get()
     @HttpCode(HttpStatus.OK)
     async list(@Request() req: ReqWithRequester, @Query() cond: TableCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.tableService.list(cond, paging);
+        const result = await this.tableService.list(cond, paging);
+
+        const zoneIds = result.data.map(item => item.zoneId).filter(id => id !== null);
+
+        const zones = await this.zoneRpc.findByIds(zoneIds);
+
+        const zoneMap: Record<string, PublicZone> = {};
+
+        if (zones) {
+            zones.forEach(zone => {
+                zoneMap[zone.id] = zone;
+            });
+        }
+
+        const data = result.data.map(item => {
+            const zone = zoneMap[item.zoneId];
+            return { ...item, zone } as Table;
+        });
+
         return { data };
     }
      
@@ -80,7 +98,25 @@ export class TableHttpController {
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
-        const data = await this.tableService.listByIds(ids);
+        const result = await this.tableService.listByIds(ids);
+
+        const zoneIds = result.map(item => item.zoneId).filter(id => id !== null);
+
+        const zones = await this.zoneRpc.findByIds(zoneIds);
+
+        const zoneMap: Record<string, PublicZone> = {};
+
+        if (zones) {
+            zones.forEach(zone => {
+                zoneMap[zone.id] = zone;
+            });
+        }
+
+        const data = result.map(item => {
+            const zone = zoneMap[item.zoneId];
+            return { ...item, zone } as Table;
+        });
+
         return { data };
     }
 
@@ -90,6 +126,24 @@ export class TableHttpController {
     async listByAvailable(@Request() req: ReqWithRequester, @Query('time') time: string, @Query() cond: TableCondDTO) {
         const timeDate = new Date(time);
         const data = await this.tableService.listByAvailable(timeDate, cond);
+
+        const zoneIds = data.map(item => item.zoneId).filter(id => id !== null);    
+
+        const zones = await this.zoneRpc.findByIds(zoneIds);
+
+        const zoneMap: Record<string, PublicZone> = {};
+
+        if (zones) {
+            zones.forEach(zone => {
+                zoneMap[zone.id] = zone;
+            });
+        }
+
+        const dataWithZone = data.map(item => {
+            const zone = zoneMap[item.zoneId];
+            return { ...item, zone } as Table;
+        });
+        
         return { data };
     }
 }

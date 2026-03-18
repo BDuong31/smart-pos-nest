@@ -113,9 +113,39 @@ export class ProductHttpController {
     // API lấy danh sách sản phẩm theo mảng IDs
     @Get('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listProductByIds(@Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getProductByIds(idArray);
+    async listProductByIds(@Body('ids') ids: string[]){
+        const result = await this.productService.getProductByIds(ids);
+
+        const categoryIds = result.map(item => item.categoryId);
+        const productIds = result.map(item => item.id);
+
+        const categories = await this.categoryRpc.findByIds([...new Set(categoryIds)]);
+        const images = await this.imageRpc.getImagesByRefId([...new Set(productIds)], 'product');
+
+        const categoryMap: Record<string, PublicCategory> = {};
+        const imageMap: Record<string, PublicImage[]> = {};
+
+        if (categories){
+            categories.forEach(category => {
+                categoryMap[category.id] = category;
+            });
+        }
+
+        if (images){
+            images.forEach(image => {
+                if (!imageMap[image.refId]) {
+                    imageMap[image.refId] = [];
+                }
+                imageMap[image.refId].push(image);
+            });
+        }
+
+        const data = result.map(item => {
+            const category = categoryMap[item.categoryId];
+            const images = imageMap[item.id] || [];
+            return { ...item, category, images } as Product;
+        });
+
         return { data };
     }
 
@@ -176,9 +206,8 @@ export class ProductRpcController {
     // RPC lấy danh sách sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listProductByIds(@Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getProductByIds(idArray);
+    async listProductByIds(@Body('ids') ids: string[]){
+        const data = await this.productService.getProductByIds(ids);
         return { data };
     }
 }
@@ -256,9 +285,8 @@ export class VariantHttpController {
     // API lấy danh sách biến thể sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listVariantByIds(@Request() req: ReqWithRequester, @Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getVariantByIds(idArray);
+    async listVariantByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]){
+        const data = await this.productService.getVariantByIds(ids);
         return { data };
     }
 }
@@ -280,9 +308,8 @@ export class VariantRpcController {
     // RPC lấy danh sách biến thể sản phẩm theo mảng IDs   
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listVariantByIds(@Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getVariantByIds(idArray);
+    async listVariantByIds(@Body('ids') ids: string[]){
+        const data = await this.productService.getVariantByIds(ids);
         return { data };
     } 
 }
@@ -378,9 +405,29 @@ export class ComboHttpController {
     // API lấy danh sách combo sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listComboByIds(@Request() req: ReqWithRequester, @Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getComboByIds(idArray);
+    async listComboByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]){
+        const result = await this.productService.getComboByIds(ids);
+
+        const comboIds = result.map(item => item.id);
+
+        const images = await this.imageRpc.getImagesByRefId([...new Set(comboIds)], 'combo');
+
+        const imageMap: Record<string, PublicImage[]> = {};
+
+        if (images){
+            images.forEach(image => {
+                if (!imageMap[image.refId]) {
+                    imageMap[image.refId] = [];
+                }
+                imageMap[image.refId].push(image);
+            });
+        }   
+
+        const data = result.map(item => {
+            const images = imageMap[item.id] || [];
+            return { ...item, images } as Combo;
+        });
+
         return { data };
      }
 }
@@ -402,9 +449,8 @@ export class ComboRpcController {
     // RPC lấy danh sách combo sản phẩm theo mảng IDs   
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listComboByIds(@Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getComboByIds(idArray);
+    async listComboByIds(@Body('ids') ids: string[]){
+        const data = await this.productService.getComboByIds(ids);
         return { data };
      }
 }
@@ -510,9 +556,36 @@ export class ComboItemHttpController {
     // API lấy danh sách mục combo sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listComboItemByIds(@Request() req: ReqWithRequester,@Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getComboItemsByIds( idArray);
+    async listComboItemByIds(@Request() req: ReqWithRequester,@Body('ids') ids: string[]){
+        const result = await this.productService.getComboItemsByIds(ids);
+
+        const productIds = result.map(item => item.productId);
+        const variantIds = result.map(item => item.variantId);
+
+        const products = await this.productRpc.findByIds([...new Set(productIds)]);
+        const variants = await this.variantRpc.findByIds([...new Set(variantIds)]); 
+
+        const productMap: Record<string, PublicProduct> = {};
+        const variantMap: Record<string, PublicVariant> = {};
+
+        if (products){
+            products.forEach(product => {
+                productMap[product.id] = product;
+            });
+        }
+
+        if (variants){
+            variants.forEach(variant => {
+                variantMap[variant.id] = variant;
+            });
+        }
+
+        const data = result.map(item => {
+            const product = productMap[item.productId];
+            const variant = variantMap[item.variantId];
+            return { ...item, product, variant } as ComboItem;
+        });
+
         return { data };
      }
 }
@@ -534,9 +607,8 @@ export class ComboItemRpcController {
     // RPC lấy danh sách mục combo sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listComboItemByIds(@Body() dto: { ids: string[] }){
-        const idArray = dto.ids;
-        const data = await this.productService.getComboItemsByIds( idArray);
+    async listComboItemByIds(@Body('ids') ids: string[]){
+        const data = await this.productService.getComboItemsByIds(ids);
         return { data };
      }
 }

@@ -7,18 +7,18 @@ import axios from "axios";
 export class OptionItemRPCClient implements IPublicOptionItemRpc {
     constructor(private readonly productServiceUrl: string) {}
 
-    async findById(groupId: string, id: string): Promise<PublicOptionItem | null> {
+    async findById(id: string): Promise<PublicOptionItem | null> {
         try {
-            const response = await axios.get(`${this.productServiceUrl}/rpc/option/group/${groupId}/item/${id}`);
+            const response = await axios.get(`${this.productServiceUrl}/rpc/option/group/items/${id}`);
             return response.data;
         } catch (error) {
             return null;
         }
     }
 
-    async findByIds(groupId: string, ids: string[]): Promise<PublicOptionItem[]> {
+    async findByIds(ids: string[]): Promise<PublicOptionItem[]> {
         try {
-            const response = await axios.post(`${this.productServiceUrl}/rpc/option/group/${groupId}/items/list-by-ids`, { ids });
+            const response = await axios.post(`${this.productServiceUrl}/rpc/option/group/items/list-by-ids`, { ids });
             return response.data;
         } catch (error) {
             return [];

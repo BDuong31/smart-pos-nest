@@ -2,9 +2,10 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Pat
 import { CART_SERVICE } from "../sales.di-token";
 import type { ICartService } from "../ports/cart.port";
 import { RemoteAuthGuard } from "src/share/guard";
-import type { CartCondDTO, CartCreateDTO, CartItemCondDTO, CartItemCreateDTO, CartItemOptionCondDTO, CartItemOptionCreateDTO, CartItemOptionUpdateDTO, CartItemUpdateDTO, CartUpdateDTO } from "../dtos/cart.dto";
-import { getIPv4FromReq, type PagingDTO, type ReqWithRequester } from "src/share";
+import { cartItemCondDTOSchema, cartItemOptionCondDTOSchema, type CartCondDTO, type CartCreateDTO, type CartItemCondDTO, type CartItemCreateDTO, type CartItemOptionCondDTO, type CartItemOptionCreateDTO, type CartItemOptionUpdateDTO, type CartItemUpdateDTO, type CartUpdateDTO } from "../dtos/cart.dto";
+import { getIPv4FromReq,type IPublicProductRpc,type IPublicVariantRpc, paginatedResponse, PRODUCT_RPC, VARIANT_RPC, type PagingDTO, type ReqWithRequester, AppError, pagingDTOSchema, PublicProduct, PublicVariant, OPTION_ITEM_RPC,type IPublicOptionItemRpc, PublicOptionItem } from "src/share";
 import type { Request as RequestExpress } from "express";
+import { Cart, CartItem, CartItemOption, ErrCartItemNotFound, ErrCartItemOptionNotFound } from "../models/cart.model";
 
 // Các controller liên quan đến giỏ hàng (Cart)
 @Controller('v1/carts')
@@ -21,9 +22,7 @@ export class CartHttpController {
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
         const data = await this.cartService.createCart(req.requester, dto, ip, userAgent);
-        return {
-            data,
-        }
+        return { data }
     }
 
     // API cập nhật giỏ hàng
@@ -34,8 +33,8 @@ export class CartHttpController {
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
         await this.cartService.updateCart(req.requester, id, dto, ip, userAgent);
-
     }
+
     // API xóa giỏ hàng
     @Delete(':id')
     @UseGuards(RemoteAuthGuard)
@@ -52,9 +51,7 @@ export class CartHttpController {
     @HttpCode(HttpStatus.OK)
     async getCartById(@Param('id') id: string) {
         const data = await this.cartService.getCart(id);
-        return {
-            data,
-        }
+        return { data }
     }
 
     // API lấy danh sách giỏ hàng theo điều kiện  
@@ -63,20 +60,16 @@ export class CartHttpController {
     @HttpCode(HttpStatus.OK)
     async listCart(@Query() cond: CartCondDTO, @Query() paging: PagingDTO) {
         const data = await this.cartService.listCart(cond, paging);
-        return {
-            data,
-        }
+        return paginatedResponse(data, paging);
     }
 
     // API lấy danh sách giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listCartByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartByIds(ids, paging);
-        return {
-            data,
-        }
+    async listCartByIds(@Body('ids') ids: string[]) {
+        const data = await this.cartService.listCartByIds(ids);
+        return { data }
     }
 
 }
@@ -92,19 +85,15 @@ export class CartRpcController {
     @HttpCode(HttpStatus.OK)
     async getCartById(@Param('id') id: string) {
         const data = await this.cartService.getCart(id);
-        return {
-            data,
-        }
+        return { data }
     }
 
     // RPC lấy danh sách giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listCartByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartByIds(ids, paging);
-        return {
-            data,
-        }
+    async listCartByIds(@Body('ids') ids: string[]) {
+        const data = await this.cartService.listCartByIds(ids);
+        return { data }
     }
 }
 
@@ -112,7 +101,9 @@ export class CartRpcController {
 @Controller('v1/carts/item')
 export class CartItemHttpController {
     constructor(
-        @Inject(CART_SERVICE) private readonly cartService: ICartService, 
+        @Inject(CART_SERVICE) private readonly cartService: ICartService,
+        @Inject(PRODUCT_RPC) private readonly productRpc: IPublicProductRpc,
+        @Inject(VARIANT_RPC) private readonly variantRpc: IPublicVariantRpc, 
     ){}
 
     // API thêm mục vào giỏ hàng
@@ -123,9 +114,7 @@ export class CartItemHttpController {
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
         const data = await this.cartService.createCartItem(req.requester, dto, ip, userAgent);
-        return {
-            data,
-        }
+        return { data }
      }
 
     // API cập nhật mục trong giỏ hàng
@@ -153,10 +142,17 @@ export class CartItemHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getCartItemById(@Param('id') id: string) {
-        const data = await this.cartService.getCartItem(id);
-        return {
-            data,
+        const result = await this.cartService.getCartItem(id);
+
+        if (!result) {
+            throw AppError.from(ErrCartItemNotFound, 404);
         }
+
+        const product = await this.productRpc.findById(result.productId);
+        const variant = await this.variantRpc.findById(result.variantId);
+
+        const data = { ...result, product, variant } as CartItem;
+        return { data }
      }  
 
     // API lấy danh sách mục trong giỏ hàng theo điều kiện  
@@ -164,21 +160,46 @@ export class CartItemHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listCartItem(@Query() cond: CartItemCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItem(cond, paging);
-        return {
-            data,
+        paging = pagingDTOSchema.parse(paging);
+        cond = cartItemCondDTOSchema.parse(cond);
+        const result = await this.cartService.listCartItem(cond, paging);
+
+        const productIds = result.data.map(item => item.productId);
+        const variantIds = result.data.map(item => item.variantId);
+
+        const products = await this.productRpc.findByIds([...new Set(productIds)]);
+        const variants = await this.variantRpc.findByIds([...new Set(variantIds)]);
+
+        const productMap: Record<string, PublicProduct> = {};
+        const variantMap: Record<string, PublicVariant> = {};
+
+        if (products) {
+            products.map(product => {
+                productMap[product.id] = product;
+            });
         }
+
+        if (variants) {
+            variants.map(variant => {
+                variantMap[variant.id] = variant;
+            });
+        }
+
+        result.data = result.data.map(item => {
+            const product = productMap[item.productId];
+            const variant = variantMap[item.variantId];
+            return { ...item, product, variant } as CartItem;
+        })
+        return paginatedResponse(result, paging);
      }
 
     // API lấy danh sách mục trong giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listCartItemByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItemByIds(ids, paging);
-        return {
-            data,
-        }
+    async listCartItemByIds(@Body('ids') ids: string[]) {
+        const data = await this.cartService.listCartItemByIds(ids);
+        return { data }
      }
 }
 
@@ -193,19 +214,15 @@ export class CartItemRpcController {
     @HttpCode(HttpStatus.OK)
     async getCartItemById(@Param('id') id: string) {
         const data = await this.cartService.getCartItem(id);
-        return {
-            data,
-        }
+        return { data }
      }
 
     // RPC lấy danh sách mục trong giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listCartItemByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItemByIds(ids, paging);
-        return {
-            data,
-        }
+    async listCartItemByIds(@Body('ids') ids: string[]) {
+        const data = await this.cartService.listCartItemByIds(ids);
+        return { data }
      }
 }
 
@@ -214,6 +231,7 @@ export class CartItemRpcController {
 export class CartItemOptionHttpController {
     constructor(
         @Inject(CART_SERVICE) private readonly cartService: ICartService, 
+        @Inject(OPTION_ITEM_RPC) private readonly optionItemRpc: IPublicOptionItemRpc,
     ){}
 
     // API thêm tùy chọn vào mục trong giỏ hàng
@@ -224,9 +242,7 @@ export class CartItemOptionHttpController {
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
         const data = await this.cartService.createCartItemOption(req.requester, dto, ip, userAgent);
-        return {
-            data,
-        }
+        return { data }
      }
 
     // API cập nhật tùy chọn trong mục giỏ hàng 
@@ -254,10 +270,17 @@ export class CartItemOptionHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getCartItemOptionById(@Param('id') id: string) {
-        const data = await this.cartService.getCartItemOption(id);
-        return {
-            data,
+        const result = await this.cartService.getCartItemOption(id);
+
+        if (!result) {
+            throw AppError.from(ErrCartItemOptionNotFound, 404);
         }
+
+        const optionItem = await this.optionItemRpc.findById(result.optionItemId);
+
+        const data = { ...result, optionItem } as CartItemOption;
+
+        return { data }
      }
 
     // API lấy danh sách tùy chọn trong mục giỏ hàng theo điều kiện
@@ -265,18 +288,36 @@ export class CartItemOptionHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listCartItemOption( @Query() cond: CartItemOptionCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItemOption(cond, paging);
-        return {
-            data,
+        paging = pagingDTOSchema.parse(paging);
+        cond = cartItemOptionCondDTOSchema.parse(cond);
+        const result = await this.cartService.listCartItemOption(cond, paging);
+
+        const optionItemIds = result.data.map(item => item.optionItemId);
+
+        const optionItems = await this.optionItemRpc.findByIds([...new Set(optionItemIds)]);
+
+        const optionItemMap: Record<string, PublicOptionItem> = {};
+
+        if (optionItems) {
+            optionItems.map(optionItem => {
+                optionItemMap[optionItem.id] = optionItem;
+            });
         }
+
+        result.data = result.data.map(item => {
+            const optionItem = optionItemMap[item.optionItemId];
+            return { ...item, optionItem } as CartItemOption;
+        })
+        
+        return paginatedResponse(result, paging);
      }
 
     // API lấy danh sách tùy chọn trong mục giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listCartItemOptionByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItemOptionByIds(ids, paging);
+    async listCartItemOptionByIds(@Body('ids') ids: string[]) {
+        const data = await this.cartService.listCartItemOptionByIds(ids);
         return {
             data,
         }
@@ -302,8 +343,8 @@ export class CartItemOptionRpcController {
     // RPC lấy danh sách tùy chọn trong mục giỏ hàng theo nhiều ID
     @Get('list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async listCartItemOptionByIds(@Body('ids') ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.cartService.listCartItemOptionByIds(ids, paging);
+    async listCartItemOptionByIds(@Body('ids') ids: string[]) {
+        const data = await this.cartService.listCartItemOptionByIds(ids);
         return {
             data,
         }

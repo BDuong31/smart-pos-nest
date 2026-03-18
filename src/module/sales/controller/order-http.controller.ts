@@ -2,16 +2,18 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Pat
 import { ORDER_SERVICE } from "../sales.di-token";
 import type { IOrderService } from "../ports/order.port";
 import { RemoteAuthGuard } from "src/share/guard";
-import type { ReqWithRequester } from "src/share/interface";
+import type { IPublicOptionItemRpc, IPublicOrderRpc, IPublicProductRpc, IPublicTableRpc, IPublicUserRpc, IPublicVariantRpc, ReqWithRequester } from "src/share/interface";
 import type { Request as RequestExpress } from "express";
-import type { InvoiceCondDTO, InvoiceCreateDTO, InvoiceUpdateDTO, OrderCondDTO, OrderCreateDTO, OrderItemCondDTO, OrderItemCreateDTO, OrderItemOptionCondDTO, OrderItemOptionCreateDTO, OrderItemUpdateDTO, OrderTableCondDTO, OrderTableCreateDTO, OrderTableUpdateDTO, OrderUpdateDTO, OrderVoucherCondDTO, OrderVoucherCreateDTO, OrderVoucherUpdateDTO } from "../dtos/order.dto";
-import { getIPv4FromReq } from "src/share/utils";
-import { type PagingDTO } from "src/share";
+import { invoiceCondDTOSchema, orderCondDTOSchema, orderItemCondDTOSchema, orderItemOptionCondDTOSchema, orderTableCondDTOSchema, type InvoiceCondDTO, type InvoiceCreateDTO, type InvoiceUpdateDTO, type OrderCondDTO, type OrderCreateDTO, type OrderItemCondDTO, type OrderItemCreateDTO, type OrderItemOptionCondDTO, type OrderItemOptionCreateDTO, type OrderItemUpdateDTO, type OrderTableCondDTO, type OrderTableCreateDTO, type OrderTableUpdateDTO, type OrderUpdateDTO, type OrderVoucherCondDTO, type OrderVoucherCreateDTO, type OrderVoucherUpdateDTO } from "../dtos/order.dto";
+import { getIPv4FromReq, paginatedResponse } from "src/share/utils";
+import { AppError, OPTION_ITEM_RPC, ORDER_RPC, pagingDTOSchema, PRODUCT_RPC, PublicOptionItem, PublicOrder, PublicProduct, PublicTable, PublicUser, PublicVariant, TABLE_RPC, USER_RPC, VARIANT_RPC, type PagingDTO } from "src/share";
+import { ErrInvoiceNotFound, ErrOrderItemNotFound, ErrOrderItemOptionNotFound, ErrOrderNotFound, ErrOrderTableNotFound, Invoice, Order, OrderItem, OrderItemOption, OrderTable } from "../models/order.model";
 
 @Controller('v1/orders')
 export class OrderHttpController {
     constructor(
-        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService
+        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService,
+        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
     ){}
 
     // API để tạo mới đơn hàng
@@ -47,7 +49,15 @@ export class OrderHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getById(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('id') id: string) {
-        const data = await this.orderService.getOrderById(req.requester, id);
+        const result = await this.orderService.getOrderById(id);
+
+        if (!result) {
+            throw AppError.from(ErrOrderNotFound, 404);
+        }
+
+        const user = await this.userRpc.getUserById(result.userId);
+
+        const data = { ...result, user } as Order;
         return { data };
     }
 
@@ -56,16 +66,56 @@ export class OrderHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async list(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: OrderCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrders(req.requester, paging, cond);
-        return { data };
+        paging = pagingDTOSchema.parse(paging);
+        cond = orderCondDTOSchema.parse(cond);
+
+        const result = await this.orderService.listOrders(paging,cond);
+
+        const userIds = result.data.map(item => item.userId);
+
+        const users = await this.userRpc.getUsersByIds([...new Set(userIds)]);
+
+        const userMap: Record<string, PublicUser> = {};
+        
+        if (users) {
+            users.map(user => {
+                userMap[user.id] = user;
+            });
+        }
+
+        result.data = result.data.map(item => {
+            const user = userMap[item.userId];
+            return { ...item, user } as Order;
+        });
+
+        return paginatedResponse(result, paging);
+        
     }
 
     // API để lấy thông tin mục sản phẩm trong đơn hàng theo nhiều ID
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrdersByIds(req.requester, ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
+        const result = await this.orderService.listOrdersByIds(ids);
+
+        const userIds = result.map(item => item.userId);
+
+        const users = await this.userRpc.getUsersByIds([...new Set(userIds)]);
+
+        const userMap: Record<string, PublicUser> = {};
+
+        if (users) {
+            users.map(user => {
+                userMap[user.id] = user;
+            });
+        }
+
+        const data = result.map(item => {
+            const user = userMap[item.userId];
+            return { ...item, user } as Order;
+        });
+
         return { data };
     }   
 }
@@ -79,14 +129,14 @@ export class OrderRpcController {
     // RPC để lấy thông tin đơn hàng theo ID
     @Get(':id')
     async getById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.orderService.getOrderById(req.requester, id);
+        const data = await this.orderService.getOrderById(id);
         return { data };
     }
     
     // RPC để lấy thông tin mục sản phẩm trong đơn hàng theo nhiều ID
     @Post('list-by-ids')
-    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrdersByIds(req.requester, ids, paging);
+    async listByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.orderService.listOrdersByIds( ids);
         return { data };
     }
 }
@@ -94,7 +144,9 @@ export class OrderRpcController {
 @Controller('v1/orders/item')
 export class OrderItemHttpController {  
     constructor(
-        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService
+        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService,
+        @Inject(PRODUCT_RPC) private readonly userRpc: IPublicProductRpc,
+        @Inject(VARIANT_RPC) private readonly variantRpc: IPublicVariantRpc,
     ){}
 
     // API tạo mới mục sản phẩm trong đơn hàng
@@ -133,7 +185,16 @@ export class OrderItemHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrderItemById(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('id') id: string) {
-        const data = await this.orderService.getOrderItemById(req.requester, id);
+        const result = await this.orderService.getOrderItemById(id);
+        
+        if (!result) {
+            throw AppError.from(ErrOrderItemNotFound, 404);
+        }
+
+        const product = await this.userRpc.findById(result.productId);
+        const variant = await this.variantRpc.findById(result.variantId);
+
+        const data = { ...result, product, variant} as OrderItem;
         return { data };
     }
 
@@ -142,7 +203,38 @@ export class OrderItemHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listOrderItems(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: OrderItemCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItems(req.requester, paging, cond);
+        paging = pagingDTOSchema.parse(paging);
+        cond = orderItemCondDTOSchema.parse(cond);
+
+        const data = await this.orderService.listOrderItems(paging, cond);
+
+        const productIds = data.data.map(item => item.productId);
+        const variantIds = data.data.map(item => item.variantId);
+
+        const products = await this.userRpc.findByIds([...new Set(productIds)]);    
+        const variants = await this.variantRpc.findByIds([...new Set(variantIds)]);
+
+        const productMap: Record<string, PublicProduct> = {};
+        const variantMap: Record<string, PublicVariant> = {};
+
+        if (products) {
+            products.map(product => {
+                productMap[product.id] = product;
+            });
+        }
+
+        if (variants) {
+            variants.map(variant => {
+                variantMap[variant.id] = variant;
+            });
+        }
+
+        data.data = data.data.map(item => { 
+            const product = productMap[item.productId];
+            const variant = variantMap[item.variantId];
+            return { ...item, product, variant } as OrderItem;
+        });
+
         return { data };
     }
 
@@ -150,8 +242,36 @@ export class OrderItemHttpController {
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listOrderItemsByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItemsByIds(req.requester, ids, paging);
+    async listOrderItemsByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
+        const result = await this.orderService.listOrderItemsByIds(ids);
+
+        const productIds = result.map(item => item.productId);
+        const variantIds = result.map(item => item.variantId);
+
+        const products = await this.userRpc.findByIds([...new Set(productIds)]);
+        const variants = await this.variantRpc.findByIds([...new Set(variantIds)]);
+
+        const productMap: Record<string, PublicProduct> = {};
+        const variantMap: Record<string, PublicVariant> = {};
+
+        if (products) {
+            products.map(product => {
+                productMap[product.id] = product;
+            });
+        }
+
+        if (variants) {
+            variants.map(variant => {
+                variantMap[variant.id] = variant;
+            });
+        }
+
+        const data = result.map(item => {
+            const product = productMap[item.productId];
+            const variant = variantMap[item.variantId];
+            return { ...item, product, variant } as OrderItem;
+        });
+
         return { data };
     }
 }
@@ -165,14 +285,14 @@ export class OrderItemRpcController {
     // RPC để lấy thông tin mục sản phẩm trong đơn hàng theo ID
     @Get(':id')
     async getOrderItemById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.orderService.getOrderItemById(req.requester, id);
+        const data = await this.orderService.getOrderItemById(id);
         return { data };
     }
 
     // RPC để lấy thông tin mục sản phẩm trong đơn hàng theo nhiều ID
     @Post('list-by-ids')
-    async listOrderItemsByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItemsByIds(req.requester, ids, paging);
+    async listOrderItemsByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.orderService.listOrderItemsByIds(ids);
         return { data };
     }
 }
@@ -180,7 +300,8 @@ export class OrderItemRpcController {
 @Controller('v1/orders/item/option')
 export class OrderItemOptionHttpController {  
     constructor(
-        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService
+        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService,
+        @Inject(OPTION_ITEM_RPC) private readonly optionItemRpc: IPublicOptionItemRpc,
     ){}
 
     // API tạo mới tùy chọn sản phẩm trong mục đơn hàng
@@ -219,7 +340,15 @@ export class OrderItemOptionHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrderItemOptionById(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('id') id: string) {
-        const data = await this.orderService.getOrderItemOptionById(req.requester, id);
+        const result = await this.orderService.getOrderItemOptionById(id);
+
+        if (!result) {
+            throw AppError.from(ErrOrderItemOptionNotFound, 404);
+        }
+
+        const optionItem = await this.optionItemRpc.findById(result.optionItemId);
+
+        const data = { ...result, optionItem } as OrderItemOption;
         return { data };
     }
 
@@ -228,16 +357,53 @@ export class OrderItemOptionHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listOrderItemOptions(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: OrderItemOptionCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItemOptions(req.requester, paging, cond);
-        return { data };
+        paging = pagingDTOSchema.parse(paging);
+        cond = orderItemOptionCondDTOSchema.parse(cond);
+
+        const result = await this.orderService.listOrderItemOptions(paging, cond);
+
+        const optionItemIds = result.data.map(item => item.optionItemId);
+
+        const optionItems = await this.optionItemRpc.findByIds([...new Set(optionItemIds)]);
+
+        const optionItemMap: Record<string, PublicOptionItem> = {};
+
+        if (optionItems) {
+            optionItems.map(optionItem => {
+                optionItemMap[optionItem.id] = optionItem;
+            });
+        }
+
+        result.data = result.data.map(item => {
+            const optionItem = optionItemMap[item.optionItemId];
+            return { ...item, optionItem } as OrderItemOption;
+        });    
+        return paginatedResponse(result, paging);
     }
 
     // API lấy thông tin tùy chọn sản phẩm trong mục đơn hàng theo nhiều ID
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listOrderItemOptionsByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItemOptionsByIds(req.requester, ids, paging);
+    async listOrderItemOptionsByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
+        const result = await this.orderService.listOrderItemOptionsByIds(ids);
+
+        const optionItemIds = result.map(item => item.optionItemId);
+
+        const optionItems = await this.optionItemRpc.findByIds([...new Set(optionItemIds)]);
+
+        const optionItemMap: Record<string, PublicOptionItem> = {};
+
+        if (optionItems) {
+            optionItems.map(optionItem => {
+                optionItemMap[optionItem.id] = optionItem;
+            });
+        }
+
+        const data = result.map(item => {
+            const optionItem = optionItemMap[item.optionItemId];
+            return { ...item, optionItem } as OrderItemOption;
+        });
         return { data };
     }
 }
@@ -251,14 +417,14 @@ export class OrderItemOptionRpcController {
     // RPC để lấy thông tin tùy chọn sản phẩm trong mục đơn hàng theo ID
     @Get(':id')
     async getOrderItemOptionById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.orderService.getOrderItemOptionById(req.requester, id);
+        const data = await this.orderService.getOrderItemOptionById(id);
         return { data };
     }
 
     // RPC để lấy thông tin tùy chọn sản phẩm trong mục đơn hàng theo nhiều ID
     @Post('list-by-ids')
-    async listOrderItemOptionsByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderItemOptionsByIds(req.requester, ids, paging);
+    async listOrderItemOptionsByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.orderService.listOrderItemOptionsByIds(ids);
         return { data };
     }
 }
@@ -305,7 +471,7 @@ export class OrderVoucherHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrderVoucherById(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('id') id: string) {
-        const data = await this.orderService.getOrderVoucherById(req.requester, id);
+        const data = await this.orderService.getOrderVoucherById(id);
         return { data };
     }
 
@@ -314,7 +480,7 @@ export class OrderVoucherHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listOrderVouchers(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: OrderVoucherCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderVouchers(req.requester, paging, cond);
+        const data = await this.orderService.listOrderVouchers(paging, cond);
         return { data };
     }   
 
@@ -322,8 +488,8 @@ export class OrderVoucherHttpController {
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listOrderVouchersByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderVouchersByIds(req.requester, ids, paging);
+    async listOrderVouchersByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
+        const data = await this.orderService.listOrderVouchersByIds(ids);
         return { data };
     }
 }
@@ -337,14 +503,14 @@ export class OrderVoucherRpcController {
     // RPC để lấy thông tin voucher cho đơn hàng theo ID
     @Get(':id')
     async getOrderVoucherById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.orderService.getOrderVoucherById(req.requester, id);
+        const data = await this.orderService.getOrderVoucherById(id);
         return { data };
     }
 
     // RPC để lấy thông tin voucher cho đơn hàng theo nhiều ID
     @Post('list-by-ids')
-    async listOrderVouchersByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderVouchersByIds(req.requester, ids, paging);
+    async listOrderVouchersByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.orderService.listOrderVouchersByIds(ids);
         return { data };
     }
 }
@@ -352,7 +518,8 @@ export class OrderVoucherRpcController {
 @Controller('v1/orders/table')
 export class OrderTableHttpController {  
     constructor(
-        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService
+        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService,
+        @Inject(TABLE_RPC) private readonly tableRpc: IPublicTableRpc,
     ){}
 
     // API tạo mới đơn hàng cho bàn
@@ -391,7 +558,15 @@ export class OrderTableHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getOrderForTableById(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('id') id: string) {
-        const data = await this.orderService.getOrderTableById(req.requester, id);
+        const result = await this.orderService.getOrderTableById( id);
+
+        if (!result) {
+            throw AppError.from(ErrOrderTableNotFound, 404);
+        }
+
+        const table = await this.tableRpc.findById(result.tableId);
+
+        const data = { ...result, table } as OrderTable;
         return { data };
     }
 
@@ -400,16 +575,54 @@ export class OrderTableHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listOrdersForTable(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: OrderTableCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderTables(req.requester, paging, cond);
-        return { data };
+        paging = pagingDTOSchema.parse(paging);
+        cond = orderTableCondDTOSchema.parse(cond);
+        const result = await this.orderService.listOrderTables(paging, cond);
+
+        const tableIds = result.data.map(item => item.tableId);
+
+        const tables = await this.tableRpc.findByIds([...new Set(tableIds)]);
+
+        const tableMap: Record<string, PublicTable> = {};
+
+        if (tables) {
+            tables.map(table => {
+                tableMap[table.id] = table;
+            });
+        }
+
+        result.data = result.data.map(item => {
+            const table = tableMap[item.tableId];
+            return { ...item, table } as OrderTable;
+        });
+
+        return paginatedResponse(result, paging);
     }
 
     // API lấy thông tin đơn hàng cho bàn theo nhiều ID
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listOrdersForTableByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderTablesByIds(req.requester, ids, paging);
+    async listOrdersForTableByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
+        const result = await this.orderService.listOrderTablesByIds(ids);
+
+        const tableIds = result.map(item => item.tableId);
+
+        const tables = await this.tableRpc.findByIds([...new Set(tableIds)]);
+
+        const tableMap: Record<string, PublicTable> = {};
+
+        if (tables) {
+            tables.map(table => {
+                tableMap[table.id] = table;
+            });
+        }
+
+        const data = result.map(item => {
+            const table = tableMap[item.tableId];
+            return { ...item, table } as OrderTable;
+        });
+
         return { data };
     }
 }
@@ -423,14 +636,14 @@ export class OrderTableRpcController {
     // RPC để lấy thông tin đơn hàng cho bàn theo ID
     @Get(':id')
     async getOrderForTableById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.orderService.getOrderTableById(req.requester, id);
+        const data = await this.orderService.getOrderTableById(id);
         return { data };
     }
 
     // RPC để lấy thông tin đơn hàng cho bàn theo nhiều ID
     @Post('list-by-ids')
-    async listOrdersForTableByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listOrderTablesByIds(req.requester, ids, paging);
+    async listOrdersForTableByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.orderService.listOrderTablesByIds(ids);
         return { data };
     }
 }
@@ -438,7 +651,8 @@ export class OrderTableRpcController {
 @Controller('v1/orders/invoice')
 export class InvoiceHttpController {  
     constructor(
-        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService
+        @Inject(ORDER_SERVICE) private readonly orderService: IOrderService,
+        @Inject(ORDER_RPC) private readonly orderRpc: IPublicOrderRpc,
     ){}
 
     // API tạo mới hóa đơn công ty cho đơn hàng
@@ -477,7 +691,15 @@ export class InvoiceHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async getInvoiceForOrderById(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('id') id: string) {
-        const data = await this.orderService.getInvoiceById(req.requester, id);
+        const result = await this.orderService.getInvoiceById(id);
+
+        if (!result) {
+            throw AppError.from(ErrInvoiceNotFound, 404);
+        }
+
+        const order = await this.orderRpc.findById(result.orderId);
+
+        const data = { ...result, order } as InvoiceCreateDTO;
         return { data };
     }
 
@@ -486,16 +708,54 @@ export class InvoiceHttpController {
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
     async listInvoicesForOrder(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: InvoiceCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.orderService.listInvoices(req.requester, paging, cond);
-        return { data };
+        paging = pagingDTOSchema.parse(paging);
+        cond = invoiceCondDTOSchema.parse(cond);
+        const result = await this.orderService.listInvoices(paging, cond);
+
+        const orderIds = result.data.map(item => item.orderId);
+
+        const orders = await this.orderRpc.findByIds([...new Set(orderIds)]);
+
+        const orderMap: Record<string, PublicOrder> = {};
+
+        if (orders) {
+            for (const order of orders) {
+                orderMap[order.id] = order;
+            }
+        }
+
+        result.data = result.data.map(item => {
+            const order = orderMap[item.orderId];
+            return { ...item, order } as Invoice;
+        })
+
+        return paginatedResponse(result, paging);
     }
 
     // API lấy thông tin hóa đơn công ty cho đơn hàng theo nhiều ID
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async listInvoicesForOrderByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listInvoicesByIds(req.requester, ids, paging);
+    async listInvoicesForOrderByIds(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() ids: string[]) {
+        const result = await this.orderService.listInvoicesByIds(ids);
+
+        const orderIds = result.map(item => item.orderId);
+
+        const orders = await this.orderRpc.findByIds([...new Set(orderIds)]);
+
+        const orderMap: Record<string, PublicOrder> = {};
+
+        if (orders) {
+            for (const order of orders) {
+                orderMap[order.id] = order;
+            }
+        }
+
+        const data = result.map(item => {
+            const order = orderMap[item.orderId];
+            return { ...item, order } as Invoice;
+        });
+
         return { data };
     }
 }
@@ -509,14 +769,14 @@ export class InvoiceRpcController {
     // RPC để lấy thông tin hóa đơn công ty cho đơn hàng theo ID
     @Get(':id')
     async getInvoiceForOrderById(@Request() req: ReqWithRequester, @Param('id') id: string) {
-        const data = await this.orderService.getInvoiceById(req.requester, id);
+        const data = await this.orderService.getInvoiceById(id);
         return { data };
     }
 
     // RPC để lấy thông tin hóa đơn công ty cho đơn hàng theo nhiều ID
     @Post('list-by-ids')
-    async listInvoicesForOrderByIds(@Request() req: ReqWithRequester, @Body() ids: string[], @Query() paging: PagingDTO) {
-        const data = await this.orderService.listInvoicesByIds(req.requester, ids, paging);
+    async listInvoicesForOrderByIds(@Request() req: ReqWithRequester, @Body() ids: string[]) {
+        const data = await this.orderService.listInvoicesByIds(ids);
         return { data };
     }
 }

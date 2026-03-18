@@ -85,17 +85,17 @@ export class VoucherService implements IVoucherService {
     }
 
     // Lấy thông tin voucher theo ID
-    async getVoucherById(requester: Requester, id: string): Promise<Voucher | null> {
-        return await this.voucherRepo.getVoucherById(id);
+    async getVoucherById(voucherId: string): Promise<Voucher | null> {
+        return await this.voucherRepo.getVoucherById(voucherId);
     }
 
     // Lấy danh sách voucher theo điều kiện
-    async listVouchers(requester: Requester, pagingDTO: PagingDTO, cond: VoucherCondDTO): Promise<Paginated<Voucher>> {
-        return await this.voucherRepo.listVouchers(cond, pagingDTO);
+    async listVouchers(pagingDTO: PagingDTO, voucherCondDTO: VoucherCondDTO): Promise<Paginated<Voucher>> {
+        return await this.voucherRepo.listVouchers(voucherCondDTO, pagingDTO);
     }
 
     // Lấy danh sách voucher theo nhiều ID
-    async listVouchersByIds(requester: Requester, ids: string[], pagingDTO: PagingDTO): Promise<Paginated<Voucher>> {
-        return await this.voucherRepo.listVouchersByIds(ids, pagingDTO);
+    async listVouchersByIds(voucherIds: string[]): Promise<Voucher[]> {
+        return await this.voucherRepo.listVouchersByIds(voucherIds);
     }
 }

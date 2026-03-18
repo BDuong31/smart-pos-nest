@@ -18,7 +18,7 @@ export interface IOptionService {
     getOptionGroupByIds(ids: string[]): Promise<OptionGroup[]>; // Lấy danh sách Option Group theo mảng IDs
 
     // phương thức cho Option Item
-    createOptionItem(requester: Requester, optionGroupId: string, dto: CreateOptionItemDTO, ip: string, userAgent: string): Promise<OptionItem | null>; // Tạo Option Item mới
+    createOptionItem(requester: Requester, dto: CreateOptionItemDTO, ip: string, userAgent: string): Promise<OptionItem | null>; // Tạo Option Item mới
     updateOptionItem(requester: Requester, id: string, dto: UpdateOptionItemDTO, ip: string, userAgent: string): Promise<OptionItem | null>; // Cập nhật Option Item
     deleteOptionItem(requester: Requester, id: string,  ip: string, userAgent: string): Promise<void>; // Xóa Option Item
     getOptionItemById(id: string): Promise<OptionItem | null>; // Lấy thông tin Option Item theo ID

@@ -3,9 +3,9 @@ import { UNITCONVERSION_SERVICE } from '../inventory.di-token';
 import type { IUnitConversionService } from '../ports/unitConversion.port'; 
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
 import { type UnitConversionCreateDTO, type UnitConversionUpdateDTO, type UnitConversionCondDTO, unitConversionCondDTOSchema } from '../dtos/unitConversion.dto';
-import { getIPv4FromReq, INGREDIENT_RPC,type IPublicIngredientRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicIngredient, type ReqWithRequester, UserRole } from 'src/share';
+import { AppError, getIPv4FromReq, INGREDIENT_RPC,type IPublicIngredientRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicIngredient, type ReqWithRequester, UserRole } from 'src/share';
 import type { Request as ExpressRequest } from 'express';
-import { UnitConversion } from '../models/unitConversion.model';
+import { ErrUnitConversionNotFound, UnitConversion } from '../models/unitConversion.model';
 
 @Controller('v1/unit-conversions')
 export class UnitConversionHttpController {
@@ -87,7 +87,16 @@ export class UnitConversionHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') unitConversionId: string) {
-        const data = await this.unitConversionService.get(unitConversionId);
+        const result = await this.unitConversionService.get(unitConversionId);
+
+        if (!result) {
+            throw AppError.from(ErrUnitConversionNotFound, 404);
+        }
+    
+        const ingredient = await this.ingredientRpc.findById(result.ingredientId);
+
+        const data = { ...result, ingredient } as UnitConversion;
+        
         return {data};
     }
 
@@ -97,7 +106,22 @@ export class UnitConversionHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const data = await this.unitConversionService.listByIds(ids);
+        const result = await this.unitConversionService.listByIds(ids);
+        const ingredientIds = result.map(uc => uc.ingredientId);
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.map(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            })
+        }
+
+        const data = result.map(uc => {
+            const ingredient = ingredientMap[uc.ingredientId];
+            return { ...uc, ingredient } as UnitConversion;
+        });
+
         return { data };
     }
 }

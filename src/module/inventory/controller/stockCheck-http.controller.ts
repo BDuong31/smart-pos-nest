@@ -109,7 +109,24 @@ export class StockCheckHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body() ids: string[]) {
-        const data = await this.stockCheckService.listByIds(ids);
+        const result = await this.stockCheckService.listByIds(ids);
+
+        const userIds = result.map(stockCheck => stockCheck.userId).filter(userId => !!userId);
+        const users = await this.userRpc.getUsersByIds(userIds);
+
+        const userMap: Record<string, PublicUser> = {};
+
+        if (users) {
+            users.map(user => {
+                userMap[user.id] = user;
+            })
+        }
+
+        const data = result.map(stockCheck => {
+            const user = userMap[stockCheck.userId];
+            return { ...stockCheck, user } as StockCheck;
+        });
+
         return { data };
     }
 
@@ -125,8 +142,8 @@ export class StockCheckRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const stockCheck = await this.stockCheckService.get(id);
-        return stockCheck;
+        const data = await this.stockCheckService.get(id);
+        return { data };
      }
 
     // RPC lấy danh sách kiểm kê tồn kho theo điều kiện

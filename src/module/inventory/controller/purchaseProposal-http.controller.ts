@@ -116,7 +116,24 @@ export class PurchaseProposalHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const data = await this.purchaseProposalService.listByIds(ids);
+        const result = await this.purchaseProposalService.listByIds(ids);
+
+        const creatorIds = result.map(item => item.creatorId).filter(id => id) as string[];
+
+        const creators = await this.userRpc.getUsersByIds(creatorIds);
+
+        const creatorMap: Record<string, PublicUser> = {};
+
+        if (creators) {
+            creators.forEach(creator => {
+                creatorMap[creator.id] = creator;
+            })
+        }
+
+        const data = result.map(item => {
+            const creator = item.creatorId ? creatorMap[item.creatorId] : null;
+            return { ...item, creator } as PurchaseProposal;
+        });
         return { data };
     }
 }

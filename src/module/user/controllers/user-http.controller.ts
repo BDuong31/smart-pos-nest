@@ -135,7 +135,37 @@ export class UserHttpController {
   @ApiOperation({ summary: 'Lấy danh sách người dùng theo mảng userIds' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo mảng userIds.' })
   async listUsersByIds(@Body() body: { userIds: string[] }) {
-    const users =  await this.userRepo.listByIds(body.userIds);
+    const result =  await this.userRepo.listByIds(body.userIds);
+
+    const userIds = result.map(user => user.id);
+    const rankIds = result.map(user => user.rankId).filter(rankId => rankId !== undefined && rankId !== null);
+    
+    const ranks = await this.loyaltyRpc.getUserRanksByIds(rankIds);
+    
+    const avatarMap: Record<string, PublicImage | null> = {};
+    const rankMap: Record<string, PublicRank | null> = {};
+
+    userIds.map(async (userId) => {
+      const avatars = await this.imageRpc.getImagesByRefId(userId, ImageType.AVATAR);
+      const rank = await this.loyaltyRpc.getUserRank(result.find(user => user.id === userId)?.rankId || '');
+      
+      if (avatars.length > 0) {
+        avatarMap[userId] = avatars[0];
+      } else {
+        avatarMap[userId] = null;
+      }
+    })
+
+    ranks.map((rank) => {
+      rankMap[rank.id] = rank;
+    })
+    
+    const users = result.map((item) => {
+      const avatar = avatarMap[item.id] || undefined;
+      const rank = rankMap[item.id] || undefined;
+      return { ...item, avatar, rank };
+    });
+    
     return { data: users };
   }
 

@@ -93,11 +93,9 @@ export class CartPrismaRepo implements ICartRepository {
 
     // Lấy danh sách mục sản phẩm trong giỏ hàng theo điều kiện
     async listCartItem(cond: CartItemCondDTO, paging: PagingDTO): Promise<Paginated<CartItem>> {
-        const { cartId, productId, quantity, ...rest } = cond;
+        const { cartId, productId, quantity, variantId, note } = cond;
 
-        let where = {
-            ...rest,
-        }
+        let where = {}
 
         if (cartId) {
             where = {
@@ -117,6 +115,20 @@ export class CartPrismaRepo implements ICartRepository {
             where = {
                 ...where,
                 quantity: quantity,
+            }
+        }
+
+        if (variantId) {
+            where = {
+                ...where,
+                variantId: variantId,
+            }
+        }
+
+        if (note) {
+            where = {
+                ...where,
+                note: note,
             }
         }
 

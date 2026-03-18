@@ -68,8 +68,8 @@ export class CartService implements ICartService {
     }
 
     // Lấy danh sách giỏ hàng theo nhiều ID
-    async listCartByIds(ids: string[], paging: PagingDTO): Promise<Paginated<Cart>> {
-        return await this.cartRepo.listCartByIds(ids, paging);  
+    async listCartByIds(ids: string[]): Promise<Cart[]> {
+        return await this.cartRepo.listCartByIds(ids);
     }
 
     // Cart Item
@@ -84,7 +84,9 @@ export class CartService implements ICartService {
             id: newId,
             cartId: data.cartId,
             productId: data.productId,
+            variantId: data.variantId,
             quantity: data.quantity,
+            note: data.note,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -120,8 +122,8 @@ export class CartService implements ICartService {
     }   
 
     // Lấy danh sách mục sản phẩm trong giỏ hàng theo nhiều ID
-    async listCartItemByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItem>> {
-        return await this.cartRepo.listCartItemByIds(ids, paging);
+    async listCartItemByIds(ids: string[]): Promise<CartItem[]>{
+        return await this.cartRepo.listCartItemByIds(ids);
     }
 
     // Cart Item Option
@@ -171,7 +173,7 @@ export class CartService implements ICartService {
     }
 
     // Lấy danh sách tùy chọn sản phẩm trong mục giỏ hàng theo nhiều ID
-    async listCartItemOptionByIds(ids: string[], paging: PagingDTO): Promise<Paginated<CartItemOption>> {
-        return await this.cartRepo.listCartItemOptionByIds(ids, paging);
+    async listCartItemOptionByIds(ids: string[]): Promise<CartItemOption[]> {
+        return await this.cartRepo.listCartItemOptionByIds(ids);
     }
 }

@@ -108,8 +108,8 @@ export interface IPublicOptionGroupRpc {
 
 // Định nghĩa interface cho Option Item RPC
 export interface IPublicOptionItemRpc {
-    findById(groupId: string, id: string): Promise<PublicOptionItem | null>;
-    findByIds(groupId: string, ids: string[]): Promise<PublicOptionItem[] | null>;
+    findById( id: string): Promise<PublicOptionItem | null>;
+    findByIds(ids: string[]): Promise<PublicOptionItem[] | null>;
 }
 
 // Định nghĩa interface cho Product Option Config RPC

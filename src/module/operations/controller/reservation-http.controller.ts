@@ -3,7 +3,7 @@ import { RESERVATION_SERVICE } from "../operations.di-token";
 import {type IReservationService } from "../ports/reservation.port";
 import { RolesGuard } from "src/share/guard/roles";
 import { RemoteAuthGuard, Roles } from "src/share/guard";
-import { AppError, getIPv4FromReq,type IPublicTableRpc,type IPublicUserRpc,type PagingDTO, type ReqWithRequester, TABLE_RPC, USER_RPC, UserRole } from "src/share";
+import { AppError, getIPv4FromReq,type IPublicTableRpc,type IPublicUserRpc,paginatedResponse,type PagingDTO, PublicTable, PublicUser, type ReqWithRequester, TABLE_RPC, USER_RPC, UserRole } from "src/share";
 import {type Request as ExpressRequest } from "express";
 import type { ReservationUpdateDTO, ReservationCreatedDTO, ReservationCondDTO } from "../dtos/reservation.dto";
 import { ErrReservationNotFound, Reservation } from "../models/reservation.model";
@@ -71,15 +71,79 @@ export class ReservationHttpController {
     @Get()
     @HttpCode(HttpStatus.OK)
     async list(@Request() req: ReqWithRequester, @Query() cond: ReservationCondDTO, @Query() paging: PagingDTO) {
-        const data = await this.reservationService.list(cond, paging);
-        return { data };
+        const result = await this.reservationService.list(cond, paging);
+
+        const userIds = result.data.map(item => item.userId).filter(id => id !== null);
+        const tableIds = result.data.map(item => item.tableId).filter(id => id !== null);
+
+        const users = await this.userRpc.getUsersByIds(userIds);
+        const tables = await this.tableRpc.findByIds(tableIds);
+
+        const userMap: Record<string, PublicUser> = {};
+        const tableMap: Record<string, PublicTable> = {};
+
+        if (users) {
+            users.map(user => {
+                userMap[user.id] = user;
+            });
+        }
+        if (tables) {
+            tables.forEach(table => {
+                tableMap[table.id] = table;
+            });
+        }
+
+        result.data = result.data.map(item => {
+            let user;
+            if (item.userId) {
+                user = userMap[item.userId];
+            }
+            let table;
+            if (item.tableId) {
+                table = tableMap[item.tableId];
+            }
+            return { ...item, user, table } as Reservation;
+        });
+        return paginatedResponse(result, paging);
     }   
 
     // API để lấy danh sách đặt bàn theo nhiều ID với phân trang
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async listByIds(@Request() req: ReqWithRequester, @Body('ids') ids: string[]) {
-        const data = await this.reservationService.listByIds(ids);
+        const result = await this.reservationService.listByIds(ids);
+
+        const userIds = result.map(item => item.userId).filter(id => id !== null);
+        const tableIds = result.map(item => item.tableId).filter(id => id !== null);
+
+        const users = await this.userRpc.getUsersByIds(userIds);
+        const tables = await this.tableRpc.findByIds(tableIds);
+
+        const userMap: Record<string, PublicUser> = {};
+        const tableMap: Record<string, PublicTable> = {};
+
+        if (users) {
+            users.map(user => {
+                userMap[user.id] = user;
+            });
+        }
+        if (tables) {
+            tables.forEach(table => {
+                tableMap[table.id] = table;
+            });
+        }
+
+        const data = result.map(item => {
+            let user;
+            if (item.userId) {
+                user = userMap[item.userId];
+            }
+            let table;
+            if (item.tableId) {
+                table = tableMap[item.tableId];
+            } 
+            return { ...item, user, table } as Reservation;
+        });
         return { data };
     }
 }

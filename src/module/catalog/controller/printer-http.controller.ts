@@ -82,11 +82,9 @@ export class PrinterHttpController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Lấy danh sách máy in theo mảng IDs' })
     @ApiCreatedResponse({ description: 'Danh sách máy in được lấy thành công' })
-    async listByIds(@Body() body: { ids: string[] }, @Query() pagingQuery: PagingDTO){
-        const ids = body.ids;
-        const paging = pagingDTOSchema.parse(pagingQuery);
-        const data = await this.printerService.getPrinterByIds(ids, paging);
-        return paginatedResponse(data, body);
+    async listByIds(@Body('ids') ids: string[]){
+        const data = await this.printerService.getPrinterByIds(ids);
+        return { data };
     }
 }
 
@@ -120,10 +118,8 @@ export class PrinterRpcController {
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'RPC: Lấy danh sách máy in theo mảng IDs' })
-    async listByIds(@Body() body: { ids: string[] }, @Query() pagingQuery: PagingDTO){
-        const ids = body.ids;
-        const paging = pagingDTOSchema.parse(pagingQuery);
-        const data = await this.printerService.getPrinterByIds(ids, paging);
-        return paginatedResponse(data, body);
+    async listByIds(@Body('ids') ids: string[], @Query() pagingQuery: PagingDTO){
+        const data = await this.printerService.getPrinterByIds(ids);
+        return { data };
     }
 }

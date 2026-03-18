@@ -35,6 +35,8 @@ export interface CartCondDTO extends z.infer<typeof cartCondDTOSchema> {}
 export const cartItemCreateDTOSchema = cartItemSchema.pick({
     cartId: true, // ID giỏ hàng
     productId: true, // ID sản phẩm
+    variantId: true, // ID biến thể sản phẩm, có thể null nếu sản phẩm không có biến thể
+    note: true, // Ghi chú cho mục sản phẩm trong giỏ hàng, có thể null
 }).extend({
     quantity: z.number().min(0, 'Quantity of cart item cannot be negative').optional(), // Số lượng sản phẩm trong mục giỏ hàng, mặc định là 1
 }).required()
@@ -45,6 +47,7 @@ export interface CartItemCreateDTO extends z.infer<typeof cartItemCreateDTOSchem
 // Định nghĩa schema cho cập nhật mục sản phẩm trong giỏ hàng
 export const cartItemUpdateDTOSchema = cartItemSchema.pick({
     quantity: true, // Số lượng sản phẩm trong mục giỏ hàng
+    note: true, // Ghi chú cho mục sản phẩm trong giỏ hàng
 }).partial()
 
 // Định nghĩa kiểu dữ liệu cho cập nhật mục sản phẩm trong giỏ hàng
@@ -54,7 +57,9 @@ export interface CartItemUpdateDTO extends z.infer<typeof cartItemUpdateDTOSchem
 export const cartItemCondDTOSchema = cartItemSchema.pick({
     cartId: true, // ID giỏ hàng
     productId: true, // ID sản phẩm
+    variantId: true, // ID biến thể sản phẩm
     quantity: true, // Số lượng sản phẩm trong mục giỏ hàng
+    note: true, // Ghi chú cho mục sản phẩm trong giỏ hàng
 }).partial();   
 
 // Định nghĩa kiểu dữ liệu cho điều kiện truy vấn mục sản phẩm trong giỏ hàng

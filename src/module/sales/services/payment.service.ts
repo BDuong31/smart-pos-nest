@@ -83,19 +83,18 @@ export class PaymentService implements IPaymentService {
     }
 
     // Lấy thông tin giao dịch thanh toán theo ID
-    async getPaymentById(requester: Requester, paymentId: string): Promise<PaymentTransaction | null> {
-        return await this.paymentRepo.getPaymentById(paymentId)
+    async getPaymentById(paymentId: string): Promise<PaymentTransaction | null> {
+        return await this.paymentRepo.getPaymentById(paymentId);
     }
 
     // Lấy danh sách giao dịch thanh toán theo điều kiện    
-    async listPayments(requester: Requester, pagingDTO: PagingDTO, paymentCondDTO: PaymentCondDTO): Promise<Paginated<PaymentTransaction>> {
-        const cond = paymentCondDTOSchema.parse(paymentCondDTO)
-        return await this.paymentRepo.listPayments(cond, pagingDTO)
+    async listPayments(pagingDTO: PagingDTO, paymentCondDTO: PaymentCondDTO): Promise<Paginated<PaymentTransaction>> {
+        return await this.paymentRepo.listPayments(paymentCondDTO, pagingDTO);
     }
 
     // Lấy danh sách giao dịch thanh toán theo nhiều ID
-    async listPaymentsByIds(requester: Requester, paymentIds: string[], pagingDTO : PagingDTO): Promise<Paginated<PaymentTransaction>> {
-        return await this.paymentRepo.listPaymentsByIds(paymentIds, pagingDTO)
+    async listPaymentsByIds(paymentIds: string[]): Promise<PaymentTransaction[]> {
+        return await this.paymentRepo.listPaymentsByIds(paymentIds);
     }
 
     // Khởi tạo giao dịch thanh toán và trả về URL thanh toán nếu có    

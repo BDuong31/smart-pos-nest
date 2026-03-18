@@ -109,7 +109,25 @@ export class ImportInvoiceDetailHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const data = await this.importInvoiceDetailService.listByIds(ids);
+        const result = await this.importInvoiceDetailService.listByIds(ids);
+
+        const ingredientIds = result.map(item => item.ingredientId);
+
+        const ingredients = await this.ingredientRpc.findByIds([...new Set(ingredientIds)]);
+
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.forEach(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            })
+        }
+
+        const data = result.map(item => {
+            const ingredient = ingredientMap[item.ingredientId];
+            return { ...item, ingredient } as PublicImportInvoiceDetail;
+        });
+        
         return { data };
     }
 }

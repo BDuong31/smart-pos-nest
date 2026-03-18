@@ -38,9 +38,7 @@ export class LoyaltyHttpController {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
 
-        console.log('dto:', dto);
-        console.log('paging:', paging);
-        const userRanks = await this.loyaltyService.getUserRanks(dto, ip, userAgent, paging);
+        const userRanks = await this.loyaltyService.getUserRanks(dto, paging);
         return { data: userRanks };
     }
 
@@ -96,7 +94,7 @@ export class LoyaltyHttpController {
     async getPointHistories(@Request() req: ExpressRequest, @Query() dto: PointHistoryCondDTO, @Query() paging: PagingDTO) {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
-        const pointHistories = await this.loyaltyService.getPointHistories(dto, ip, userAgent, paging);
+        const pointHistories = await this.loyaltyService.getPointHistories(dto, paging);
         return { data: pointHistories };
     }
 }
@@ -121,8 +119,7 @@ export class LoyaltyRpcController {
     @ApiOperation({ summary: 'RPC lấy thông tin hạng thành viên theo ID' })
     @ApiCreatedResponse({ description: 'Trả về thông tin hạng thành viên theo ID' })
     async getUserRankByIdRpc(@Request() req: ExpressRequest, @Param('id') id: string) {
-        const { ip, userAgent } = this.getRpcMetadata(req);
-        return await this.loyaltyService.getUserRankById(id, ip, userAgent);
+        return await this.loyaltyService.getUserRankById(id);
     }
 
     // RPC lấy danh sách hạng thành viên theo nhiều ID
@@ -130,8 +127,7 @@ export class LoyaltyRpcController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'RPC lấy danh sách hạng thành viên theo nhiều ID' })
     @ApiCreatedResponse({ description: 'Trả về danh sách hạng thành viên theo nhiều ID' })
-    async getUserRanksByIdsRpc(@Request() req: ExpressRequest, @Body() dto: { ids: string[] }, @Query() paging: PagingDTO) {
-        const { ip, userAgent } = this.getRpcMetadata(req);
-        return await this.loyaltyService.getUserRankByIds(dto.ids, ip, userAgent);
+    async getUserRanksByIdsRpc(@Request() req: ExpressRequest, @Body('ids') ids: string[]) {
+        return await this.loyaltyService.getUserRankByIds(ids);
     }
 }

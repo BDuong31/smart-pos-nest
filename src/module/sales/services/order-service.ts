@@ -77,18 +77,18 @@ export class OrderService implements IOrderService {
     }
     
     // Lấy thông tin đơn hàng theo ID 
-    async getOrderById(requester: Requester, orderId: string): Promise<Order | null> {
+    async getOrderById(orderId: string): Promise<Order | null> {
         return await this.orderRepo.getOrderById(orderId);
-    }   
+    }
     
     // Lấy danh sách đơn hàng theo điều kiện
-    async listOrders(requester: Requester, pagingDTO: PagingDTO, orderCondDTO: OrderCondDTO): Promise<Paginated<Order>> {
+    async listOrders(pagingDTO: PagingDTO, orderCondDTO: OrderCondDTO): Promise<Paginated<Order>> {
         return await this.orderRepo.listOrders(orderCondDTO, pagingDTO);
     }
 
     // Lấy danh sách đơn hàng theo nhiều ID
-    async listOrdersByIds(requester: Requester, orderIds: string[], pagingDTO: PagingDTO): Promise<Paginated<Order>> {
-        return await this.orderRepo.listOrdersByIds(orderIds, pagingDTO);
+    async listOrdersByIds(orderIds: string[]): Promise<Order[]> {
+        return await this.orderRepo.listOrdersByIds(orderIds);
     }
 
     // Order Item
@@ -135,18 +135,18 @@ export class OrderService implements IOrderService {
     }
 
     // Lấy thông tin mục sản phẩm trong đơn hàng theo ID    
-    async getOrderItemById(requester: Requester, orderItemId: string): Promise<OrderItem | null> {
+    async getOrderItemById(orderItemId: string): Promise<OrderItem | null> {
         return await this.orderRepo.getOrderItemById(orderItemId);
     }
 
     // Lấy danh sách mục sản phẩm trong đơn hàng theo điều kiện
-    async listOrderItems(requester: Requester, pagingDTO: PagingDTO, orderItemCondDTO: OrderItemCondDTO): Promise<Paginated<OrderItem>> {
+    async listOrderItems(pagingDTO: PagingDTO, orderItemCondDTO: OrderItemCondDTO): Promise<Paginated<OrderItem>> {
         return await this.orderRepo.listOrderItems(orderItemCondDTO, pagingDTO);
     }
 
     // Lấy danh sách mục sản phẩm trong đơn hàng theo nhiều ID
-    async listOrderItemsByIds(requester: Requester, orderItemIds: string[], pagingDTO: PagingDTO): Promise<Paginated<OrderItem>> {
-        return await this.orderRepo.listOrderItemsByIds(orderItemIds, pagingDTO);
+    async listOrderItemsByIds(orderItemIds: string[]): Promise<OrderItem[]> {
+        return await this.orderRepo.listOrderItemsByIds(orderItemIds);
     }
 
     // Order Item Option
@@ -186,18 +186,18 @@ export class OrderService implements IOrderService {
     }
 
     // Lấy thông tin tùy chọn sản phẩm trong mục đơn hàng theo ID
-    async getOrderItemOptionById(requester: Requester, orderItemOptionId: string): Promise<OrderItemOption | null> {
+    async getOrderItemOptionById(orderItemOptionId: string): Promise<OrderItemOption | null> {
         return await this.orderRepo.getOrderItemOptionById(orderItemOptionId);
     }
 
     // Lấy danh sách tùy chọn sản phẩm trong mục đơn hàng theo điều kiện
-    async listOrderItemOptions(requester: Requester, pagingDTO: PagingDTO, orderItemOptionCondDTO: OrderItemOptionCondDTO): Promise<Paginated<OrderItemOption>> {
+    async listOrderItemOptions(pagingDTO: PagingDTO, orderItemOptionCondDTO: OrderItemOptionCondDTO): Promise<Paginated<OrderItemOption>> {
         return await this.orderRepo.listOrderItemOptions(orderItemOptionCondDTO, pagingDTO);
     }
 
     // Lấy danh sách tùy chọn sản phẩm trong mục đơn hàng theo nhiều ID
-    async listOrderItemOptionsByIds(requester: Requester, orderItemOptionIds: string[], pagingDTO: PagingDTO): Promise<Paginated<OrderItemOption>> {
-        return await this.orderRepo.listOrderItemOptionsByIds(orderItemOptionIds, pagingDTO);
+    async listOrderItemOptionsByIds(orderItemOptionIds: string[]): Promise<OrderItemOption[]> {
+        return await this.orderRepo.listOrderItemOptionsByIds(orderItemOptionIds);
     }
 
     // Order Voucher
@@ -238,18 +238,18 @@ export class OrderService implements IOrderService {
     }
 
     // Lấy thông tin voucher áp dụng trong đơn hàng theo ID
-    async getOrderVoucherById(requester: Requester, orderVoucherId: string): Promise<OrderVoucher | null> {
+    async getOrderVoucherById(orderVoucherId: string): Promise<OrderVoucher | null> {
         return await this.orderRepo.getOrderVoucherById(orderVoucherId);
     }
 
     // Lấy danh sách voucher áp dụng trong đơn hàng theo điều kiện
-    async listOrderVouchers(requester: Requester, pagingDTO: PagingDTO, orderVoucherCondDTO: OrderVoucherCondDTO): Promise<Paginated<OrderVoucher>> {
+    async listOrderVouchers(pagingDTO: PagingDTO, orderVoucherCondDTO: OrderVoucherCondDTO): Promise<Paginated<OrderVoucher>> {
         return await this.orderRepo.listOrderVouchers(orderVoucherCondDTO, pagingDTO);
-    }   
+    }
 
     // Lấy danh sách voucher áp dụng trong đơn hàng theo nhiều ID
-    async listOrderVouchersByIds(requester: Requester, orderVoucherIds: string[], pagingDTO: PagingDTO): Promise<Paginated<OrderVoucher>> {
-        return await this.orderRepo.listOrderVouchersByIds(orderVoucherIds, pagingDTO);
+    async listOrderVouchersByIds(orderVoucherIds: string[]): Promise<OrderVoucher[]> {
+        return await this.orderRepo.listOrderVouchersByIds(orderVoucherIds);
     }
 
     // Order Table
@@ -289,18 +289,18 @@ export class OrderService implements IOrderService {
     }
 
     // Lấy thông tin bàn ăn được đặt trong đơn hàng theo ID
-    async getOrderTableById(requester: Requester, orderTableId: string): Promise<OrderTable | null> {
+    async getOrderTableById(orderTableId: string): Promise<OrderTable | null> {
         return await this.orderRepo.getOrderTableById(orderTableId);
-    }   
+    }
 
     // Lấy danh sách bàn ăn được đặt trong đơn hàng theo điều kiện
-    async listOrderTables(requester: Requester, pagingDTO: PagingDTO, orderTableCondDTO: OrderTableCondDTO): Promise<Paginated<OrderTable>> {
+    async listOrderTables(pagingDTO: PagingDTO, orderTableCondDTO: OrderTableCondDTO): Promise<Paginated<OrderTable>> {
         return await this.orderRepo.listOrderTables(orderTableCondDTO, pagingDTO);
     }
 
     // Lấy danh sách bàn ăn được đặt trong đơn hàng theo nhiều ID
-    async listOrderTablesByIds(requester: Requester, orderTableIds: string[], pagingDTO: PagingDTO): Promise<Paginated<OrderTable>> {
-        return await this.orderRepo.listOrderTablesByIds(orderTableIds, pagingDTO);
+    async listOrderTablesByIds(orderTableIds: string[]): Promise<OrderTable[]> {
+        return await this.orderRepo.listOrderTablesByIds(orderTableIds);
     }
 
     // Invoice
@@ -339,17 +339,17 @@ export class OrderService implements IOrderService {
     }
 
     // Lấy thông tin hóa đơn được tạo từ đơn hàng theo ID
-    async getInvoiceById(requester: Requester, invoiceId: string): Promise<Invoice | null> {
+    async getInvoiceById(invoiceId: string): Promise<Invoice | null> {
         return await this.orderRepo.getInvoiceById(invoiceId);
     }
 
     // Lấy danh sách hóa đơn được tạo từ đơn hàng theo điều kiện
-    async listInvoices(requester: Requester, pagingDTO: PagingDTO, invoiceCondDTO: InvoiceCondDTO): Promise<Paginated<Invoice>> {
+    async listInvoices(pagingDTO: PagingDTO, invoiceCondDTO: InvoiceCondDTO): Promise<Paginated<Invoice>> {
         return await this.orderRepo.listInvoices(invoiceCondDTO, pagingDTO);
     }
 
     // Lấy danh sách hóa đơn được tạo từ đơn hàng theo nhiều ID
-    async listInvoicesByIds(requester: Requester, invoiceIds: string[], pagingDTO: PagingDTO): Promise<Paginated<Invoice>> {
-        return await this.orderRepo.listInvoicesByIds(invoiceIds, pagingDTO);
+    async listInvoicesByIds(invoiceIds: string[]): Promise<Invoice[]> {
+        return await this.orderRepo.listInvoicesByIds(invoiceIds);
     }
 }

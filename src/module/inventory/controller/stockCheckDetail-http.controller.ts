@@ -104,7 +104,22 @@ export class StockCheckDetailHttpController {
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async listByIds(@Body('ids') ids: string[]) {
-        const data = await this.stockCheckDetailService.listByIds(ids);
+        const result = await this.stockCheckDetailService.listByIds(ids);
+
+        const ingredientIds = result.map(detail => detail.ingredientId).filter(id => !!id);
+        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+        const ingredientMap: Record<string, PublicIngredient> = {};
+
+        if (ingredients) {
+            ingredients.map(ingredient => {
+                ingredientMap[ingredient.id] = ingredient;
+            });
+        }
+        
+        const data = result.map(detail => {
+            const ingredient = ingredientMap[detail.ingredientId];
+            return { ...detail, ingredient } as StockCheckDetail;
+        });
         return { data };
      }
 }
@@ -119,8 +134,8 @@ export class StockCheckDetailRpcController {
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const stockCheckDetail = await this.stockCheckDetailService.get(id);
-        return stockCheckDetail;
+        const data = await this.stockCheckDetailService.get(id);
+        return { data };
      }
 
     // RPC lấy thông tin chi tiết kiểm kê tồn kho theo nhiều ID

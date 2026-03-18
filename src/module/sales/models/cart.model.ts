@@ -1,5 +1,5 @@
 import { create } from 'axios';
-import { PublicProduct, PublicVariant } from 'src/share';
+import { PublicOptionItem, PublicProduct, PublicVariant } from 'src/share';
 import { z } from 'zod';
 
 // ============================
@@ -43,7 +43,7 @@ export const cartItemSchema = z.object({
     id: z.string().uuid(),
     cartId: z.string().uuid(),
     productId: z.string().uuid(),
-    variantId: z.string().uuid().nullable(),
+    variantId: z.string().uuid(),
     quantity: z.number().min(0, ErrCartItemQuantityNegative),
     note: z.string().max(500).nullable(),
     createdAt: z.date(),
@@ -61,4 +61,4 @@ export const cartItemOptionSchema = z.object({
     updatedAt: z.date(),
 })
 
-export type CartItemOption = z.infer<typeof cartItemOptionSchema> & { optionItem?: PublicVariant };
+export type CartItemOption = z.infer<typeof cartItemOptionSchema> & { optionItem?: PublicOptionItem };

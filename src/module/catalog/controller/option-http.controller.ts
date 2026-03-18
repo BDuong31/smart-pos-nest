@@ -4,7 +4,7 @@ import {type IOptionService } from "../ports/option.port";
 import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
 import { getIPv4FromReq,type PagingDTO, type ReqWithRequester, UserRole } from "src/share";
 import { type Request as RequestExpress } from 'express';
-import type { CreateOptionGroupDTO, CreateOptionItemDTO, CreateProductOptionConfigDTO, OptionGroupCondDTO, OptionItemCondDTO, UpdateOptionItemDTO } from "../dtos/option.dto";
+import type { CreateOptionGroupDTO, CreateOptionItemDTO, CreateProductOptionConfigDTO, OptionGroupCondDTO, OptionItemCondDTO, ProductOptionConfigCondDTO, UpdateOptionItemDTO } from "../dtos/option.dto";
 import { ProductOptionConfig } from "../models/option.model";
 @Controller('v1/options')
 export class OptionHttpController {
@@ -68,8 +68,8 @@ export class OptionHttpController {
     // API lấy danh sách Option Group theo mảng IDs
     @Get('group/list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async getListOptionGroupByIds(@Body() ids: string[], @Query() paging: PagingDTO) {
-        return await this.optionService.getOptionGroupByIds(ids, paging);
+    async getListOptionGroupByIds(@Body('ids') ids: string[]) {
+        return await this.optionService.getOptionGroupByIds(ids);
     }
 
     // ============================
@@ -77,60 +77,60 @@ export class OptionHttpController {
     // ============================
 
     // API tạo Option Item mới
-    @Post('group/:groupId/item')
+    @Post('group/item')
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.CREATED)
-    async createOptionItem(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() dto: CreateOptionItemDTO, @Param('groupId') groupId: string) {
+    async createOptionItem(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() dto: CreateOptionItemDTO) {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        return await this.optionService.createOptionItem(requester, groupId, dto, ip, userAgent);
+        return await this.optionService.createOptionItem(requester, dto, ip, userAgent);
      }
 
     // API cập nhật Option Item
-    @Patch('group/:groupId/item/:itemId')
+    @Patch('group/item/:itemId')
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async updateOptionItem(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() dto: UpdateOptionItemDTO, @Param('groupId') groupId: string, @Param('itemId') itemId: string) {
+    async updateOptionItem(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() dto: UpdateOptionItemDTO, @Param('itemId') itemId: string) {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        return await this.optionService.updateOptionItem(requester, groupId, itemId, dto, ip, userAgent);
+        return await this.optionService.updateOptionItem(requester, itemId, dto, ip, userAgent);
      }
 
     // API xóa Option Item
-    @Delete('group/:groupId/item/:itemId')  
+    @Delete('group/item/:itemId')  
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async deleteOptionItem(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('groupId') groupId: string, @Param('itemId') itemId: string) {
+    async deleteOptionItem(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('itemId') itemId: string) {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        return await this.optionService.deleteOptionItem(requester, groupId, itemId, ip, userAgent);
+        return await this.optionService.deleteOptionItem(requester, itemId, ip, userAgent);
      }  
 
     // API lấy thông tin Option Item theo ID
-    @Get('group/:groupId/item/:itemId')
+    @Get('group/item/:itemId')
     @HttpCode(HttpStatus.OK)
-    async getOptionItemById(@Param('groupId') groupId: string, @Param('itemId') itemId: string) {
-        return await this.optionService.getOptionItemById(groupId, itemId);
+    async getOptionItemById(@Param('itemId') itemId: string) {
+        return await this.optionService.getOptionItemById(itemId);
      }
 
     // API lấy danh sách Option Item theo điều kiện lọc
-    @Get('group/:groupId/item') 
+    @Get('group/item') 
     @HttpCode(HttpStatus.OK)
     async getListOptionItem(@Body() cond: OptionItemCondDTO, @Query() paging: PagingDTO) {
         return await this.optionService.getListOptionItem(cond, paging);
      }
 
     // API lấy danh sách Option Item theo mảng IDs
-    @Get('group/:groupId/item/list-by-ids')
+    @Get('group/item/list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async getListOptionItemByIds(@Param('groupId') groupId: string, @Body() ids: string[], @Query() paging: PagingDTO) {
-        return await this.optionService.getOptionItemsByIds(groupId, ids, paging);  
+    async getListOptionItemByIds(@Body('ids') ids: string[]) {
+        return await this.optionService.getOptionItemsByIds(ids);  
     }
    
     // ============================
@@ -138,34 +138,41 @@ export class OptionHttpController {
     // ============================
 
     // API thiết lập cấu hình Option cho sản phẩm
-    @Post('product/:productId/config')  
+    @Post('product/config')  
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async setProductOptionConfig(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() dto: CreateProductOptionConfigDTO, @Param('productId') productId: string) {
+    async setProductOptionConfig(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Body() dto: CreateProductOptionConfigDTO) {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        return await this.optionService.setProductOptionConfig(requester, productId, dto, ip, userAgent);
+        return await this.optionService.setProductOptionConfig(requester, dto, ip, userAgent);
      }
 
      // API xóa cấu hình Option của sản phẩm
-    @Delete('product/:productId/config/:optionGroupId') 
+    @Delete('product/config/:productOptionConfigId') 
     @UseGuards(RemoteAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async removeProductOptionConfig(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('productId') productId: string, @Param('optionGroupId') optionGroupId: string) {
+    async removeProductOptionConfig(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Param('productOptionConfigId') productOptionConfigId: string) {
         const requester = req.requester;
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || '';
-        return await this.optionService.removeProductOptionConfig(requester, productId, optionGroupId, ip, userAgent);
+        return await this.optionService.removeProductOptionConfig(requester, productOptionConfigId, ip, userAgent);
      } 
 
     // API lấy cấu hình Option của sản phẩm
-    @Get('product/:productId/config')
+    @Get('product/config/:productOptionConfigId')
     @HttpCode(HttpStatus.OK)
-    async getProductOptionConfig(@Param('productId') productId: string) {
-        return await this.optionService.getProductOptionConfig(productId);
+    async getProductOptionConfig(@Param('productOptionConfigId') productOptionConfigId: string) {
+        return await this.optionService.getProductOptionConfigById(productOptionConfigId);
+     }
+
+     // API lấy danh sách cấu hình Option của sản phẩm theo điều kiện lọc
+    @Get('product/config')
+    @HttpCode(HttpStatus.OK)
+    async listProductOptionConfig(@Body() cond: ProductOptionConfigCondDTO, @Query() paging: PagingDTO) {
+        return await this.optionService.listProductOptionConfig(cond, paging);
      }
 }
 
@@ -188,8 +195,8 @@ export class OptionRpcController {
     // RPC lấy danh sách Option Group theo mảng IDs
     @Get('group/list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async getListOptionGroupByIds(@Body() ids: string[], @Query() paging: PagingDTO) {
-        return await this.optionService.getOptionGroupByIds(ids, paging);
+    async getListOptionGroupByIds(@Body('ids') ids: string[]) {
+        return await this.optionService.getOptionGroupByIds(ids);
      }
 
     // ============================
@@ -197,17 +204,17 @@ export class OptionRpcController {
     // ============================
 
     // RPC lấy thông tin Option Item theo ID
-    @Get('group/:groupId/item/:itemId')
+    @Get('group/item/:id')
     @HttpCode(HttpStatus.OK)
-    async getOptionItemById(@Param('groupId') groupId: string, @Param('itemId') itemId: string) {
-        return await this.optionService.getOptionItemById(groupId, itemId);
+    async getOptionItemById(@Param('id') id: string) {
+        return await this.optionService.getOptionItemById(id);
      }
 
     // RPC lấy danh sách Option Item theo mảng IDs
-    @Get('group/:groupId/item/list-by-ids')
+    @Post('group/item/list-by-ids')
     @HttpCode(HttpStatus.OK)
-    async getListOptionItemByIds(@Param('groupId') groupId: string, @Body() ids: string[], @Query() paging: PagingDTO) {
-        return await this.optionService.getOptionItemsByIds(groupId, ids, paging);
+    async getListOptionItemByIds(@Body('ids') ids: string[]) {
+        return await this.optionService.getOptionItemsByIds(ids);
      }
    
     // ============================
@@ -215,9 +222,9 @@ export class OptionRpcController {
     // ============================
 
     // RPC lấy cấu hình Option của sản phẩm
-    @Get('product/:productId/config')
+    @Get('product/config/:id')
     @HttpCode(HttpStatus.OK)
-    async getProductOptionConfig(@Param('productId') productId: string) {
-        return await this.optionService.getProductOptionConfig(productId);
+    async getProductOptionConfig(@Param('id') id: string) {
+        return await this.optionService.getProductOptionConfigById(id);
      }
 }
