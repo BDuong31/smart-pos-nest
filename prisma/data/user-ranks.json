@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Đồng",
+    "minPoint": 0,
+    "discountPercent": 0
+  },
+  {
+    "name": "Bạc",
+    "minPoint": 1000,
+    "discountPercent": 3
+  },
+  {
+    "name": "Vàng",
+    "minPoint": 5000,
+    "discountPercent": 5
+  },
+  {
+    "name": "Bạch Kim",
+    "minPoint": 15000,
+    "discountPercent": 8
+  },
+  {
+    "name": "Kim Cương",
+    "minPoint": 50000,
+    "discountPercent": 10
+  }
+]

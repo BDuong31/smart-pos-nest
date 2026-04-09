@@ -19,7 +19,7 @@ export const recipeCreateDTOSchema = recipeSchema.pick({
     }
     // Kiểm tra nếu optionItemId tồn tại thì productId phải tồn tại và variantId phải không tồn tại
     if (data.optionItemId) {
-        return data.productId && !data.variantId;
+        return !data.productId && !data.variantId;
     }   
 
     return true; // Nếu không có productId, variantId, optionItemId nào được cung cấp thì vẫn hợp lệ

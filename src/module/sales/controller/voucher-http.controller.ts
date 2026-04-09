@@ -1,4 +1,18 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post, Request, UseGuards, Query } from "@nestjs/common";
+import { 
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Delete,
+  Request,
+  UseGuards,
+  Query,
+  Patch,
+} from "@nestjs/common";
 import { VOUCHER_SERVICE } from "../sales.di-token";
 import type { IVoucherService } from "../ports/voucher.port";
 import  type { Request as RequestExpress } from "express";
@@ -25,7 +39,7 @@ export class VoucherHttpController {
     }
 
     // API cập nhật thông tin voucher theo ID
-    @Post(':id')
+    @Patch(':id')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.NO_CONTENT)
     async update(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress,@Param('id') id: string, @Body() dto: VoucherUpdateDTO) {
@@ -36,7 +50,7 @@ export class VoucherHttpController {
     }
 
     // API xóa voucher theo ID
-    @Post(':id/delete')
+    @Delete(':id')
     @UseGuards(RemoteAuthGuard)
     @HttpCode(HttpStatus.NO_CONTENT)
     async delete(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress,@Param('id') id: string) {
@@ -45,6 +59,17 @@ export class VoucherHttpController {
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
         await this.voucherService.deleteVoucher(requester, id, ip, userAgent);
     }
+    
+    // API lấy danh sách voucher theo điều kiện với phân trang
+    @Get()
+    @UseGuards(RemoteAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async list(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: VoucherCondDTO, @Query() paging: PagingDTO) {
+        const ip = getIPv4FromReq(reqExpress);
+        const userAgent = reqExpress.headers['user-agent'] || 'unknown';
+        const data = await this.voucherService.listVouchers(paging, cond);
+        return { data };
+     }
 
     // API lấy thông tin voucher theo ID
     @Get(':id')
@@ -54,17 +79,6 @@ export class VoucherHttpController {
         const data = await this.voucherService.getVoucherById(req.requester, id,);
         return { data };
     }
-
-    // API lấy danh sách voucher theo điều kiện với phân trang
-    @Get()
-    @UseGuards(RemoteAuthGuard)
-    @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: VoucherCondDTO, @Query() paging: PagingDTO) {
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || 'unknown';
-        const data = await this.voucherService.listVouchers(req.requester, paging, cond);
-        return { data };
-     }
 
      // API lấy danh sách voucher theo nhiều ID với phân trang
      @Post('list-by-ids')

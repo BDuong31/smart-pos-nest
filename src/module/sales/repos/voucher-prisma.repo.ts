@@ -22,9 +22,7 @@ export class VoucherPrismaRepo implements IVoucherRepository {
     async listVouchers(cond: VoucherCondDTO, paging: PagingDTO): Promise<Paginated<Voucher>> {
         const { code, type, value, minOrderVal, usageLimit, isActive,  startDate, endDate, ...rest} = cond; 
 
-        let where = {
-            ...rest,
-        }
+        let where = {}
 
         if (code) {
             where = {
@@ -82,14 +80,17 @@ export class VoucherPrismaRepo implements IVoucherRepository {
             }
         }
 
+        const page = Number(paging.page) || 1;
+        const limit = Number(paging.limit) || 10;
+
         const total = await prisma.voucher.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const result = await prisma.voucher.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { createdAt: 'desc' },
         });
 

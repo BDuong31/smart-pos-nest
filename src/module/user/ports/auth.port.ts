@@ -1,9 +1,6 @@
 import { Requester, AccessTokenPayload, RefreshTokenPayload } from 'src/share'
 import { User } from '../models/user.model'
 import { UserAuthDTO, UserChangePasswordDTO, UserLoginDTO, UserRegistrationDTO, UserResetPasswordDTO } from '../dtos/auth.dto'
-// ============================
-// Định nghĩa các interface cho Auth Service
-// ============================
 
 // Định nghĩa kiểu dữ liệu người dùng xác thực
 export interface IAuthService {

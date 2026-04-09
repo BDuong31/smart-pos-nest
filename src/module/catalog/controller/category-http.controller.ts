@@ -2,10 +2,11 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Pat
 import { CATEGORY_SERVICE } from "../catalog.di-token";
 import type { ICategoryService } from "../ports/category.port";
 import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
-import { getIPv4FromReq, paginatedResponse, type PagingDTO, pagingDTOSchema, type ReqWithRequester, UserRole } from "src/share";
+import { getIPv4FromReq, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicCategory, type ReqWithRequester, UserRole } from "src/share";
 import { categoryCondDTOSchema, type CategoryCondDTO, type CategoryCreatedDTO } from "../dtos/category.dto";
 import type { Request as ExpressRequest } from "express";
 import { ApiCreatedResponse, ApiOperation } from "@nestjs/swagger";
+import { Category } from "../models/category.model";
 // Lớp CategoryHttpController xử lý các yêu cầu HTTP liên quan đến danh mục sản phẩm
 @Controller('v1/categories')
 export class CategoryHttpController {
@@ -59,7 +60,16 @@ export class CategoryHttpController {
     @ApiOperation({ summary: 'Lấy thông tin danh mục sản phẩm theo ID' })
     @ApiCreatedResponse({ description: 'Thông tin danh mục sản phẩm được lấy thành công' })
     async get(@Param('id') id: string){
-        const data = await this.categoryService.get(id);
+        const result = await this.categoryService.get(id);
+        let data;
+        let parent;
+        if (data?.parentId) {
+            parent = await this.categoryService.get(data.parentId);
+        }
+
+        if (parent) {
+            data = {...result, parent} as Category;
+        }
         return { data };
     }
     
@@ -71,8 +81,32 @@ export class CategoryHttpController {
     async listCategory(@Request() req: ReqWithRequester, @Query() dto: CategoryCondDTO, @Query() paging: PagingDTO){
         paging = pagingDTOSchema.parse(paging);
         dto = categoryCondDTOSchema.parse(dto);
-        const data = await this.categoryService.list(dto, paging);
-        return paginatedResponse(data, dto);
+
+        const result = await this.categoryService.list(dto, paging);
+
+        const parentIds = result.data
+            .map(item => item.parentId)
+            .filter((id): id is string => id != null);
+
+        const parents = await this.categoryService.listByIds([...new Set(parentIds)])
+        
+        const parentMap: Record<string, PublicCategory> = {};
+
+        if (parents && parents.length > 0){
+            parents.map(parent => {
+                parentMap[parent.id] = parent;
+            })
+        }
+
+        result.data = result.data.map(item => {
+            let parent;
+            if (item.parentId){
+                parent = parentMap[item?.parentId];
+            }
+            return { ...item, parent} as Category;
+        })
+
+        return paginatedResponse(result, dto);
     }
 
     // API lấy danh sách danh mục sản phẩm theo nhiều ID

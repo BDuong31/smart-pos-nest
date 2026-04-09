@@ -47,8 +47,8 @@ export const voucherSchema = z.object({
     minOrderVal: z.number().min(0, ErrVoucherMinOrderValueNegative),
     usageLimit: z.number().min(0, ErrVoucherUsageLimitNegative),
     isActive: z.boolean(),
-    startDate: z.date(),
-    endDate: z.date(),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
     createdAt: z.date(),
     updatedAt: z.date(),
 })

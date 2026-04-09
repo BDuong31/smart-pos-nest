@@ -1,3 +1,4 @@
+import { PublicImage } from 'src/share/data-model';
 import { z } from 'zod';
 // Định nghĩa lỗi về Option Group
 // 1. Định nghĩa lỗi chung về Option Group
@@ -62,7 +63,7 @@ export const optionItem = z.object({
     updatedAt: z.date(),
 })
 
-export type OptionItem = z.infer<typeof optionItem>;
+export type OptionItem = z.infer<typeof optionItem> & { images?: PublicImage[] };
 
 // Định nghĩa dữ liệu ProductOptionConfig
 export const productOptionConfig = z.object({

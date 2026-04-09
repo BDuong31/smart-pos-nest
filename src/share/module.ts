@@ -1,13 +1,13 @@
-import { Module, Provider, Global } from "@nestjs/common";
-import { RedisClient, RabbitMQClient, MongoClient } from "./components"; // Import các client mới
-import { TerminusModule } from "@nestjs/terminus";
-import { MongooseModule } from "@nestjs/mongoose";
-import { config } from "./config";
-import { 
-  EVENT_PUBLISHER, 
-  TOKEN_INTROSPECTOR, 
-  CACHE_SERVICE, 
-  MONGO_SERVICE, 
+import { Module, Provider, Global } from '@nestjs/common';
+import { RedisClient, RabbitMQClient, MongoClient } from './components'; // Import các client mới
+import { TerminusModule } from '@nestjs/terminus';
+import { MongooseModule } from '@nestjs/mongoose';
+import { config } from './config';
+import {
+  EVENT_PUBLISHER,
+  TOKEN_INTROSPECTOR,
+  CACHE_SERVICE,
+  MONGO_SERVICE,
   USER_RPC,
   SHIFT_RPC,
   LOYALTY_RPC,
@@ -44,46 +44,48 @@ import {
   ORDER_ITEM_OPTION_RPC,
   PAYMENT_TRANSACTION_RPC,
   INVOICE_RPC,
-  IMAGE_RPC
-} from "./di-token";
-import { TokenIntrospectorRPCClient } from "./rpc/token-introspect.rpc";
-import { UserRPCClient } from "./rpc/user.rpc";
-import { ShiftRPCClient } from "./rpc/shift.rpc";
-import { LoyaltyRPCClient } from "./rpc/loyalty.rpc";
-import { CategoryRPCClient } from "./rpc/category.rpc";
-import { ProductRPCClient } from "./rpc/product.rpc";
-import { VariantRPCClient } from "./rpc/variant.rpc";
-import { OptionGroupRPCClient } from "./rpc/option-group.rpc";
-import { OptionItemRPCClient } from "./rpc/option-item.rpc";
-import { ProductOptionConfigRPCClient } from "./rpc/product-option-config.rpc";
-import { ComboRPCClient } from "./rpc/combo.rpc";
-import { SupplierRPCClient } from "./rpc/supplier.rpc";
-import { IngredientRPCClient } from "./rpc/ingredient.rpc";
-import { ComboItemRPCClient } from "./rpc/combo-item.rpc";
-import { UnitConversionRPCClient } from "./rpc/unit-conversion.rpc";
-import { InventoryBatchRPCClient } from "./rpc/inventory-batch.rpc";
-import { RecipeRPCClient } from "./rpc/recipe.rpc";
-import { ImportInvoiceRPCClient } from "./rpc/import-invoice.rpc";
-import { ImportInvoiceDetailRPCClient } from "./rpc/import-invoice-detail.rpc";
-import { PurchaseProposalRPCClient } from "./rpc/purchase-proposal.rpc";
-import { PurchaseProposalDetailRPCClient } from "./rpc/purchase-proposal-detail.rpc";
-import { StockCheckRPCClient } from "./rpc/stock-check.rpc";
-import { StockCheckDetailRPCClient } from "./rpc/stock-check-detail.rpc";
-import { ZoneRPCClient } from "./rpc/zone.rpc"; 
-import { TableRPCClient } from "./rpc/table.rpc";
-import { ReservationRPCClient } from "./rpc/reservation.rpc";
-import { CartRPCClient } from "./rpc/cart.rpc";
-import { CartItemRPCClient } from "./rpc/cart-item.rpc";
-import { CartItemOptionRPCClient } from "./rpc/cart-item-option.rpc";
-import { VoucherRPCClient } from "./rpc/voucher.rpc";
-import { OrderRPCClient } from "./rpc/order.rpc";
-import { OrderVoucherRPCClient } from "./rpc/order-voucher.rpc";
-import { OrderTableRPCClient } from "./rpc/order-table.rpc";
-import { OrderItemRPCClient } from "./rpc/order-item.rpc";
-import { OrderItemOptionRPCClient } from "./rpc/order-item-option.rpc";
-import { PaymentTransactionRPCClient } from "./rpc/payment-transaction.rpc";
-import { InvoiceRPCClient } from "./rpc/invoice.rpc";
-import { ImageRPCClient } from "./rpc/image.rpc";
+  IMAGE_RPC,
+  GATEWAY_SERVICE,
+} from './di-token';
+import { TokenIntrospectorRPCClient } from './rpc/token-introspect.rpc';
+import { UserRPCClient } from './rpc/user.rpc';
+import { ShiftRPCClient } from './rpc/shift.rpc';
+import { LoyaltyRPCClient } from './rpc/loyalty.rpc';
+import { CategoryRPCClient } from './rpc/category.rpc';
+import { ProductRPCClient } from './rpc/product.rpc';
+import { VariantRPCClient } from './rpc/variant.rpc';
+import { OptionGroupRPCClient } from './rpc/option-group.rpc';
+import { OptionItemRPCClient } from './rpc/option-item.rpc';
+import { ProductOptionConfigRPCClient } from './rpc/product-option-config.rpc';
+import { ComboRPCClient } from './rpc/combo.rpc';
+import { SupplierRPCClient } from './rpc/supplier.rpc';
+import { IngredientRPCClient } from './rpc/ingredient.rpc';
+import { ComboItemRPCClient } from './rpc/combo-item.rpc';
+import { UnitConversionRPCClient } from './rpc/unit-conversion.rpc';
+import { InventoryBatchRPCClient } from './rpc/inventory-batch.rpc';
+import { RecipeRPCClient } from './rpc/recipe.rpc';
+import { ImportInvoiceRPCClient } from './rpc/import-invoice.rpc';
+import { ImportInvoiceDetailRPCClient } from './rpc/import-invoice-detail.rpc';
+import { PurchaseProposalRPCClient } from './rpc/purchase-proposal.rpc';
+import { PurchaseProposalDetailRPCClient } from './rpc/purchase-proposal-detail.rpc';
+import { StockCheckRPCClient } from './rpc/stock-check.rpc';
+import { StockCheckDetailRPCClient } from './rpc/stock-check-detail.rpc';
+import { ZoneRPCClient } from './rpc/zone.rpc';
+import { TableRPCClient } from './rpc/table.rpc';
+import { ReservationRPCClient } from './rpc/reservation.rpc';
+import { CartRPCClient } from './rpc/cart.rpc';
+import { CartItemRPCClient } from './rpc/cart-item.rpc';
+import { CartItemOptionRPCClient } from './rpc/cart-item-option.rpc';
+import { VoucherRPCClient } from './rpc/voucher.rpc';
+import { OrderRPCClient } from './rpc/order.rpc';
+import { OrderVoucherRPCClient } from './rpc/order-voucher.rpc';
+import { OrderTableRPCClient } from './rpc/order-table.rpc';
+import { OrderItemRPCClient } from './rpc/order-item.rpc';
+import { OrderItemOptionRPCClient } from './rpc/order-item-option.rpc';
+import { PaymentTransactionRPCClient } from './rpc/payment-transaction.rpc';
+import { InvoiceRPCClient } from './rpc/invoice.rpc';
+import { ImageRPCClient } from './rpc/image.rpc';
+import { AppGateway } from './components/gateway';
 
 // Khởi tạo provider cho việc kiểm tra token
 const tokenRPCClient = new TokenIntrospectorRPCClient(config.rpc.introspectUrl);
@@ -92,31 +94,39 @@ const tokenIntrospector: Provider = {
   useValue: tokenRPCClient,
 };
 
-// Định nghĩa provider cho RabbitMQ, Redis và MongoDB
+// Định nghĩa provider cho RabbitMQ
 const rabbitMQProvider: Provider = {
-  provide: EVENT_PUBLISHER, 
+  provide: EVENT_PUBLISHER,
   useFactory: async () => {
     // Khởi tạo Singleton RabbitMQ
-    await RabbitMQClient.init(config.rabbitmq.url); 
+    await RabbitMQClient.init(config.rabbitmq.url);
     return RabbitMQClient.getInstance();
-  }
+  },
 };
 
+// Định nghĩa provider cho Redis
 const redisProvider: Provider = {
-  provide: CACHE_SERVICE, 
-  useFactory: async () => {
+  provide: CACHE_SERVICE,
+  useFactory: () => {
     // Khởi tạo Singleton Redis
     const redisClient = new RedisClient();
     return redisClient;
-  }
+  },
 };
 
+// Định nghĩa provider cho MongoDB
 const mongoProvider: Provider = {
   provide: MONGO_SERVICE,
   useFactory: async () => {
     await MongoClient.init(config.mongo.uri);
     return MongoClient.getInstance();
-  }
+  },
+};
+
+// Định nghĩa provider cho Socket
+const socketGatewayProvider: Provider = {
+  provide: GATEWAY_SERVICE,
+  useClass: AppGateway,
 };
 
 // Khởi tạo các RPC
@@ -163,21 +173,27 @@ const variantRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với option group service
-const optionGroupRPCClient = new OptionGroupRPCClient(config.rpc.optionGroupServiceUrl);
+const optionGroupRPCClient = new OptionGroupRPCClient(
+  config.rpc.optionGroupServiceUrl,
+);
 const optionGroupRPC: Provider = {
   provide: OPTION_GROUP_RPC,
   useValue: optionGroupRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với option item service
-const optionGroupItemRPCClient = new OptionItemRPCClient(config.rpc.optionItemServiceUrl);
+const optionGroupItemRPCClient = new OptionItemRPCClient(
+  config.rpc.optionItemServiceUrl,
+);
 const optionGroupItemRPC: Provider = {
   provide: OPTION_ITEM_RPC,
   useValue: optionGroupItemRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với product option config service
-const productOptionConfigRPCClient = new ProductOptionConfigRPCClient(config.rpc.productOptionConfigServiceUrl);  
+const productOptionConfigRPCClient = new ProductOptionConfigRPCClient(
+  config.rpc.productOptionConfigServiceUrl,
+);
 const productOptionConfigRPC: Provider = {
   provide: PRODUCT_OPTION_CONFIG_RPC,
   useValue: productOptionConfigRPCClient,
@@ -191,7 +207,11 @@ const comboRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với combo item service
-const comboItemRPCClient = new ComboItemRPCClient(config.rpc.comboItemServiceUrl);
+const comboItemRPCClient = new ComboItemRPCClient(
+  config.rpc.comboItemServiceUrl,
+);
+
+// Khởi tạo client cho việc giao tiếp với combo item service
 const comboItemRPC: Provider = {
   provide: COMBO_ITEM_RPC,
   useValue: comboItemRPCClient,
@@ -205,21 +225,27 @@ const supplierRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với ingrendient service
-const ingredientRPCClient = new IngredientRPCClient(config.rpc.ingredientServiceUrl);
+const ingredientRPCClient = new IngredientRPCClient(
+  config.rpc.ingredientServiceUrl,
+);
 const ingredientRPC: Provider = {
   provide: INGREDIENT_RPC,
   useValue: ingredientRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với unit conversion service
-const unitConversionRPCClient = new UnitConversionRPCClient(config.rpc.unitConversionServiceUrl);
+const unitConversionRPCClient = new UnitConversionRPCClient(
+  config.rpc.unitConversionServiceUrl,
+);
 const unitConversionRPC: Provider = {
   provide: UNIT_CONVERSION_RPC,
   useValue: unitConversionRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với inventory batch service
-const inventoryRPCClient = new InventoryBatchRPCClient(config.rpc.inventoryBatchServiceUrl);
+const inventoryRPCClient = new InventoryBatchRPCClient(
+  config.rpc.inventoryBatchServiceUrl,
+);
 const inventoryRPC: Provider = {
   provide: INVENTORY_BATCH_RPC,
   useValue: inventoryRPCClient,
@@ -233,42 +259,54 @@ const recipeRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với import invoice service
-const importInvoiceRPCClient = new ImportInvoiceRPCClient(config.rpc.importInvoiceServiceUrl);
+const importInvoiceRPCClient = new ImportInvoiceRPCClient(
+  config.rpc.importInvoiceServiceUrl,
+);
 const importInvoiceRPC: Provider = {
   provide: IMPORT_INVOICE_RPC,
   useValue: importInvoiceRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với import invoice detail service
-const importInvoiceDetailRPCClient = new ImportInvoiceDetailRPCClient(config.rpc.importInvoiceDetailServiceUrl);
+const importInvoiceDetailRPCClient = new ImportInvoiceDetailRPCClient(
+  config.rpc.importInvoiceDetailServiceUrl,
+);
 const importInvoiceDetailRPC: Provider = {
   provide: IMPORT_INVOICE_DETAIL_RPC,
   useValue: importInvoiceDetailRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với purchase proposal service
-const purchaseProposalRPCClient = new PurchaseProposalRPCClient(config.rpc.purchaseProposalServiceUrl);
+const purchaseProposalRPCClient = new PurchaseProposalRPCClient(
+  config.rpc.purchaseProposalServiceUrl,
+);
 const purchaseProposalRPC: Provider = {
   provide: PURCHASE_PROPOSAL_RPC,
   useValue: purchaseProposalRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với purchase proposal detail service
-const purchaseProposalDetailRPCClient = new PurchaseProposalDetailRPCClient(config.rpc.purchaseProposalDetailServiceUrl);
+const purchaseProposalDetailRPCClient = new PurchaseProposalDetailRPCClient(
+  config.rpc.purchaseProposalDetailServiceUrl,
+);
 const purchaseProposalDetailRPC: Provider = {
   provide: PURCHASE_PROPOSAL_DETAIL_RPC,
   useValue: purchaseProposalDetailRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với stock check service
-const stockCheckRPCClient = new StockCheckRPCClient(config.rpc.stockCheckServiceUrl);
+const stockCheckRPCClient = new StockCheckRPCClient(
+  config.rpc.stockCheckServiceUrl,
+);
 const stockCheckRPC: Provider = {
   provide: STOCK_CHECK_RPC,
   useValue: stockCheckRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với stock check detail service
-const stockCheckDetailRPCClient = new StockCheckDetailRPCClient(config.rpc.stockCheckDetailServiceUrl);
+const stockCheckDetailRPCClient = new StockCheckDetailRPCClient(
+  config.rpc.stockCheckDetailServiceUrl,
+);
 const stockCheckDetailRPC: Provider = {
   provide: STOCK_CHECK_DETAIL_RPC,
   useValue: stockCheckDetailRPCClient,
@@ -279,7 +317,7 @@ const zoneRPCClient = new ZoneRPCClient(config.rpc.zoneServiceUrl);
 const zoneRPC: Provider = {
   provide: ZONE_RPC,
   useValue: zoneRPCClient,
-};  
+};
 
 // Khởi tạo client cho việc giao tiếp với table service
 const tableRPCClient = new TableRPCClient(config.rpc.tableServiceUrl);
@@ -289,14 +327,16 @@ const tableRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với reservation service
-const reservationRPCClient = new ReservationRPCClient(config.rpc.reservationServiceUrl);
+const reservationRPCClient = new ReservationRPCClient(
+  config.rpc.reservationServiceUrl,
+);
 const reservationRPC: Provider = {
   provide: RESERVATION_RPC,
   useValue: reservationRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với cart service
-const cartRPCClient = new CartRPCClient(config.rpc.cartServiceUrl); 
+const cartRPCClient = new CartRPCClient(config.rpc.cartServiceUrl);
 const cartRPC: Provider = {
   provide: CART_RPC,
   useValue: cartRPCClient,
@@ -310,7 +350,9 @@ const cartItemRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với cart item option service
-const cartItemOptionRPCClient = new CartItemOptionRPCClient(config.rpc.cartItemOptionServiceUrl);
+const cartItemOptionRPCClient = new CartItemOptionRPCClient(
+  config.rpc.cartItemOptionServiceUrl,
+);
 const cartItemOptionRPC: Provider = {
   provide: CART_ITEM_OPTION_RPC,
   useValue: cartItemOptionRPCClient,
@@ -331,35 +373,45 @@ const orderRPC: Provider = {
 };
 
 // Khởi tạo client cho việc giao tiếp với order voucher service
-const orderVoucherRPCClient = new OrderVoucherRPCClient(config.rpc.orderVoucherServiceUrl);
+const orderVoucherRPCClient = new OrderVoucherRPCClient(
+  config.rpc.orderVoucherServiceUrl,
+);
 const orderVoucherRPC: Provider = {
   provide: ORDER_VOUCHER_RPC,
   useValue: orderVoucherRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với order table service
-const orderTableRPCClient = new OrderTableRPCClient(config.rpc.orderTableServiceUrl);
+const orderTableRPCClient = new OrderTableRPCClient(
+  config.rpc.orderTableServiceUrl,
+);
 const orderTableRPC: Provider = {
   provide: ORDER_TABLE_RPC,
   useValue: orderTableRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với order item service
-const orderItemRPCClient = new OrderItemRPCClient(config.rpc.orderItemServiceUrl);
+const orderItemRPCClient = new OrderItemRPCClient(
+  config.rpc.orderItemServiceUrl,
+);
 const orderItemRPC: Provider = {
   provide: ORDER_ITEM_RPC,
   useValue: orderItemRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với order item option service
-const orderItemOptionRPCClient = new OrderItemOptionRPCClient(config.rpc.orderItemOptionServiceUrl);
+const orderItemOptionRPCClient = new OrderItemOptionRPCClient(
+  config.rpc.orderItemOptionServiceUrl,
+);
 const orderItemOptionRPC: Provider = {
   provide: ORDER_ITEM_OPTION_RPC,
   useValue: orderItemOptionRPCClient,
 };
 
 // Khởi tạo client cho việc giao tiếp với payment transaction service
-const paymentTransactionRPCClient = new PaymentTransactionRPCClient(config.rpc.paymentTransactionServiceUrl);
+const paymentTransactionRPCClient = new PaymentTransactionRPCClient(
+  config.rpc.paymentTransactionServiceUrl,
+);
 const paymentTransactionRPC: Provider = {
   provide: PAYMENT_TRANSACTION_RPC,
   useValue: paymentTransactionRPCClient,
@@ -381,54 +433,16 @@ const imageRPC: Provider = {
 
 @Global()
 @Module({
+  imports: [
+    TerminusModule, // Health Check
+    MongooseModule,
+  ], // Health Check
   providers: [
-    tokenIntrospector, // RPC Token Introspector
-    rabbitMQProvider, // Pub/Sub
-    redisProvider,    // Cache
-    mongoProvider,     // NoSQL DB
-    userRPC,          // RPC User Service
-    shiftRPC,         // RPC Shift Service
-    loyaltyRPC,       // RPC Loyalty Service
-    categoryRPC,      // RPC Category Service
-    productRPC,       // RPC Product Service
-    variantRPC,       // RPC Variant Service
-    optionGroupRPC,   // RPC Option Group Service
-    optionGroupItemRPC, // RPC Option Item Service
-    productOptionConfigRPC, // RPC Product Option Config Service
-    comboRPC,         // RPC Combo Service
-    comboItemRPC,     // RPC Combo Item Service
-    supplierRPC,      // RPC Supplier Service
-    ingredientRPC,     // RPC Ingredient Service
-    unitConversionRPC,  // RPC Unit Conversion Service
-    inventoryRPC,       // RPC Inventory Batch Service
-    recipeRPC,          // RPC Recipe Service
-    importInvoiceRPC,   // RPC Import Invoice Service
-    importInvoiceDetailRPC, // RPC Import Invoice Detail Service
-    purchaseProposalRPC,   // RPC Purchase Proposal Service
-    purchaseProposalDetailRPC, // RPC Purchase Proposal Detail Service
-    stockCheckRPC,         // RPC Stock Check Service
-    stockCheckDetailRPC,   // RPC Stock Check Detail Service
-    zoneRPC,              // RPC Zone Service
-    tableRPC,             // RPC Table Service
-    reservationRPC,       // RPC Reservation Service
-    cartRPC,              // RPC Cart Service
-    cartItemRPC,          // RPC Cart Item Service
-    cartItemOptionRPC,    // RPC Cart Item Option Service
-    voucherRPC,           // RPC Voucher Service
-    orderRPC,             // RPC Order Service
-    orderVoucherRPC,      // RPC Order Voucher Service
-    orderTableRPC,        // RPC Order Table Service
-    orderItemRPC,         // RPC Order Item Service
-    orderItemOptionRPC,   // RPC Order Item Option Service
-    paymentTransactionRPC,  // RPC Payment Transaction Service
-    invoiceRPC,             // RPC Invoice Service
-    imageRPC,               // RPC Image Service
-  ],
-  exports: [
     tokenIntrospector, // RPC Token Introspector
     rabbitMQProvider, // Pub/Sub
     redisProvider, // Cache
     mongoProvider, // NoSQL DB
+    socketGatewayProvider, // Socket Gateway
     userRPC, // RPC User Service
     shiftRPC, // RPC Shift Service
     loyaltyRPC, // RPC Loyalty Service
@@ -466,6 +480,54 @@ const imageRPC: Provider = {
     paymentTransactionRPC, // RPC Payment Transaction Service
     invoiceRPC, // RPC Invoice Service
     imageRPC, // RPC Image Service
-  ]
+  ],
+  exports: [
+    TerminusModule, // Health Check
+    MongooseModule,
+    tokenIntrospector, // RPC Token Introspector
+    rabbitMQProvider, // Pub/Sub
+    redisProvider, // Cache
+    mongoProvider, // NoSQL DB
+    socketGatewayProvider, // Socket Gateway
+    userRPC, // RPC User Service
+    shiftRPC, // RPC Shift Service
+    loyaltyRPC, // RPC Loyalty Service
+    categoryRPC, // RPC Category Service
+    productRPC, // RPC Product Service
+    variantRPC, // RPC Variant Service
+    optionGroupRPC, // RPC Option Group Service
+    optionGroupItemRPC, // RPC Option Item Service
+    productOptionConfigRPC, // RPC Product Option Config Service
+    comboRPC, // RPC Combo Service
+    comboItemRPC, // RPC Combo Item Service
+    supplierRPC, // RPC Supplier Service
+    ingredientRPC, // RPC Ingredient Service
+    unitConversionRPC, // RPC Unit Conversion Service
+    inventoryRPC, // RPC Inventory Batch Service
+    recipeRPC, // RPC Recipe Service
+    importInvoiceRPC, // RPC Import Invoice Service
+    importInvoiceDetailRPC, // RPC Import Invoice Detail Service
+    purchaseProposalRPC, // RPC Purchase Proposal Service
+    purchaseProposalDetailRPC, // RPC Purchase Proposal Detail Service
+    stockCheckRPC, // RPC Stock Check Service
+    stockCheckDetailRPC, // RPC Stock Check Detail Service
+    zoneRPC, // RPC Zone Service
+    tableRPC, // RPC Table Service
+    reservationRPC, // RPC Reservation Service
+    cartRPC, // RPC Cart Service
+    cartItemRPC, // RPC Cart Item Service
+    cartItemOptionRPC, // RPC Cart Item Option Service
+    voucherRPC, // RPC Voucher Service
+    orderRPC, // RPC Order Service
+    orderVoucherRPC, // RPC Order Voucher Service
+    orderTableRPC, // RPC Order Table Service
+    orderItemRPC, // RPC Order Item Service
+    orderItemOptionRPC, // RPC Order Item Option Service
+    paymentTransactionRPC, // RPC Payment Transaction Service
+    invoiceRPC, // RPC Invoice Service
+    imageRPC, // RPC Image Service
+  ],
 })
-export class ShareModule { }
+
+// Export module
+export class ShareModule {}

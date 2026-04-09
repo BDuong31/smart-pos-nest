@@ -7,21 +7,25 @@ import { UserRole } from 'src/share';
 // ============================
 
 // Định nghĩa kiểu dữ liệu tạo người dùng mới cho Staff/Kitchen
-export const createStaffDTOSchema = userSchema.pick({
+export const createStaffDTOSchema = userSchema
+  .pick({
     username: true,
     fullName: true,
     email: true,
     password: true,
     birthday: true,
-}).extend({
+  })
+  .extend({
     role: z.enum([UserRole.STAFF, UserRole.KITCHEN]), // Chỉ cho tạo Staff/Kitchen
-}).required();
+  })
+  .required();
 
 // Định nghĩa kiểu dữ liệu tạo người dùng mới cho Staff/Kitchen
-export interface CreateStaffDTO extends z.infer<typeof createStaffDTOSchema> {}
+export type CreateStaffDTO = z.infer<typeof createStaffDTOSchema>;
 
 // Định nghĩa kiểu dữ liệu cho cập nhật thông tin người dùng
-export const userUpdateDTOSchema = userSchema.pick({
+export const userUpdateDTOSchema = userSchema
+  .pick({
     username: true,
     salt: true,
     password: true,
@@ -34,40 +38,47 @@ export const userUpdateDTOSchema = userSchema.pick({
     currentPoints: true,
     status: true,
     fcmToken: true,
-}).partial();
+  })
+  .partial();
 
 // Định nghĩa kiểu dữ liệu cập nhật người dùng
-export interface UserUpdateDTO extends z.infer<typeof userUpdateDTOSchema> {}
+export type UserUpdateDTO = z.infer<typeof userUpdateDTOSchema>;
 
 // Baso TODO: không cho phép cập nhật vai trò, trạng thái, điểm, hạng qua DTO này
 // Chỉ cho phép cập nhật qua admin hoặc các chức năng đặc biệt khác
-export const userUpdateProfileDTOSchema = userSchema.pick({
+export const userUpdateProfileDTOSchema = userSchema
+  .pick({
     role: true,
     status: true,
     currentPoints: true,
     rankId: true,
-}).partial();
+  })
+  .partial();
 
 // Định nghĩa kiểu dữ liệu cập nhật hồ sơ người dùng
-export interface UserUpdateProfileDTO extends z.infer<typeof userUpdateProfileDTOSchema> {}
+export type UserUpdateProfileDTO = z.infer<typeof userUpdateProfileDTOSchema>;
 
 // Định nghĩa kiểu dữ liệu cho điều kiện lọc người dùng
-export const userCondDTOSchema = userSchema.pick({
+export const userCondDTOSchema = userSchema
+  .pick({
     username: true,
     fullName: true,
     email: true,
     role: true,
     status: true,
     rankId: true,
-}).partial();
+  })
+  .partial();
 
 // Định nghĩa kiểu dữ liệu điều kiện lọc người dùng
-export interface UserCondDTO extends z.infer<typeof userCondDTOSchema> {}
+export type UserCondDTO = z.infer<typeof userCondDTOSchema>;
 
 // Định nghĩa kiểu dữ liệu cho cập nhật token FCM
-export const fcmTokenDTOSchema = userSchema.pick({
+export const fcmTokenDTOSchema = userSchema
+  .pick({
     fcmToken: true,
-}).required();
+  })
+  .required();
 
 // Định nghĩa kiểu dữ liệu cập nhật token FCM
-export interface FcmTokenDTO extends z.infer<typeof fcmTokenDTOSchema> {}
+export type FcmTokenDTO = z.infer<typeof fcmTokenDTOSchema>;

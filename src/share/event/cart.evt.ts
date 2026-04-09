@@ -29,6 +29,7 @@ export type CartItemEventPayload = {
     productId?: string; // ID của sản phẩm trong mục giỏ hàng
     quantity?: number; // Số lượng sản phẩm trong mục giỏ hàng
     changeType: 'ADDED' | 'UPDATED' | 'REMOVED'; // Loại thay đổi
+    statusUpdateCartItem?: 'increase' | 'decrease';
 };
 
 // Định nghĩa kiểu dữ liệu cho payload của sự kiện tùy chọn mục giỏ hàng

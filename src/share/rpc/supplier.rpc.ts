@@ -19,7 +19,7 @@ export class SupplierRPCClient implements IPublicSupplierRpc {
     async findByIds(ids: string[]): Promise<PublicSupplier[]> {
         try {
             const response = await axios.post(`${this.supplierServiceUrl}/rpc/suppliers/list-by-ids`, { ids });
-            return response.data;
+            return response.data.data;
         } catch (error) {
             return [];
         }

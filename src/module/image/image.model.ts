@@ -14,6 +14,8 @@ export enum ImageType {
     AVATAR = 'avatar', // hình ảnh đại diện
     PRODUCT = 'product', // hình ảnh sản phẩm
     INGREDIENT = 'ingredient', // hình ảnh nguyên liệu
+    COMBO = 'combo', // hình ảnh combo
+    OPTION = 'option', // hình ảnh tùy chọn
 }
 
 // Mô hình dữ liệu

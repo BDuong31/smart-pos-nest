@@ -1,3 +1,4 @@
+import { PublicSupplier } from "src/share";
 import { z } from "zod";
 
 // ============================
@@ -20,9 +21,9 @@ export const importInvoiceSchema = z.object({
     code: z.string().max(50),
     supplierId: z.string().uuid(),
     totalCost: z.number().min(0, {message: ErrImportInvoiceTotalCostNegative.message}),
-    importDate: z.date().optional(),
+    importDate: z.coerce.date().optional(),
     createdAt: z.date(),
     updatedAt: z.date(),
 })
 
-export type ImportInvoice = z.infer<typeof importInvoiceSchema>;
+export type ImportInvoice = z.infer<typeof importInvoiceSchema> & {supplier?: PublicSupplier};

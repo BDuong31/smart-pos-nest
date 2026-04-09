@@ -1,3 +1,4 @@
+import { PublicCategory } from 'src/share';
 import { z } from 'zod';
 
 // Định nghĩa lỗi về danh mục sản phẩm
@@ -24,4 +25,4 @@ export const categorySchema = z.object({
     updatedAt: z.date(),
 });
 
-export type Category = z.infer<typeof categorySchema>;
+export type Category = z.infer<typeof categorySchema> & { parent?: PublicCategory};

@@ -1,0 +1,113 @@
+[
+  { "name": "Cà phê đen đá", "categoryId": "Cà phê Việt Nam", "printerId": null, "basePrice": 25000, "isCombo": false, "isActive": true },
+  { "name": "Cà phê sữa đá", "categoryId": "Cà phê Việt Nam", "printerId": null, "basePrice": 29000, "isCombo": false, "isActive": true },
+  { "name": "Bạc xỉu", "categoryId": "Cà phê Việt Nam", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Cà phê muối", "categoryId": "Cà phê Việt Nam", "printerId": null, "basePrice": 39000, "isCombo": false, "isActive": true },
+  { "name": "Cà phê cốt dừa", "categoryId": "Cà phê Việt Nam", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Espresso", "categoryId": "Cà phê Ý (Espresso Bar)", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Americano", "categoryId": "Cà phê Ý (Espresso Bar)", "printerId": null, "basePrice": 39000, "isCombo": false, "isActive": true },
+  { "name": "Cappuccino", "categoryId": "Cà phê Ý (Espresso Bar)", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Latte", "categoryId": "Cà phê Ý (Espresso Bar)", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Mocha", "categoryId": "Cà phê Ý (Espresso Bar)", "printerId": null, "basePrice": 49000, "isCombo": false, "isActive": true },
+  { "name": "Macchiato", "categoryId": "Cà phê Ý (Espresso Bar)", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Trà đào cam sả", "categoryId": "Trà trái cây & Trà thảo mộc", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Trà vải hoa hồng", "categoryId": "Trà trái cây & Trà thảo mộc", "printerId": null, "basePrice": 49000, "isCombo": false, "isActive": true },
+  { "name": "Trà dâu tằm", "categoryId": "Trà trái cây & Trà thảo mộc", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Trà hoa cúc mật ong", "categoryId": "Trà trái cây & Trà thảo mộc", "printerId": null, "basePrice": 40000, "isCombo": false, "isActive": true },
+  { "name": "Trà sen vàng", "categoryId": "Trà trái cây & Trà thảo mộc", "printerId": null, "basePrice": 49000, "isCombo": false, "isActive": true },
+
+  { "name": "Trà sữa trân châu đường đen", "categoryId": "Trà sữa & Kem béo", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Trà sữa Thái xanh", "categoryId": "Trà sữa & Kem béo", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Trà sữa Thái đỏ", "categoryId": "Trà sữa & Kem béo", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Trà sữa Oolong nướng", "categoryId": "Trà sữa & Kem béo", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Hồng trà kem cheese", "categoryId": "Trà sữa & Kem béo", "printerId": null, "basePrice": 49000, "isCombo": false, "isActive": true },
+
+  { "name": "Nước ép cam", "categoryId": "Nước ép & Sinh tố tươi", "printerId": null, "basePrice": 40000, "isCombo": false, "isActive": true },
+  { "name": "Nước ép dưa hấu", "categoryId": "Nước ép & Sinh tố tươi", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Nước ép thơm", "categoryId": "Nước ép & Sinh tố tươi", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Sinh tố bơ", "categoryId": "Nước ép & Sinh tố tươi", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Sinh tố xoài", "categoryId": "Nước ép & Sinh tố tươi", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Matcha đá xay", "categoryId": "Đá xay & Cookie", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Cà phê đá xay", "categoryId": "Đá xay & Cookie", "printerId": null, "basePrice": 50000, "isCombo": false, "isActive": true },
+  { "name": "Choco đá xay", "categoryId": "Đá xay & Cookie", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Cookies & Cream", "categoryId": "Đá xay & Cookie", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+
+  { "name": "Soda chanh dây", "categoryId": "Soda & Mojito", "printerId": null, "basePrice": 39000, "isCombo": false, "isActive": true },
+  { "name": "Soda việt quất", "categoryId": "Soda & Mojito", "printerId": null, "basePrice": 39000, "isCombo": false, "isActive": true },
+  { "name": "Mojito bạc hà", "categoryId": "Soda & Mojito", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Mojito dâu tây", "categoryId": "Soda & Mojito", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Phở bò tái nạm", "categoryId": "Phở & Bún bò", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Phở bò gầu", "categoryId": "Phở & Bún bò", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Phở gà lá chanh", "categoryId": "Phở & Bún bò", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Bún bò Huế", "categoryId": "Phở & Bún bò", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Bún bò bắp giò heo", "categoryId": "Phở & Bún bò", "printerId": null, "basePrice": 65000, "isCombo": false, "isActive": true },
+
+  { "name": "Hủ tiếu Nam Vang", "categoryId": "Hủ tiếu & Bánh canh", "printerId": null, "basePrice": 50000, "isCombo": false, "isActive": true },
+  { "name": "Hủ tiếu mực", "categoryId": "Hủ tiếu & Bánh canh", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Bánh canh cua", "categoryId": "Hủ tiếu & Bánh canh", "printerId": null, "basePrice": 60000, "isCombo": false, "isActive": true },
+  { "name": "Bánh canh chả cá", "categoryId": "Hủ tiếu & Bánh canh", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Bánh canh giò heo", "categoryId": "Hủ tiếu & Bánh canh", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+
+  { "name": "Mì vằn thắn", "categoryId": "Mì & Hoành thánh", "printerId": null, "basePrice": 50000, "isCombo": false, "isActive": true },
+  { "name": "Mì khô xá xíu", "categoryId": "Mì & Hoành thánh", "printerId": null, "basePrice": 50000, "isCombo": false, "isActive": true },
+  { "name": "Súp hoành thánh", "categoryId": "Mì & Hoành thánh", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Hoành thánh chiên giòn", "categoryId": "Mì & Hoành thánh", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Cơm tấm sườn bì chả", "categoryId": "Cơm tấm truyền thống", "printerId": null, "basePrice": 55000, "isCombo": false, "isActive": true },
+  { "name": "Cơm tấm ba rọi nướng", "categoryId": "Cơm tấm truyền thống", "printerId": null, "basePrice": 50000, "isCombo": false, "isActive": true },
+  { "name": "Cơm tấm đùi gà nướng", "categoryId": "Cơm tấm truyền thống", "printerId": null, "basePrice": 50000, "isCombo": false, "isActive": true },
+  { "name": "Cơm tấm lạp xưởng", "categoryId": "Cơm tấm truyền thống", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Cơm xá xíu", "categoryId": "Cơm phần văn phòng", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Cơm gà xối mỡ", "categoryId": "Cơm phần văn phòng", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Cơm thịt kho tiêu", "categoryId": "Cơm phần văn phòng", "printerId": null, "basePrice": 40000, "isCombo": false, "isActive": true },
+  { "name": "Cơm cá hú kho tộ", "categoryId": "Cơm phần văn phòng", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Cơm sườn xào chua ngọt", "categoryId": "Cơm phần văn phòng", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Bò lúc lắc khoai tây", "categoryId": "Món xào & Món kho", "printerId": null, "basePrice": 85000, "isCombo": false, "isActive": true },
+  { "name": "Mực xào sa tế", "categoryId": "Món xào & Món kho", "printerId": null, "basePrice": 75000, "isCombo": false, "isActive": true },
+  { "name": "Rau muống xào tỏi", "categoryId": "Món xào & Món kho", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Thịt kho tàu", "categoryId": "Món xào & Món kho", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Gà kho gừng", "categoryId": "Món xào & Món kho", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Mì Ý sốt bò băm", "categoryId": "Pasta & Món Âu", "printerId": null, "basePrice": 75000, "isCombo": false, "isActive": true },
+  { "name": "Mì Ý sốt kem nấm", "categoryId": "Pasta & Món Âu", "printerId": null, "basePrice": 75000, "isCombo": false, "isActive": true },
+  { "name": "Bò bít tết xốt tiêu đen", "categoryId": "Pasta & Món Âu", "printerId": null, "basePrice": 120000, "isCombo": false, "isActive": true },
+
+  { "name": "Bánh mì thịt chả", "categoryId": "Bánh mì Việt Nam", "printerId": null, "basePrice": 25000, "isCombo": false, "isActive": true },
+  { "name": "Bánh mì heo quay", "categoryId": "Bánh mì Việt Nam", "printerId": null, "basePrice": 30000, "isCombo": false, "isActive": true },
+  { "name": "Bánh mì ốp la xúc xích", "categoryId": "Bánh mì Việt Nam", "printerId": null, "basePrice": 25000, "isCombo": false, "isActive": true },
+  { "name": "Bánh mì xíu mại", "categoryId": "Bánh mì Việt Nam", "printerId": null, "basePrice": 25000, "isCombo": false, "isActive": true },
+
+  { "name": "Sandwich cá ngừ", "categoryId": "Sandwich & Burger", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Sandwich thịt nguội phô mai", "categoryId": "Sandwich & Burger", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Hamburger bò", "categoryId": "Sandwich & Burger", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Hamburger gà giòn", "categoryId": "Sandwich & Burger", "printerId": null, "basePrice": 40000, "isCombo": false, "isActive": true },
+
+  { "name": "Salad ức gà sốt mè rang", "categoryId": "Salad & Gỏi", "printerId": null, "basePrice": 65000, "isCombo": false, "isActive": true },
+  { "name": "Salad cá ngừ", "categoryId": "Salad & Gỏi", "printerId": null, "basePrice": 65000, "isCombo": false, "isActive": true },
+  { "name": "Gỏi cuốn tôm thịt", "categoryId": "Salad & Gỏi", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Gỏi ngó sen tôm thịt", "categoryId": "Salad & Gỏi", "printerId": null, "basePrice": 75000, "isCombo": false, "isActive": true },
+
+  { "name": "Khoai tây chiên lắc phô mai", "categoryId": "Đồ chiên & Xiên que", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Xúc xích chiên", "categoryId": "Đồ chiên & Xiên que", "printerId": null, "basePrice": 20000, "isCombo": false, "isActive": true },
+  { "name": "Cá viên chiên", "categoryId": "Đồ chiên & Xiên que", "printerId": null, "basePrice": 25000, "isCombo": false, "isActive": true },
+  { "name": "Cánh gà chiên nước mắm", "categoryId": "Đồ chiên & Xiên que", "printerId": null, "basePrice": 65000, "isCombo": false, "isActive": true },
+
+  { "name": "Bánh Tiramisu", "categoryId": "Bánh ngọt & Pastry", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Bánh phô mai chanh dây", "categoryId": "Bánh ngọt & Pastry", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+  { "name": "Bánh sừng trâu", "categoryId": "Bánh ngọt & Pastry", "printerId": null, "basePrice": 30000, "isCombo": false, "isActive": true },
+  { "name": "Bánh Red Velvet", "categoryId": "Bánh ngọt & Pastry", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true },
+
+  { "name": "Chè khúc bạch", "categoryId": "Chè & Thạch", "printerId": null, "basePrice": 35000, "isCombo": false, "isActive": true },
+  { "name": "Chè đậu đỏ nước cốt dừa", "categoryId": "Chè & Thạch", "printerId": null, "basePrice": 30000, "isCombo": false, "isActive": true },
+  { "name": "Sương sáo hạt é", "categoryId": "Chè & Thạch", "printerId": null, "basePrice": 25000, "isCombo": false, "isActive": true },
+  { "name": "Chè thái sầu riêng", "categoryId": "Chè & Thạch", "printerId": null, "basePrice": 40000, "isCombo": false, "isActive": true },
+
+  { "name": "Đĩa trái cây theo mùa", "categoryId": "Trái cây dĩa", "printerId": null, "basePrice": 60000, "isCombo": false, "isActive": true },
+  { "name": "Trái cây tô xốt sữa chua", "categoryId": "Trái cây dĩa", "printerId": null, "basePrice": 45000, "isCombo": false, "isActive": true }
+]

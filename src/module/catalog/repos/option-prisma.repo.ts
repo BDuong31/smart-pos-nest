@@ -45,10 +45,9 @@ export class OptionPrismaRepository implements IOptionRepository {
 
     // lấy danh sách Option Group theo điều kiện
     async getListOptionGroup(cond: OptionGroupCondDTO, paging: PagingDTO): Promise<Paginated<OptionGroup>> {
-        const { name, ...rest } = cond;
+        const { name } = cond || {};
 
         let where = {
-            ...rest,
         }
         
         if (name) {
@@ -58,14 +57,17 @@ export class OptionPrismaRepository implements IOptionRepository {
             }
         }
 
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
         const total = await prisma.optionGroup.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
         
         const data = await prisma.optionGroup.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: {
                 name: 'asc',
             }

@@ -20,10 +20,7 @@ export class VoucherService implements IVoucherService {
         const data = voucherCreateDTOSchema.parse(dto);
 
         // Kiểm tra xem voucher đã tồn tại chưa
-        const existing = await this.voucherRepo.listVouchers({ 
-            code: data.code,
-        }, { page: 1, limit: 1 });
-        
+        const existing = await this.voucherRepo.listVouchers({ code: data.code }, { page: 1, limit: 1 });
         if (existing.data.length > 0) {
             throw AppError.from(ErrVoucherAlreadyExists, 409);
         }

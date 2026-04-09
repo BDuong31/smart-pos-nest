@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url       = env("DATABASE_URL")
+  url = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -222,6 +222,7 @@ model UnitConversion {
 model InventoryBatch {
   id           String   @id @default(uuid()) @map("id") @db.VarChar(36)
   ingredientId String   @map("ingredient_id") @db.VarChar(36)
+  importInvoiceDetailId  String   @map("import_invoice_detail_id") @db.VarChar(36)
   quantity     Float    @map("quantity")
   expiryDate   DateTime @map("expiry_date") @db.Timestamp(0)
   importDate   DateTime @default(now()) @map("import_date") @db.Timestamp(0)
@@ -229,6 +230,7 @@ model InventoryBatch {
   updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
 
   @@index([ingredientId], map: "batchIngIdx")
+  @@index([importInvoiceDetailId], map: "batchImportInvoiceDetailIdx")
   @@map("inventory_batches")
 }
 
@@ -520,6 +522,19 @@ model Invoice {
   @@map("invoices")
 }
 
+model Rating {
+  id          String   @id @default(uuid()) @map("id") @db.VarChar(36)
+  userId      String?  @map("user_id") @db.VarChar(36) // Có thể để null nếu cho phép đánh giá ẩn danh
+  star        Int      @default(5) @db.Integer
+  comment     String?  @map("comment") @db.Text
+  productId   String?  @map("product_id") @db.VarChar(36) 
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@index([productId], map: "ratingProductIdx")
+  @@map("ratings")
+}
+
 model Image {
   id        String     @id @map("id") @db.VarChar(36)
   url       String     @map("url") @db.Text
@@ -532,6 +547,64 @@ model Image {
 
   @@map("images")
   @@index([refId], map: "imageRefIdIdx")
+}
+
+// ==========================================
+// 6. NOTIFICATION (THÔNG BÁO)
+// ==========================================
+model Notification {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+
+  userId    String?  @db.VarChar(36)
+  role      UserRole?
+  isGlobal  Boolean  @default(false)
+
+  type      NotificationType
+  refType   String?  @db.VarChar(50)
+  refId     String?  @db.VarChar(36)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reads     NotificationRead[]
+
+  @@index([userId, createdAt])
+  @@index([role, createdAt])
+  @@index([isGlobal, createdAt])
+  @@index([type])
+  @@index([refType, refId])
+
+  @@map("notifications")
+}
+
+model NotificationRead {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  notificationId String   @db.VarChar(36)
+  userId         String   @db.VarChar(36)
+
+  readAt         DateTime @default(now())
+
+  notification   Notification @relation(fields: [notificationId], references: [id])
+
+  @@unique([notificationId, userId])
+  @@index([userId])
+  @@index([notificationId])
+
+  @@map("notification_reads")
+}
+
+model NotificationSetting {
+  id     String @id @default(uuid()) @db.VarChar(36)
+  userId String @unique @db.VarChar(36)
+
+  enabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_settings")
 }
 
 enum UserStatus {
@@ -596,4 +669,13 @@ enum ImageType {
   product
   ingredient
   option
+}
+
+enum NotificationType {
+  order
+  payment
+  inventory
+  reservation
+  promotion
+  system
 }

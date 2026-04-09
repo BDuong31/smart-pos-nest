@@ -24,6 +24,7 @@ export class InventoryBatchService implements IInventoryBatchService {
         const inventoryBatch = {
             id: newId,
             ingredientId: data.ingredientId,
+            importInvoiceDetailId: data.importInvoiceDetailId,
             quantity: data.quantity,
             expiryDate: data.expiryDate,
             importDate: data.importDate,

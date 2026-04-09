@@ -26,6 +26,7 @@ export interface IUserRepository {
     // truy vấn
     get(id: string): Promise<User | null>; // Lấy người dùng theo ID
     list(cond: UserCondDTO, paging: PagingDTO): Promise<Paginated<User>>; // Lấy danh sách người dùng theo điều kiện và phân trang
+    listStaff(cond: UserCondDTO, paging: PagingDTO): Promise<Paginated<User>>; // Lấy danh sách người dùng theo điều kiện và phân trang
     listByIds(ids: string[]): Promise<User[]>; // Lấy danh sách người dùng theo mảng IDs
     listBySearch(keyword: string, paging: PagingDTO): Promise<Paginated<User>>; // Tìm kiếm người dùng theo từ khóa và phân trang
 

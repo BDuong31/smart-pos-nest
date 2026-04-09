@@ -23,7 +23,6 @@ export class ZonePrismaRepo implements IZoneRepository {
         const { name, description, isActive, ...rest} = cond; 
 
         let where = {
-            ...rest,
         }
 
         if (name) {
@@ -43,18 +42,21 @@ export class ZonePrismaRepo implements IZoneRepository {
         if (isActive !== undefined) {
             where = {
                 ...where,
-                isActive: isActive,
+                isActive: Boolean(isActive),
             }
         }
 
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
         const total = await prisma.zone.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const result = await prisma.zone.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { name: 'asc' },
         });
 

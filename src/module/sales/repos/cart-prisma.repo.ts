@@ -15,16 +15,15 @@ export class CartPrismaRepo implements ICartRepository {
         const data = await prisma.cart.findFirst({ where: { OR: [{ userId: userId }, { id: userId }] }});
 
         if (!data) return null;
-        
+
         return this._toCartModel(data);
     }
 
     // Lấy danh sách giỏ hàng theo điều kiện
     async listCart(cond: CartCondDTO, paging: PagingDTO): Promise<Paginated<Cart>> {
-        const { userId, totalItem, ...rest } = cond; 
+        const { userId, totalItem, ...rest } = cond;
 
         let where = {
-            ...rest,
         }
 
         if (userId) {
@@ -41,14 +40,17 @@ export class CartPrismaRepo implements ICartRepository {
             }
         }
 
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
         const total = await prisma.cart.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const result = await prisma.cart.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { createdAt: 'desc' },
         });
 
@@ -79,6 +81,26 @@ export class CartPrismaRepo implements ICartRepository {
     // Xóa giỏ hàng theo ID người dùng
     async deleteCart(userId: string): Promise<void> {
         await prisma.cart.delete({ where: { userId } });
+    }
+
+    // Tăng số lượng của một trường nào đó trong giỏ hàng
+    async increaseCount(id: string, field: string, value: number): Promise<void> {
+        await prisma.cart.update({
+            where: { id },
+            data: {
+                [field]: { increment: value },
+            },
+        });
+    }
+
+    // Giảm số lượng của một trường nào đó trong giỏ hàng
+    async decreaseCount(id: string, field: string, value: number): Promise<void> {
+        await prisma.cart.update({
+            where: { id },
+            data: {
+                [field]: { decrement: value },
+            },
+        });
     }
 
     // Cart Item
@@ -243,6 +265,11 @@ export class CartPrismaRepo implements ICartRepository {
     // Xóa tùy chọn sản phẩm trong mục giỏ hàng theo ID
     async deleteCartItemOption(id: string): Promise<void> {
         await prisma.cartItemOption.delete({ where: { id } });
+    }
+
+    // Xóa tùy chọn sản phẩm trong mục giỏ hàng theo ID
+    async deleteCartItemOptionByCartItemId(cartItemId: string): Promise<void> {
+        await prisma.cartItemOption.deleteMany({ where: { cartItemId } });
     }
 
     // Chuyển đổi dữ liệu từ Prisma sang model Cart

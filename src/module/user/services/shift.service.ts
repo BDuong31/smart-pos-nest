@@ -15,7 +15,7 @@ export class ShiftService implements IShiftService {
         @Inject(USER_MONGO_AUDIT_REPOSITORY) private readonly userAuditRepo: IUserMongoAuditRepository,
     ){}
     // Nhân viên check in bắt đầu ca làm việc
-    async checkIn(userId: string, dto: ShiftCreateDTO, ip: string, userAgent: string): Promise<void> {
+    async checkIn(userId: string, dto: ShiftCreateDTO, ip: string, userAgent: string): Promise<string> {
         // 1. Kiểm tra nếu nhân viên đã có ca làm việc hiện tại chưa
         const currentShift = await this.shiftRepository.list({ userId, endTime: null }, { page: 1, limit: 1 });
         if (currentShift.data.length > 0) {
@@ -67,10 +67,11 @@ export class ShiftService implements IShiftService {
         });
 
         // 4. Bắn sự kiện RabbitMQ thông báo bắt đầu ca làm việc
+        return shiftId;
     }
 
     // Nhân viên check out kết thúc ca làm việc
-    async checkOut(userId: string, shiftId: string, dto: ShiftUpdateDTO, ip: string, userAgent: string): Promise<void> {
+    async checkOut(userId: string, shiftId: string, dto: ShiftUpdateDTO, ip: string, userAgent: string): Promise<string> {
         // 1. Kiểm tra nếu ca làm việc tồn tại và thuộc về nhân viên
         const shift = await this.shiftRepository.get(shiftId);
         if (!shift || shift.userId !== userId) {
@@ -132,6 +133,7 @@ export class ShiftService implements IShiftService {
         }
 
         // Bắn sự kiện RabbitMQ thông báo kết thúc ca làm việc
+        return shiftId;
     }
 
     // Lấy ca làm việc hiện tại của nhân viên

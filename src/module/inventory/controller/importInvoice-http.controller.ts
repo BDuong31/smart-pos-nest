@@ -3,13 +3,16 @@ import { IMPORTINVOICE_REPOSITORY, IMPORTINVOICE_SERVICE } from '../inventory.di
 import type { IImportInvoiceService } from '../ports/importInvoice.port';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
 import { type ImportInvoiceCreateDTO, type ImportInvoiceUpdateDTO, type ImportInvoiceCondDTO, importInvoiceCondDTOSchema } from '../dtos/importInvoice.dto';
-import { getIPv4FromReq, paginatedResponse, type PagingDTO, pagingDTOSchema, type ReqWithRequester, UserRole } from 'src/share';
+import { AppError, getIPv4FromReq,type IPublicSupplierRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicSupplier, type ReqWithRequester, SUPPLIER_RPC, UserRole } from 'src/share';
 import type { Request as ExpressRequest } from 'express';
+import { ImportInvoice } from '../models/importInvoice.model';
+import { ErrImportInvoiceDetailNotFound } from '../models/importInvoiceDetail.model';
 
 @Controller('v1/import-invoices')
 export class ImportInvoiceHttpController {
     constructor(
         @Inject(IMPORTINVOICE_SERVICE) private readonly importInvoiceService: IImportInvoiceService,
+        @Inject(SUPPLIER_RPC) private readonly supplierRpc: IPublicSupplierRpc,
     ){}
 
     // API để tạo mới phiếu nhập hàng
@@ -59,6 +62,29 @@ export class ImportInvoiceHttpController {
         paging = pagingDTOSchema.parse(paging);
         cond = importInvoiceCondDTOSchema.parse(cond);
         const result = await this.importInvoiceService.list(cond, paging);
+
+        const supplierIds = result.data.map(invoice => invoice.supplierId);
+
+        const suppliers = await this.supplierRpc.findByIds([...new Set(supplierIds)]);
+
+        console.log('Suppliers:', suppliers); // Log danh sách nhà cung cấp để kiểm tra
+        const supplierMap: Record<string, PublicSupplier> = {};
+
+        if (suppliers && suppliers.length > 0) {
+            console.log('Mapping suppliers to supplierMap...'); // Log trước khi map nhà cung cấp
+            suppliers.map(supplier => {
+                supplierMap[supplier.id] = supplier;
+            });
+        }
+
+        console.log('Supplier Map:', supplierMap); // Log bản đồ nhà cung cấp để kiểm tra
+
+        result.data = result.data.map((invoice) => {
+            const supplier = supplierMap[invoice.supplierId];
+            console.log(`Mapping supplier for invoice ${invoice.supplierId}:`, supplier); // Log thông tin nhà cung cấp được map cho mỗi phiếu nhập hàng
+            return { ...invoice, supplier } as ImportInvoice;
+        })
+
         return paginatedResponse(result, paging);
     }
 
@@ -68,7 +94,15 @@ export class ImportInvoiceHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async getById(@Param('id') id: string) {
-        const data = await this.importInvoiceService.get(id);
+        const result = await this.importInvoiceService.get(id);
+        
+        if (!result) {
+            throw AppError.from(ErrImportInvoiceDetailNotFound, 404);
+        }
+
+        const supplier = await this.supplierRpc.findById(result.supplierId);
+
+        const data = { ...result, supplier } as ImportInvoice;
         return { data };
     }
 

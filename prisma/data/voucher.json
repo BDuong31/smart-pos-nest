@@ -1,0 +1,62 @@
+[
+  {
+    "code": "WELCOME20",
+    "type": "percentage",
+    "value": 20,
+    "minOrderVal": 50000,
+    "usageLimit": 1000,
+    "isActive": true,
+    "startDate": "2026-01-01T00:00:00Z",
+    "endDate": "2026-12-31T23:59:59Z"
+  },
+  {
+    "code": "GIAM50K",
+    "type": "fixed_amount",
+    "value": 50000,
+    "minOrderVal": 250000,
+    "usageLimit": 200,
+    "isActive": true,
+    "startDate": "2026-04-01T00:00:00Z",
+    "endDate": "2026-04-30T23:59:59Z"
+  },
+  {
+    "code": "WEEKEND15",
+    "type": "percentage",
+    "value": 15,
+    "minOrderVal": 100000,
+    "usageLimit": 500,
+    "isActive": true,
+    "startDate": "2026-04-08T00:00:00Z",
+    "endDate": "2026-06-30T23:59:59Z"
+  },
+  {
+    "code": "MARCH30K",
+    "type": "fixed_amount",
+    "value": 30000,
+    "minOrderVal": 150000,
+    "usageLimit": 100,
+    "isActive": false,
+    "startDate": "2026-03-01T00:00:00Z",
+    "endDate": "2026-03-31T23:59:59Z"
+  },
+  {
+    "code": "MAYDAY100",
+    "type": "fixed_amount",
+    "value": 100000,
+    "minOrderVal": 400000,
+    "usageLimit": 50,
+    "isActive": true,
+    "startDate": "2026-04-28T00:00:00Z",
+    "endDate": "2026-05-05T23:59:59Z"
+  },
+  {
+    "code": "FREEDRINK",
+    "type": "percentage",
+    "value": 100,
+    "minOrderVal": 0,
+    "usageLimit": 50,
+    "isActive": true,
+    "startDate": "2026-04-08T00:00:00Z",
+    "endDate": "2026-12-31T23:59:59Z"
+  }
+]

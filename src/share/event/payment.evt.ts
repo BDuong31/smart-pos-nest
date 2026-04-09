@@ -7,6 +7,7 @@ export const EvtPaymentDeleted = 'PaymentDeleted'; // Sự kiện khi một than
 
 // Định nghĩa kiểu dữ liệu cho payload của sự kiện thanh toán
 export type PaymentEventPayload = {
+    userId: string; // ID của người dùng thực hiện thanh toán
     paymentId: string; // ID của thanh toán
     orderId: string; // ID của đơn hàng liên quan đến thanh toán
     externalTransactionId?: string; // ID giao dịch từ hệ thống thanh toán bên thứ ba, nếu có

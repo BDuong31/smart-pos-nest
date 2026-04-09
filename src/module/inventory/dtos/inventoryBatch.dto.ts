@@ -8,6 +8,7 @@ import { inventoryBatchSchema } from "../models/inventoryBatch.model";
 // Định nghĩa schema cho tạo lô hàng tồn kho
 export const inventoryBatchCreateDTOSchema = inventoryBatchSchema.pick({
     ingredientId: true, // ID nguyên liệu   
+    importInvoiceDetailId: true, // ID chi tiết phiếu nhập kho liên quan đến lô hàng
     quantity: true, // Số lượng nguyên liệu trong lô hàng
     expiryDate: true, // Ngày hết hạn của lô hàng
     importDate: true, // Ngày nhập kho của lô hàn
@@ -18,7 +19,8 @@ export interface InventoryBatchCreateDTO extends z.infer<typeof inventoryBatchCr
 
 // Định nghĩa schema cho cập nhật lô hàng tồn kho
 export const inventoryBatchUpdateDTOSchema = inventoryBatchSchema.pick({
-    ingredientId: true, // ID nguyên liệu   
+    ingredientId: true, // ID nguyên liệu 
+    importInvoiceDetailId: true, // ID chi tiết phiếu nhập kho liên quan đến lô hàng  
     quantity: true, // Số lượng nguyên liệu trong lô hàng
     expiryDate: true, // Ngày hết hạn của lô hàng
     importDate: true, // Ngày nhập kho của lô hàn
@@ -29,7 +31,8 @@ export interface InventoryBatchUpdateDTO extends z.infer<typeof inventoryBatchUp
 
 // Định nghĩa schema cho điều kiện truy vấn lô hàng tồn kho 
 export const inventoryBatchCondDTOSchema = inventoryBatchSchema.pick({
-    ingredientId: true, // ID nguyên liệu   
+    ingredientId: true, // ID nguyên liệu  
+    importInvoiceDetailId: true, // ID chi tiết phiếu nhập kho liên quan đến lô hàng 
     quantity: true, // Số lượng nguyên liệu trong lô hàng
     expiryDate: true, // Ngày hết hạn của lô hàng
     importDate: true, // Ngày nhập kho của lô hàn

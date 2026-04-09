@@ -12,123 +12,153 @@ import { ErrStockCheckNotFound, StockCheck } from '../models/stockCheck.model';
 
 @Controller('v1/stock-checks')
 export class StockCheckHttpController {
-    constructor(
-        @Inject(STOCKCHECK_SERVICE) private readonly stockCheckService: IStockCheckService,
-        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
-    ){}
+  constructor(
+    @Inject(STOCKCHECK_SERVICE)
+    private readonly stockCheckService: IStockCheckService,
+    @Inject(USER_RPC)
+    private readonly userRpc: IPublicUserRpc,
+  ) {}
 
-    // API tạo mới kiểm kê tồn kho
-    @Post()
-    @UseGuards(RemoteAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @HttpCode(HttpStatus.CREATED)
-    async create(@Request() req: ReqWithRequester, @Request() reqExpress: ExpressRequest, @Body() dto: StockCheckCreateDTO) {
-        const requester = req.requester;
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        const data = await this.stockCheckService.create(requester, dto, ip, userAgent);
-        return { data };
+  // API tạo mới kiểm kê tồn kho
+  @Post()
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @Request() req: ReqWithRequester,
+    @Request() reqExpress: ExpressRequest,
+    @Body() dto: StockCheckCreateDTO,
+  ) {
+    const requester = req.requester;
+    const ip = getIPv4FromReq(reqExpress);
+    const userAgent = reqExpress.headers['user-agent'] || '';
+    const data = await this.stockCheckService.create(
+      requester,
+      dto,
+      ip,
+      userAgent,
+    );
+    return { data };
+  }
+
+  // API cập nhật kiểm kê tồn kho theo ID
+  @Patch(':id')
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Request() req: ReqWithRequester,
+    @Request() reqExpress: ExpressRequest,
+    @Param('id') id: string,
+    @Body() dto: StockCheckUpdateDTO,
+  ) {
+    const requester = req.requester;
+    const ip = getIPv4FromReq(reqExpress);
+    const userAgent = reqExpress.headers['user-agent'] || '';
+    const data = await this.stockCheckService.update(
+      requester,
+      id,
+      dto,
+      ip,
+      userAgent,
+    );
+    return { data };
+  }
+
+  // API xóa kiểm kê tồn kho theo ID
+  @Delete(':id')
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(
+    @Request() req: ReqWithRequester,
+    @Request() reqExpress: ExpressRequest,
+    @Param('id') id: string,
+  ) {
+    const requester = req.requester;
+    const ip = getIPv4FromReq(reqExpress);
+    const userAgent = reqExpress.headers['user-agent'] || '';
+    await this.stockCheckService.delete(requester, id, ip, userAgent);
+  }
+
+  // API lấy danh sách kiểm kê tồn kho theo điều kiện
+  @Get()
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async list(@Query() cond: StockCheckCondDTO, @Query() paging: PagingDTO) {
+    paging = pagingDTOSchema.parse(paging);
+    cond = stockCheckCondDTOSchema.parse(cond);
+
+    const result = await this.stockCheckService.list(cond, paging);
+
+    const userIds = result.data
+      .map((stockCheck) => stockCheck.userId)
+      .filter((userId) => !!userId);
+
+    const users = await this.userRpc.getUsersByIds(userIds);
+
+    const userMap: Record<string, PublicUser> = {};
+
+    if (users) {
+      users.map((user) => (userMap[user.id] = user));
     }
 
-    // API cập nhật kiểm kê tồn kho theo ID
-    @Patch(':id')
-    @UseGuards(RemoteAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @HttpCode(HttpStatus.OK)
-    async update(@Request() req: ReqWithRequester, @Request() reqExpress: ExpressRequest, @Param('id') id: string, @Body() dto: StockCheckUpdateDTO) {
-        const requester = req.requester;
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        const data = await this.stockCheckService.update(requester, id, dto, ip, userAgent);
-        return { data };
+    result.data = result.data.map((stockCheck) => {
+      const user = userMap[stockCheck.userId] || undefined;
+      console.log(user);
+      return { ...stockCheck, user } as StockCheck;
+    });
+
+    console.log(result);
+
+    return paginatedResponse(result, paging);
+  }
+
+  // API lấy kiểm kê tồn kho theo ID
+  @Get(':id')
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async getById(@Param('id') id: string) {
+    const result = await this.stockCheckService.get(id);
+
+    if (!result) {
+      throw AppError.from(ErrStockCheckNotFound, 404);
     }
 
-    // API xóa kiểm kê tồn kho theo ID
-    @Delete(':id')
-    @UseGuards(RemoteAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @HttpCode(HttpStatus.NO_CONTENT)
-    async delete(@Request() req: ReqWithRequester, @Request() reqExpress: ExpressRequest, @Param('id') id: string) {
-        const requester = req.requester;
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || '';
-        await this.stockCheckService.delete(requester, id, ip, userAgent);
+    const user = await this.userRpc.getUserById(result.userId);
+
+    const data = { ...result, user } as StockCheck;
+    return { data };
+  }
+
+  // API lấy danh sách kiểm kê tồn kho theo nhiều ID
+  @Post('list-by-ids')
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async listByIds(@Body() ids: string[]) {
+    const result = await this.stockCheckService.listByIds(ids);
+
+    const userIds = result
+      .map((stockCheck) => stockCheck.userId)
+      .filter((userId) => !!userId);
+    const users = await this.userRpc.getUsersByIds(userIds);
+
+    const userMap: Record<string, PublicUser> = {};
+
+    if (users) {
+      users.map((user) => (userMap[user.id] = user));
     }
 
-    // API lấy kiểm kê tồn kho theo ID
-    @Get(':id')
-    @UseGuards(RemoteAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @HttpCode(HttpStatus.OK)
-    async getById(@Param('id') id: string) {
-        const result = await this.stockCheckService.get(id);
+    const data = result.map((stockCheck) => {
+      const user = userMap[stockCheck.userId];
+      return { ...stockCheck, user } as StockCheck;
+    });
 
-        if (!result) {
-            throw AppError.from(ErrStockCheckNotFound, 404);
-        }
-
-        const user = await this.userRpc.getUserById(result.userId);
-
-        const data = { ...result, user } as StockCheck;
-        return { data };
-    }
-
-    // API lấy danh sách kiểm kê tồn kho theo điều kiện
-    @Get()
-    @UseGuards(RemoteAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @HttpCode(HttpStatus.OK)
-    async list(@Query() cond: StockCheckCondDTO, @Query() paging: PagingDTO) {
-        paging = pagingDTOSchema.parse(paging);
-        cond = stockCheckCondDTOSchema.parse(cond);
-
-        const result = await this.stockCheckService.list(cond, paging);
-
-        const userIds = result.data.map(stockCheck => stockCheck.userId).filter(userId => !!userId);
-        const users = await this.userRpc.getUsersByIds(userIds);
-
-        const userMap: Record<string, PublicUser> = {};
-
-        if (users) {
-            users.map(user => {
-                userMap[user.id] = user;
-            })
-        }
-
-        result.data.map(stockCheck => {
-            const user = userMap[stockCheck.userId];
-            return { ...stockCheck, user } as StockCheck;
-        })
-
-        return paginatedResponse(result, paging);
-     }
-
-    // API lấy danh sách kiểm kê tồn kho theo nhiều ID
-    @Post('list-by-ids')
-    @UseGuards(RemoteAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @HttpCode(HttpStatus.OK)
-    async listByIds(@Body() ids: string[]) {
-        const result = await this.stockCheckService.listByIds(ids);
-
-        const userIds = result.map(stockCheck => stockCheck.userId).filter(userId => !!userId);
-        const users = await this.userRpc.getUsersByIds(userIds);
-
-        const userMap: Record<string, PublicUser> = {};
-
-        if (users) {
-            users.map(user => {
-                userMap[user.id] = user;
-            })
-        }
-
-        const data = result.map(stockCheck => {
-            const user = userMap[stockCheck.userId];
-            return { ...stockCheck, user } as StockCheck;
-        });
-
-        return { data };
-    }
+    return { data };
+  }
 
 }
 

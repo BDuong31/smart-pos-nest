@@ -64,10 +64,10 @@ export class UnitConversionHttpController {
         const result = await this.unitConversionService.list(cond, paging);
 
         const ingredientIds = result.data.map(uc => uc.ingredientId);
-        const ingredients = await this.ingredientRpc.findByIds(ingredientIds);
+        const ingredients = await this.ingredientRpc.findByIds([... new Set(ingredientIds)]);
         const ingredientMap: Record<string, PublicIngredient> = {};
 
-        if (ingredients) {
+        if (ingredients && ingredients.length > 0) {
             ingredients.map(ingredient => {
                 ingredientMap[ingredient.id] = ingredient;
             })

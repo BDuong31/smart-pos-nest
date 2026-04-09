@@ -17,7 +17,7 @@ export class LoyaltyService implements ILoyaltyService {
     ){}
 
     // Tạo hạng khách hàng thân thiết mới
-    async createUserRank(dto: UserRankDTO, ip: string, userAgent: string): Promise<void> {
+    async createUserRank(dto: UserRankDTO, ip: string, userAgent: string): Promise<string> {
         // 1. Kiểm tra xem hạng khách hàng thân thiết có tên hoặc điểm tối thiểu đã tồn tại chưa
         const minPoint = dto.minPoint || 0;
         const name = dto.name || '';
@@ -60,6 +60,7 @@ export class LoyaltyService implements ILoyaltyService {
             }
         });
 
+        return newId;
     }
 
     // Cập nhật hạng khách hàng thân thiết
@@ -130,7 +131,7 @@ export class LoyaltyService implements ILoyaltyService {
     }   
 
     // Tạo lịch sử điểm khách hàng thân thiết mới
-    async createPointHistory(dto: PointHistoryDTO, ip: string, userAgent: string): Promise<void> {
+    async createPointHistory(dto: PointHistoryDTO, ip: string, userAgent: string): Promise<string> {
         // 1. Validate dữ liệu đầu vào
         const data = pointHistoryDTOSchema.parse(dto);
         
@@ -145,6 +146,8 @@ export class LoyaltyService implements ILoyaltyService {
             updatedAt: new Date(),
         }
         await this.loyaltyRepository.insertPointHistory(newPointHistory);
+
+        return newId;
     }
 
     // Lấy danh sách lịch sử điểm khách hàng thân thiết theo điều kiện

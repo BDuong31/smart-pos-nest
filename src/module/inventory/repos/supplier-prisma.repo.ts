@@ -21,7 +21,6 @@ export class SupplierPrismaRepo implements ISupplierRepository {
         const { name, contact, ...rest } = cond;
 
         let where = {
-            ...rest,
         }
 
         if (name) {
@@ -38,14 +37,17 @@ export class SupplierPrismaRepo implements ISupplierRepository {
             }
         }
 
+        const page = Number(paging.page) || 1;
+        const limit = Number(paging.limit) || 10;
+
         const total = await prisma.supplier.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
         
         const result = await prisma.supplier.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { name: 'asc' },
         });
 

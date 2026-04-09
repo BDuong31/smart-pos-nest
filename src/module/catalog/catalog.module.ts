@@ -9,7 +9,7 @@ import { ProductRepository } from "./repos/product-prisma.repo";
 import { ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController, ComboHttpController, ComboRpcController, ComboItemHttpController, ComboItemRpcController } from "./controller/product-http.controller";
 import { OptionService } from "./services/option.service";
 import { OptionPrismaRepository } from "./repos/option-prisma.repo";
-import { OptionHttpController, OptionRpcController } from "./controller/option-http.controller";
+import { OptionHttpController, OptionItemHttpController, OptionItemRpcController, OptionRpcController, ProductOptionConfigHttpController, ProductOptionConfigRpcController } from "./controller/option-http.controller";
 import { PrinterService } from "./services/printer.service";
 import { PrinterPrismaRepo } from "./repos/printer-prisma.repo";
 import { PrinterHttpController, PrinterRpcController } from "./controller/printer-http.controller";
@@ -28,7 +28,7 @@ const dependencies: Provider[] = [
 
 @Module({
     imports: [ShareModule],
-    controllers: [CategoryHttpController, CategoryRpcController, ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController, ComboHttpController, ComboRpcController, ComboItemHttpController, ComboItemRpcController, OptionHttpController, OptionRpcController, PrinterHttpController, PrinterRpcController],
+    controllers: [CategoryHttpController, CategoryRpcController, ProductHttpController, ProductRpcController, VariantHttpController, VariantRpcController, ComboHttpController, ComboRpcController, ComboItemHttpController, ComboItemRpcController, OptionHttpController, OptionRpcController, OptionItemHttpController, OptionItemRpcController, ProductOptionConfigHttpController, ProductOptionConfigRpcController, PrinterHttpController, PrinterRpcController],
     providers: [...dependencies],
 })
 

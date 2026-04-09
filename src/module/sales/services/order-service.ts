@@ -33,13 +33,13 @@ export class OrderService implements IOrderService {
         // Tạo đơn hàng mới
         const newId = v7();
         const code =  'BSO-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.floor(1000 + Math.random() * 9000); // Mã đơn hàng theo định dạng BSO-YYYYMMDD-XXXX (BSO là BASO, YYYYMMDD là ngày tạo đơn hàng, XXXX là số ngẫu nhiên từ 1000 đến 9999)
-
+        const status = requester.role === 'customer' ? OrderStatus.PENDING : OrderStatus.CONFIRMED; // Nếu người tạo đơn hàng là khách hàng thì trạng thái mặc định là PENDING, ngược lại nếu là nhân viên hoặc quản lý thì trạng thái mặc định là CONFIRMED
         const order = {
             id: newId,
             code: code,
             userId: data.userId,
             totalAmount: data.totalAmount,
-            status: OrderStatus.PENDING,
+            status: status,
             createdAt: new Date(),
             updatedAt: new Date(),
         };  

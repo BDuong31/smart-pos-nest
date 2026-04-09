@@ -86,14 +86,16 @@ export class ProductHttpController {
         const categoryMap: Record<string, PublicCategory> = {};
         const imageMap: Record<string, PublicImage[]> = {};
 
-        if (categories){
-            categories.forEach(category => {
+        if (categories && categories.length > 0){
+            console.log('Categories:', categories);
+            categories.map(category => {
                 categoryMap[category.id] = category;
             });
         }
 
         if (images){
-            images.forEach(image => {
+            console.log('Images:', images);
+            images.map(image => {
                 if (!imageMap[image.refId]) {
                     imageMap[image.refId] = [];
                 }
@@ -104,8 +106,10 @@ export class ProductHttpController {
         result.data = result.data.map(item => {
             const category = categoryMap[item.categoryId];
             const images = imageMap[item.id] || [];
+            console.log(`Mapping product ${item.id} with category ${category?.id} and images:`, images);
             return { ...item, category, images } as Product;
         })
+        console.log('Final Result with Categories and Images:', result);
 
         return paginatedResponse(result, dto);
     }
@@ -195,19 +199,19 @@ export class ProductRpcController {
         @Inject(PRODUCT_SERVICE) private readonly productService: IProductService, 
     ){}
 
-    // RPC lấy thông tin sản phẩm theo ID
-    @Get(':id')
-    @HttpCode(HttpStatus.OK)
-    async get(@Param('id') id: string){
-        const data = await this.productService.getProductById(id);
-        return { data };
-    }
-
     // RPC lấy danh sách sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async listProductByIds(@Body('ids') ids: string[]){
         const data = await this.productService.getProductByIds(ids);
+        return { data };
+    }
+
+    // RPC lấy thông tin sản phẩm theo ID
+    @Get(':id')
+    @HttpCode(HttpStatus.OK)
+    async get(@Param('id') id: string){
+        const data = await this.productService.getProductById(id);
         return { data };
     }
 }
@@ -297,6 +301,14 @@ export class VariantRpcController {
         @Inject(PRODUCT_SERVICE) private readonly productService: IProductService, 
     ){}
 
+    // RPC lấy danh sách biến thể sản phẩm theo mảng IDs   
+    @Post('list-by-ids')
+    @HttpCode(HttpStatus.OK)
+    async listVariantByIds(@Body('ids') ids: string[]){
+        const data = await this.productService.getVariantByIds(ids);
+        return { data };
+    } 
+
     // RPC lấy thông tin biến thể sản phẩm theo ID
     @Get(':id')
     @HttpCode(HttpStatus.OK)
@@ -305,13 +317,6 @@ export class VariantRpcController {
         return { data };
     }
     
-    // RPC lấy danh sách biến thể sản phẩm theo mảng IDs   
-    @Post('list-by-ids')
-    @HttpCode(HttpStatus.OK)
-    async listVariantByIds(@Body('ids') ids: string[]){
-        const data = await this.productService.getVariantByIds(ids);
-        return { data };
-    } 
 }
 
 @Controller('v1/combos')
@@ -497,6 +502,46 @@ export class ComboItemHttpController {
         await this.productService.deleteComboItem(req.requester, id, ip, userAgent);
      }
 
+     // API lấy danh sách mục combo sản phẩm theo điều kiện
+    @Get('list')
+    @HttpCode(HttpStatus.OK)
+    async listComboItem(@Request() req: ReqWithRequester, @Query() dto: ComboItemCondDTO, @Query() paging: PagingDTO){
+        paging = pagingDTOSchema.parse(paging);
+        dto = comboItemCondDTOSchema.parse(dto);
+
+        const result = await this.productService.getListComboItem( dto, paging);
+
+        const productIds = result.data.map(item => item.productId);
+        const variantIds = result.data.map(item => item.variantId);
+
+        const products = await this.productRpc.findByIds([...new Set(productIds)]);
+        const variants = await this.variantRpc.findByIds([...new Set(variantIds)]);
+
+        const productMap: Record<string, PublicProduct> = {};
+        const variantMap: Record<string, PublicVariant> = {};
+
+        console.log('Products:', products);
+        console.log('Variants:', variants);
+        if (products){
+            products.map(product => {
+                productMap[product.id] = product;
+            });
+        }
+
+        if (variants){
+            variants.map(variant => {
+                variantMap[variant.id] = variant;
+            });
+        }
+
+        result.data = result.data.map(item => {
+            const product = productMap[item.productId];
+            const variant = variantMap[item.variantId];
+            return { ...item, product, variant } as ComboItem;
+        })
+        return paginatedResponse(result, dto);
+     }
+
     // API lấy thông tin mục combo sản phẩm theo ID
     @Get(':id')
     @HttpCode(HttpStatus.OK)
@@ -515,44 +560,6 @@ export class ComboItemHttpController {
         return { data };
      }
 
-    // API lấy danh sách mục combo sản phẩm theo điều kiện
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    async listComboItem(@Request() req: ReqWithRequester, @Query() dto: ComboItemCondDTO, @Query() paging: PagingDTO){
-        paging = pagingDTOSchema.parse(paging);
-        dto = comboItemCondDTOSchema.parse(dto);
-
-        const result = await this.productService.getListComboItem( dto, paging);
-
-        const productIds = result.data.map(item => item.productId);
-        const variantIds = result.data.map(item => item.variantId);
-
-        const products = await this.productRpc.findByIds([...new Set(productIds)]);
-        const variants = await this.variantRpc.findByIds([...new Set(variantIds)]);
-
-        const productMap: Record<string, PublicProduct> = {};
-        const variantMap: Record<string, PublicVariant> = {};
-
-        if (products){
-            products.forEach(product => {
-                productMap[product.id] = product;
-            });
-        }
-
-        if (variants){
-            variants.forEach(variant => {
-                variantMap[variant.id] = variant;
-            });
-        }
-
-        result.data = result.data.map(item => {
-            const product = productMap[item.productId];
-            const variant = variantMap[item.variantId];
-            return { ...item, product, variant } as ComboItem;
-        })
-        return paginatedResponse(result, dto);
-     }
-
     // API lấy danh sách mục combo sản phẩm theo mảng IDs
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
@@ -569,13 +576,13 @@ export class ComboItemHttpController {
         const variantMap: Record<string, PublicVariant> = {};
 
         if (products){
-            products.forEach(product => {
+            products.map(product => {
                 productMap[product.id] = product;
             });
         }
 
         if (variants){
-            variants.forEach(variant => {
+            variants.map(variant => {
                 variantMap[variant.id] = variant;
             });
         }

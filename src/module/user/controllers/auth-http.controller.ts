@@ -6,6 +6,7 @@ import type { UserChangePasswordDTO, UserLoginDTO, UserRegistrationDTO, UserRese
 import type { Request as ExpressRequest, Response } from "express";
 import { getIPv4FromReq, type ReqWithRequester } from "src/share";
 import { RemoteAuthGuard } from "src/share/guard";
+import { Public } from "src/share/guard/public.decorator";
 
 // Lớp AuthHttpController xử lý các yêu cầu HTTP liên quan đến người dùng
 @Controller('v1/auth')
@@ -146,6 +147,7 @@ export class AuthHttpController {
 
     // API đăng nhập người dùng
     @Post('authenticate')
+    @Public()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Đăng nhập người dùng', description: 'API này cho phép người dùng đăng nhập vào hệ thống bằng cách cung cấp thông tin xác thực như email và mật khẩu. Nếu thông tin xác thực hợp lệ, hệ thống sẽ trả về một token truy cập để người dùng có thể sử dụng cho các yêu cầu tiếp theo.' })
     @ApiBody({
@@ -257,6 +259,7 @@ export class AuthHttpController {
     async resetPassword(@Body() body: { resetToken: string, dto: UserResetPasswordDTO }, @Request() req: ExpressRequest) {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
+        console.log(body);
         await this.authService.resetPassword(body.resetToken, body.dto, ip, userAgent);
         return { message: 'Password reset successfully' };
     }
@@ -316,6 +319,7 @@ export class AuthRpcHttpController {
     ) {}
 
     // API introspect access token
+    @Public()
     @Post('introspect')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Introspect access token' })

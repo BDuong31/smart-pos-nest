@@ -58,10 +58,8 @@ export interface UserForgotPasswordDTO extends z.infer<typeof userForgotPassword
 
 // Định nghĩa schema cho đặt lại mật khẩu
 export const userResetPasswordDTOSchema = z.object({
-    password: userSchema.shape.password,
-    confirmPassword: userSchema.shape.password,
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    password: z.string().min(8).max(30), // Mật khẩu mới phải có độ dài từ 8 đến 30 ký tự
+    confirmPassword: z.string().min(8).max(30),
 }).required();
 
 // Định nghĩa kiểu dữ liệu cho đặt lại mật khẩu

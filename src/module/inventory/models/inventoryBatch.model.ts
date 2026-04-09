@@ -23,9 +23,10 @@ export const ErrInventoryBatchEntryDateInvalid = new Error('Inventory batch entr
 export const inventoryBatchSchema = z.object({
     id: z.string().uuid(),
     ingredientId: z.string().uuid(),
+    importInvoiceDetailId: z.string().uuid(),
     quantity: z.number().min(0, {message: ErrInventoryBatchQuantityNegative.message}),
-    expiryDate: z.date(),
-    importDate: z.date(),
+    expiryDate: z.coerce.date().optional(),
+    importDate: z.coerce.date().optional(),
     createdAt: z.date(),
     updatedAt: z.date(),
 })

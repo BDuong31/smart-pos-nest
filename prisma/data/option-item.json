@@ -1,0 +1,73 @@
+[
+  { "name": "100% Đường (Bình thường)", "groupId": "Mức đường", "priceExtra": 0 },
+  { "name": "70% Đường (Ít ngọt)", "groupId": "Mức đường", "priceExtra": 0 },
+  { "name": "50% Đường (Ngọt vừa)", "groupId": "Mức đường", "priceExtra": 0 },
+  { "name": "30% Đường (Rất ít ngọt)", "groupId": "Mức đường", "priceExtra": 0 },
+  { "name": "0% Đường (Không đường)", "groupId": "Mức đường", "priceExtra": 0 },
+
+  { "name": "100% Đá (Bình thường)", "groupId": "Mức đá", "priceExtra": 0 },
+  { "name": "50% Đá (Ít đá)", "groupId": "Mức đá", "priceExtra": 0 },
+  { "name": "Không đá (Nóng)", "groupId": "Mức đá", "priceExtra": 0 },
+
+  { "name": "Sữa tươi nguyên kem", "groupId": "Đổi loại sữa", "priceExtra": 0 },
+  { "name": "Sữa hạt óc chó", "groupId": "Đổi loại sữa", "priceExtra": 10000 },
+  { "name": "Sữa yến mạch", "groupId": "Đổi loại sữa", "priceExtra": 15000 },
+
+  { "name": "Trân châu đen", "groupId": "Topping Trà & Trà Sữa", "priceExtra": 8000 },
+  { "name": "Trân châu trắng (Giòn)", "groupId": "Topping Trà & Trà Sữa", "priceExtra": 10000 },
+  { "name": "Thạch nha đam", "groupId": "Topping Trà & Trà Sữa", "priceExtra": 8000 },
+  { "name": "Pudding trứng", "groupId": "Topping Trà & Trà Sữa", "priceExtra": 10000 },
+  { "name": "Kem cheese (Macchiato)", "groupId": "Topping Trà & Trà Sữa", "priceExtra": 15000 },
+
+  { "name": "Thêm 1 shot Espresso", "groupId": "Topping Cà Phê", "priceExtra": 10000 },
+  { "name": "Thạch cà phê", "groupId": "Topping Cà Phê", "priceExtra": 10000 },
+  { "name": "Kem muối", "groupId": "Topping Cà Phê", "priceExtra": 15000 },
+
+  { "name": "Nước trong", "groupId": "Loại nước dùng", "priceExtra": 0 },
+  { "name": "Nước béo", "groupId": "Loại nước dùng", "priceExtra": 0 },
+
+  { "name": "Thêm bánh quẩy", "groupId": "Món thêm (Phở/Bún/Hủ tiếu)", "priceExtra": 5000 },
+  { "name": "Thêm chén trứng chần", "groupId": "Món thêm (Phở/Bún/Hủ tiếu)", "priceExtra": 10000 },
+  { "name": "Thêm tiết", "groupId": "Món thêm (Phở/Bún/Hủ tiếu)", "priceExtra": 10000 },
+  { "name": "Thêm bò tái", "groupId": "Món thêm (Phở/Bún/Hủ tiếu)", "priceExtra": 25000 },
+  { "name": "Thêm chả cua", "groupId": "Món thêm (Phở/Bún/Hủ tiếu)", "priceExtra": 15000 },
+
+  { "name": "Không hành lá", "groupId": "Yêu cầu Rau / Hành", "priceExtra": 0 },
+  { "name": "Không ngò rí", "groupId": "Yêu cầu Rau / Hành", "priceExtra": 0 },
+  { "name": "Không giá", "groupId": "Yêu cầu Rau / Hành", "priceExtra": 0 },
+  { "name": "Trụng giá chín", "groupId": "Yêu cầu Rau / Hành", "priceExtra": 0 },
+  { "name": "Nhiều hành ngò", "groupId": "Yêu cầu Rau / Hành", "priceExtra": 0 },
+
+  { "name": "Thêm ốp la", "groupId": "Thêm Topping (Cơm)", "priceExtra": 10000 },
+  { "name": "Thêm lạp xưởng", "groupId": "Thêm Topping (Cơm)", "priceExtra": 15000 },
+  { "name": "Thêm bì", "groupId": "Thêm Topping (Cơm)", "priceExtra": 10000 },
+  { "name": "Thêm chả", "groupId": "Thêm Topping (Cơm)", "priceExtra": 15000 },
+  { "name": "Thêm miếng sườn", "groupId": "Thêm Topping (Cơm)", "priceExtra": 30000 },
+  { "name": "Cơm thêm", "groupId": "Thêm Topping (Cơm)", "priceExtra": 5000 },
+
+  { "name": "Canh chua", "groupId": "Chọn loại canh", "priceExtra": 0 },
+  { "name": "Canh súp rau củ", "groupId": "Chọn loại canh", "priceExtra": 0 },
+  { "name": "Canh rong biển", "groupId": "Chọn loại canh", "priceExtra": 0 },
+
+  { "name": "Không mỡ hành", "groupId": "Yêu cầu (Mỡ hành/Đồ chua)", "priceExtra": 0 },
+  { "name": "Nhiều mỡ hành", "groupId": "Yêu cầu (Mỡ hành/Đồ chua)", "priceExtra": 0 },
+  { "name": "Không lấy đồ chua", "groupId": "Yêu cầu (Mỡ hành/Đồ chua)", "priceExtra": 0 },
+  { "name": "Thêm nhiều đồ chua", "groupId": "Yêu cầu (Mỡ hành/Đồ chua)", "priceExtra": 0 },
+
+  { "name": "Thêm phô mai lát", "groupId": "Thêm Topping (Bánh mì/Burger)", "priceExtra": 10000 },
+  { "name": "Thêm trứng ốp la", "groupId": "Thêm Topping (Bánh mì/Burger)", "priceExtra": 10000 },
+  { "name": "Thêm xúc xích", "groupId": "Thêm Topping (Bánh mì/Burger)", "priceExtra": 15000 },
+  { "name": "Thêm thịt nguội", "groupId": "Thêm Topping (Bánh mì/Burger)", "priceExtra": 10000 },
+
+  { "name": "Không cay", "groupId": "Yêu cầu độ cay", "priceExtra": 0 },
+  { "name": "Ít cay", "groupId": "Yêu cầu độ cay", "priceExtra": 0 },
+  { "name": "Cay vừa", "groupId": "Yêu cầu độ cay", "priceExtra": 0 },
+  { "name": "Cay nhiều", "groupId": "Yêu cầu độ cay", "priceExtra": 0 },
+
+  { "name": "Xin thêm Mayonnaise", "groupId": "Loại xốt / Nước chấm", "priceExtra": 0 },
+  { "name": "Xin thêm Xốt mè rang", "groupId": "Loại xốt / Nước chấm", "priceExtra": 0 },
+  { "name": "Nước mắm chua ngọt", "groupId": "Loại xốt / Nước chấm", "priceExtra": 0 },
+
+  { "name": "Cắt đôi bánh", "groupId": "Yêu cầu đặc biệt khác", "priceExtra": 0 },
+  { "name": "Không lấy dưa leo", "groupId": "Yêu cầu đặc biệt khác", "priceExtra": 0 }
+]

@@ -116,8 +116,9 @@ export class ProductService implements IProductService {
         // validate dữ liệu đầu vào
         const data = variantDTOSchema.parse(dto);
 
+
         // Kiểm tra xem sản phẩm chính tồn tại chưa
-        const existingProduct = await this.productRepository.get(productId);
+        const existingProduct = await this.productRepository.get(dto.productId);
 
         if (!existingProduct) {
             throw AppError.from(ErrProductNotFound, 404);
@@ -134,7 +135,7 @@ export class ProductService implements IProductService {
         const id = v7();
         const newVariant = {
             id,
-            productId,
+            productId: data.productId,
             name: data.name,
             priceDiff: data.priceDiff,
             createdAt: new Date(),

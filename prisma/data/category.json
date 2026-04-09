@@ -1,0 +1,33 @@
+[
+    { "name": "Thức uống", "parentId": null },
+    { "name": "Điểm tâm sáng", "parentId": null },
+    { "name": "Cơm & Món chính", "parentId": null },
+    { "name": "Món ăn nhẹ & Bánh mì", "parentId": null },
+    { "name": "Tráng miệng", "parentId": null },
+
+    { "name": "Cà phê Việt Nam", "parentId": "Thức uống" },
+    { "name": "Cà phê Ý (Espresso Bar)", "parentId": "Thức uống" },
+    { "name": "Trà trái cây & Trà thảo mộc", "parentId": "Thức uống" },
+    { "name": "Trà sữa & Kem béo", "parentId": "Thức uống" },
+    { "name": "Nước ép & Sinh tố tươi", "parentId": "Thức uống" },
+    { "name": "Đá xay & Cookie", "parentId": "Thức uống" },
+    { "name": "Soda & Mojito", "parentId": "Thức uống" },
+
+    { "name": "Phở & Bún bò", "parentId": "Điểm tâm sáng" },
+    { "name": "Hủ tiếu & Bánh canh", "parentId": "Điểm tâm sáng" },
+    { "name": "Mì & Hoành thánh", "parentId": "Điểm tâm sáng" },
+
+    { "name": "Cơm tấm truyền thống", "parentId": "Cơm & Món chính" },
+    { "name": "Cơm phần văn phòng", "parentId": "Cơm & Món chính" },
+    { "name": "Món xào & Món kho", "parentId": "Cơm & Món chính" },
+    { "name": "Pasta & Món Âu", "parentId": "Cơm & Món chính" },
+
+    { "name": "Bánh mì Việt Nam", "parentId": "Món ăn nhẹ & Bánh mì" },
+    { "name": "Sandwich & Burger", "parentId": "Món ăn nhẹ & Bánh mì" },
+    { "name": "Salad & Gỏi", "parentId": "Món ăn nhẹ & Bánh mì" },
+    { "name": "Đồ chiên & Xiên que", "parentId": "Món ăn nhẹ & Bánh mì" },
+
+    { "name": "Bánh ngọt & Pastry", "parentId": "Tráng miệng" },
+    { "name": "Chè & Thạch", "parentId": "Tráng miệng" },
+    { "name": "Trái cây dĩa", "parentId": "Tráng miệng" }
+]

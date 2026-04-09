@@ -1,12 +1,53 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, Request, UseGuards } from "@nestjs/common";
-import type { Request as ExpressRequest } from "express";
-import { LOYALTY_REPOSITORY, USER_REPOSITORY, USER_SERVICE } from "../user.di-token";
-import { type IUserRepository, type IUserService } from "../ports/user.port";
-import { userCondDTOSchema, type CreateStaffDTO, type UserCondDTO, type UserUpdateDTO, type UserUpdateProfileDTO } from "../dtos/user.dto";
-import { ApiCreatedResponse, ApiOperation } from "@nestjs/swagger";
-import { AppError, ErrTokenInvalid, getIPv4FromReq, IMAGE_RPC,  ImageType,  type IPublicImageRpc, type IPublicLoyaltyRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicImage, PublicRank, type ReqWithRequester, UserRole } from "src/share";
-import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
-import { ErrUserNotFound, User } from "../models/user.model"
+import { Paginated } from 'src/share';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
+import {
+  LOYALTY_REPOSITORY,
+  USER_REPOSITORY,
+  USER_SERVICE,
+} from '../user.di-token';
+import { type IUserRepository, type IUserService } from '../ports/user.port';
+import {
+  userCondDTOSchema,
+  type CreateStaffDTO,
+  type UserCondDTO,
+  type UserUpdateDTO,
+  type UserUpdateProfileDTO,
+} from '../dtos/user.dto';
+import { ApiCreatedResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  AppError,
+  ErrTokenInvalid,
+  getIPv4FromReq,
+  IMAGE_RPC,
+  ImageType,
+  type IPublicImageRpc,
+  type IPublicLoyaltyRpc,
+  LOYALTY_RPC,
+  paginatedResponse,
+  type PagingDTO,
+  pagingDTOSchema,
+  PublicImage,
+  PublicRank,
+  type ReqWithRequester,
+  UserRole,
+} from 'src/share';
+import { RemoteAuthGuard, Roles, RolesGuard } from 'src/share/guard';
+import { ErrUserNotFound, User } from '../models/user.model';
 
 // Lớp UserHttpController xử lý các yêu cầu HTTP liên quan đến người dùng
 @Controller('v1/users')
@@ -15,7 +56,7 @@ export class UserHttpController {
     @Inject(USER_SERVICE) private readonly userService: IUserService,
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
     @Inject(IMAGE_RPC) private readonly imageRpc: IPublicImageRpc,
-    @Inject(LOYALTY_REPOSITORY) private readonly loyaltyRpc: IPublicLoyaltyRpc,
+    @Inject(LOYALTY_RPC) private readonly loyaltyRpc: IPublicLoyaltyRpc,
   ) {}
 
   // API tạo tài khoản người dùng mới
@@ -40,14 +81,13 @@ export class UserHttpController {
   @ApiOperation({ summary: 'Lấy thông tin hồ sơ người dùng' })
   @ApiCreatedResponse({ description: 'Trả về thông tin hồ sơ người dùng.' })
   async profile(@Request() req: ReqWithRequester) {
-
     const result = await this.userService.profile(req.requester.sub);
 
     if (!result) {
       throw AppError.from(ErrUserNotFound, 404);
     }
 
-    const avatars = await this.imageRpc.getImagesByRefId(result.id, ImageType.AVATAR);
+    const avatars = await this.imageRpc.getImagesByRefId([result.id], ImageType.AVATAR);
 
     const avatar = avatars[0];
 
@@ -70,36 +110,98 @@ export class UserHttpController {
 
     const results = await this.userRepo.list(cond, paging);
 
-    const userIds = results.data.map(user => user.id);
-    const rankIds = results.data.map(user => user.rankId).filter(rankId => rankId !== undefined && rankId !== null);
-    
+    const userIds = results.data.map((user) => user.id);
+    const rankIds = results.data
+      .map((user) => user.rankId)
+      .filter((rankId) => rankId !== undefined && rankId !== null);
+
     const ranks = await this.loyaltyRpc.getUserRanksByIds(rankIds);
+    const avatars = await this.imageRpc.getImagesByRefId(userIds, 'avatar');
 
     const avatarMap: Record<string, PublicImage | null> = {};
     const rankMap: Record<string, PublicRank | null> = {};
 
-    userIds.map(async (userId) => {
-      const avatars = await this.imageRpc.getImagesByRefId(userId, ImageType.AVATAR);
-      const rank = await this.loyaltyRpc.getUserRank(results.data.find(user => user.id === userId)?.rankId || '');
-
-      if (avatars.length > 0) { 
-        avatarMap[userId] = avatars[0];
+    userIds.map((userId) => {
+      const avatar = avatars.find((i) => i.refId === userId) || null;
+      if (avatar) {
+        avatarMap[userId] = avatar;
       } else {
         avatarMap[userId] = null;
       }
-    })
+    });
 
     ranks.map((rank) => {
       rankMap[rank.id] = rank;
-    })
-    
-    results.data = results.data.map((item) => {
-      const avatar = avatarMap[item.id] || undefined;
-      const rank = rankMap[item.id] || undefined;
-      return { ...item, avatar, rank };
-    })
+    });
 
-    return paginatedResponse(results, cond);
+    const mappedData = results.data.map((item) => {
+      const userObj: any = { ...item };
+      delete userObj.password;
+      delete userObj.salt;
+      userObj.avatar = avatarMap[item.id];
+      userObj.rank = rankMap[item.id];
+
+      return userObj;
+    });
+
+    const data: Paginated<Omit<User, 'password' | 'salt'>> = {
+      ...results,
+      data: mappedData,
+    };
+    return paginatedResponse(data, paging);
+  }
+
+  @Get('staff')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RemoteAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
+  @ApiOperation({ summary: 'Lấy danh sách nhân viên' })
+  @ApiCreatedResponse({ description: 'Trả về danh sách nhân viên.' })
+  async listStaff(@Request() req: ReqWithRequester, @Query() cond: UserCondDTO, @Query() paging: PagingDTO) {
+    paging = pagingDTOSchema.parse(paging);
+    cond = userCondDTOSchema.parse(cond);
+
+    const result = await this.userRepo.listStaff(cond, paging);
+
+    const userIds = result.data.map((user) => user.id);
+    const rankIds = result.data
+      .map((user) => user.rankId)
+      .filter((rankId) => rankId !== undefined && rankId !== null);
+
+    const ranks = await this.loyaltyRpc.getUserRanksByIds(rankIds);
+    const avatars = await this.imageRpc.getImagesByRefId(userIds, 'avatar');
+
+    const avatarMap: Record<string, PublicImage | null> = {};
+    const rankMap: Record<string, PublicRank | null> = {};
+
+    userIds.map((userId) => {
+      const avatar = avatars.find((i) => i.refId === userId) || null;
+      if (avatar) {
+        avatarMap[userId] = avatar;
+      } else {
+        avatarMap[userId] = null;
+      }
+    });
+
+    ranks.map((rank) => {
+      rankMap[rank.id] = rank;
+    });
+
+    const mappedData = result.data.map((item) => {
+      const userObj: any =  { ...item };
+      delete userObj.password;
+      delete userObj.salt;
+      userObj.avatar = avatarMap[item.id];
+      userObj.rank = rankMap[item.id];
+
+      return userObj;
+    });
+
+    const data: Paginated<Omit<User, 'password' | 'salt'>> = {
+      ...result,
+      data: mappedData,
+    };
+    return paginatedResponse(data, paging);
   }
 
   // API lấy thông tin hồ sơ người dùng theo userId
@@ -116,15 +218,21 @@ export class UserHttpController {
       throw AppError.from(ErrUserNotFound, 404);
     }
 
-    const avatars = await this.imageRpc.getImagesByRefId(user.id, ImageType.AVATAR);
+    const avatars = await this.imageRpc.getImagesByRefId(
+      [id],
+      ImageType.AVATAR,
+    );
 
     const avatar = avatars[0];
 
     const rank = await this.loyaltyRpc.getUserRank(user?.rankId || '');
 
-    const data: Omit<User, 'password' | 'salt'> = { ...user, avatar, rank };
-    
-    return { data: user };
+    const data: any = { ...user };
+    delete data.password;
+    delete data.salt;
+    data.avatar = avatar;
+    data.rank = rank;
+    return { data };
   }
 
   // API lấy danh sách người dùng theo mảng userIds
@@ -134,39 +242,9 @@ export class UserHttpController {
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @ApiOperation({ summary: 'Lấy danh sách người dùng theo mảng userIds' })
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo mảng userIds.' })
-  async listUsersByIds(@Body() body: { userIds: string[] }) {
-    const result =  await this.userRepo.listByIds(body.userIds);
-
-    const userIds = result.map(user => user.id);
-    const rankIds = result.map(user => user.rankId).filter(rankId => rankId !== undefined && rankId !== null);
-    
-    const ranks = await this.loyaltyRpc.getUserRanksByIds(rankIds);
-    
-    const avatarMap: Record<string, PublicImage | null> = {};
-    const rankMap: Record<string, PublicRank | null> = {};
-
-    userIds.map(async (userId) => {
-      const avatars = await this.imageRpc.getImagesByRefId(userId, ImageType.AVATAR);
-      const rank = await this.loyaltyRpc.getUserRank(result.find(user => user.id === userId)?.rankId || '');
-      
-      if (avatars.length > 0) {
-        avatarMap[userId] = avatars[0];
-      } else {
-        avatarMap[userId] = null;
-      }
-    })
-
-    ranks.map((rank) => {
-      rankMap[rank.id] = rank;
-    })
-    
-    const users = result.map((item) => {
-      const avatar = avatarMap[item.id] || undefined;
-      const rank = rankMap[item.id] || undefined;
-      return { ...item, avatar, rank };
-    });
-    
-    return { data: users };
+  async listUsersByIds(@Body() ids: string[]) {
+    const data = await this.userRepo.listByIds(ids);
+    return { data };
   }
 
   // API cập nhật thông tin cho người dùng
@@ -257,11 +335,11 @@ export class UserHttpRpcController{
   @ApiOperation({ summary: 'Lấy thông tin hồ sơ người dùng theo userId' })
   @ApiCreatedResponse({ description: 'Trả về thông tin hồ sơ người dùng theo userId.' })
   async rpcGetUserById(@Param('id') id: string) {
-    const user = await this.userRepo.get(id);
-    if (!user) {
+    const data = await this.userRepo.get(id);
+    if (!data) {
       throw AppError.from(ErrUserNotFound, 404);
     }
-    return { data: this._toResponseModel(user) };
+    return { data };
   }
 
   // API RPC lấy danh sách người dùng theo mảng userIds
@@ -271,12 +349,6 @@ export class UserHttpRpcController{
   @ApiCreatedResponse({ description: 'Trả về danh sách người dùng theo mảng userIds.' })
   async rpcListUsersByIds(@Body('ids') ids: string[]) {
     const data = await this.userRepo.listByIds(ids);
-    return { data: data.map(this._toResponseModel) };
-  }
-
-  // Chuyển đổi dữ liệu từ User sang dạng trả về
-  private _toResponseModel(data: User): Omit<User, 'password' | 'salt'> {
-    const { password, salt, ...responseModel } = data;
-    return responseModel;
+    return { data };
   }
 }

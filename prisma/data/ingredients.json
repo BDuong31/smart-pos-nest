@@ -1,0 +1,10 @@
+[
+    { "comment": "--- VẬT TƯ TIÊU HAO TẠI QUÁN (DINE-IN) ---" },
+    { "name": "Ống hút nhỏ (Cà phê/Trà)", "baseUnit": "cái", "minStock": 3000, "forecastDataId": null },
+    { "name": "Ống hút to (Hút trân châu)", "baseUnit": "cái", "minStock": 3000, "forecastDataId": null },
+    { "name": "Que khuấy (Dùng 1 lần cho đồ nóng)", "baseUnit": "cái", "minStock": 1000, "forecastDataId": null },
+    { "name": "Khăn giấy khô (Napkin)", "baseUnit": "tờ", "minStock": 10000, "forecastDataId": null },
+    { "name": "Khăn ướt", "baseUnit": "cái", "minStock": 2000, "forecastDataId": null },
+    { "name": "Tăm tre", "baseUnit": "cái", "minStock": 5000, "forecastDataId": null },
+    { "name": "Đế lót ly (Bằng giấy thấm nước)", "baseUnit": "cái", "minStock": 2000, "forecastDataId": null }
+]

@@ -18,6 +18,7 @@ import { ZalopayService } from "./services/payment/zalo.service";
 import { VnpayService } from "./services/payment/vnpay.service";
 import { ConfigModule } from "@nestjs/config";
 
+// Định nghĩa các dependency
 const dependencies: Provider[] = [
     { provide: CART_REPOSITORY, useClass: CartPrismaRepo },
     { provide: CART_SERVICE, useClass: CartService },

@@ -1,0 +1,22 @@
+[
+  { "name": "Mức đường", "isMultiSelect": false },
+  { "name": "Mức đá", "isMultiSelect": false },
+  { "name": "Đổi loại sữa", "isMultiSelect": false },
+  { "name": "Topping Trà & Trà Sữa", "isMultiSelect": true },
+  { "name": "Topping Cà Phê", "isMultiSelect": true },
+
+  { "name": "Loại nước dùng", "isMultiSelect": false },
+  { "name": "Món thêm (Phở/Bún/Hủ tiếu)", "isMultiSelect": true },
+  { "name": "Yêu cầu Rau / Hành", "isMultiSelect": true },
+
+  { "name": "Thêm Topping (Cơm)", "isMultiSelect": true },
+  { "name": "Chọn loại canh", "isMultiSelect": false },
+  { "name": "Yêu cầu (Mỡ hành/Đồ chua)", "isMultiSelect": true },
+
+  { "name": "Thêm Topping (Bánh mì/Burger)", "isMultiSelect": true },
+  
+  { "name": "Yêu cầu độ cay", "isMultiSelect": false },
+  { "name": "Loại xốt / Nước chấm", "isMultiSelect": true },
+  
+  { "name": "Yêu cầu đặc biệt khác", "isMultiSelect": true }
+]

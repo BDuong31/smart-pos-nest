@@ -23,7 +23,8 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@nestjs-modules/mailer": "^2.0.2",
+    "@faker-js/faker": "^10.3.0",
+    "@nestjs-modules/mailer": "^1.9.1",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.0.1",
@@ -32,9 +33,11 @@
     "@nestjs/microservices": "^11.1.12",
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.17",
     "@nestjs/serve-static": "^5.0.4",
     "@nestjs/swagger": "^11.2.5",
     "@nestjs/terminus": "^11.0.0",
+    "@nestjs/websockets": "^11.1.17",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "6.19.2",
     "amqp-connection-manager": "^5.0.0",

@@ -1,0 +1,137 @@
+[
+  {
+    "comboId": "Combo Sáng Nhanh Gọn",
+    "productId": "Bánh mì thịt chả",
+    "variantId": "Cỡ Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Sáng Nhanh Gọn",
+    "productId": "Cà phê sữa đá",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Bữa Sáng Truyền Thống",
+    "productId": "Phở bò tái nạm",
+    "variantId": "Tô Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Bữa Sáng Truyền Thống",
+    "productId": "Cà phê đen đá",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Trưa Năng Lượng",
+    "productId": "Cơm tấm sườn bì chả",
+    "variantId": "Phần Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Trưa Năng Lượng",
+    "productId": "Trà đào cam sả",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Trưa Đậm Đà",
+    "productId": "Bún bò Huế",
+    "variantId": "Tô Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Trưa Đậm Đà",
+    "productId": "Trà sữa Thái xanh",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Healthy Dinh Dưỡng",
+    "productId": "Salad ức gà sốt mè rang",
+    "variantId": "Phần Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Healthy Dinh Dưỡng",
+    "productId": "Nước ép cam",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Đồ Âu Sang Trọng",
+    "productId": "Bò bít tết xốt tiêu đen",
+    "variantId": "Chín vừa (Medium)",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Đồ Âu Sang Trọng",
+    "productId": "Soda chanh dây",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Fastfood Tiêu Chuẩn",
+    "productId": "Hamburger bò",
+    "variantId": "Cỡ Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Fastfood Tiêu Chuẩn",
+    "productId": "Khoai tây chiên lắc phô mai",
+    "variantId": "Phần Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Fastfood Tiêu Chuẩn",
+    "productId": "Soda việt quất",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Trà Chiều Ngọt Ngào",
+    "productId": "Bánh Tiramisu",
+    "variantId": "Miếng Nhỏ",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Trà Chiều Ngọt Ngào",
+    "productId": "Trà vải hoa hồng",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Nhâm Nhi",
+    "productId": "Cánh gà chiên nước mắm",
+    "variantId": "Phần Nhỏ",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Nhâm Nhi",
+    "productId": "Trà sữa Oolong nướng",
+    "variantId": "Size M",
+    "quantity": 1
+  },
+
+  {
+    "comboId": "Combo Chắn Dạ Mát Lòng",
+    "productId": "Hủ tiếu Nam Vang",
+    "variantId": "Tô Vừa",
+    "quantity": 1
+  },
+  {
+    "comboId": "Combo Chắn Dạ Mát Lòng",
+    "productId": "Chè khúc bạch",
+    "variantId": "Chén Vừa",
+    "quantity": 1
+  }
+]

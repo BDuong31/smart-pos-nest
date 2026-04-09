@@ -1,3 +1,4 @@
+import { PublicImage } from "src/share";
 import { z } from "zod";
 
 // ============================
@@ -31,10 +32,10 @@ export const ingredientSchema = z.object({
     name: z.string().min(1, {message: ErrIngredientNameRequired.message}).max(100, {message: ErrIngredientNameTooLong.message}),
     baseUnit: z.string().min(1, {message: ErrIngredientBaseUnitRequired.message}).max(50, {message: ErrIngredientBaseUnitTooLong.message}),
     minStock: z.number().min(0, {message: ErrIngredientMinStockNegative.message}),
-    forecastDataId: z.string().uuid().optional(),
+    forecastDataId: z.string().optional(),
     createdAt: z.date(),
     updatedAt: z.date(),
 })
 
-export type Ingredient = z.infer<typeof ingredientSchema>;
+export type Ingredient = z.infer<typeof ingredientSchema> & { images?: PublicImage[] };
 

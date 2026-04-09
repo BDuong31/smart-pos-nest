@@ -1,8 +1,3 @@
-
-// ==========================
-// Định nghĩa các interface cho Shift Service
-// ============================
-
 import { Paginated, PagingDTO } from "src/share";
 import { ShiftCondDTO, ShiftCreateDTO, ShiftUpdateDTO } from "../dtos/shift.dto";
 import { Shift } from "../models/shift.model";
@@ -10,13 +5,12 @@ import { Shift } from "../models/shift.model";
 // Định nghĩa các phương thức mà ShiftService phải triển khai
 export interface IShiftService {
     // Nhân viên thao tác
-    checkIn(userId: string, dto: ShiftCreateDTO, ip: string, userAgent: string): Promise<void>; // Nhân viên check in bắt đầu ca làm việc
-    checkOut(userId: string, shiftId: string, dto: ShiftUpdateDTO, ip: string, userAgent: string): Promise<void>; // Nhân viên check out kết thúc ca làm việc
-    
+    checkIn(userId: string, dto: ShiftCreateDTO, ip: string, userAgent: string): Promise<string>; // Nhân viên check in bắt đầu ca làm việc
+    checkOut(userId: string, shiftId: string, dto: ShiftUpdateDTO, ip: string, userAgent: string): Promise<string>; // Nhân viên check out kết thúc ca làm việc
+
     // Lấy thông tin ca làm việc
     getCurrentShift(userId: string): Promise<Shift>; // Lấy ca làm việc hiện tại của nhân viên
     getShiftHistory(userId: string, paging: PagingDTO): Promise<Paginated<Shift>>; // Lấy lịch sử ca làm việc của nhân viên
-    
 
     // Quản lý ca làm việc
     findShifts(cond: ShiftCondDTO, paging: PagingDTO): Promise<Paginated<Shift>>; // Tìm ca làm việc theo điều kiện

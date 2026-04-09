@@ -34,7 +34,6 @@ export class AuthService implements IAuthService {
         // 2. Kiểm tra xem email đã được sử dụng chưa
         const userEmail = await this.userRepo.list({ email: dto.email }, { page: 1, limit: 1 });
 
-
         if (userEmail && userEmail.data.length > 0) {
             // Lưu log đăng ký thất bại
             await this.userAuditRepo.logUserAudit({

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AppController } from './app.controller';
@@ -11,6 +11,9 @@ import { CatalogModule } from './module/catalog/catalog.module';
 import { OperationsModule } from './module/operations/operations.module';
 import { SalesModule } from './module/sales/sales.module';
 import { InventoryModule } from './module/inventory/inventory.module';
+import { SystemModule } from './module/system/system.module';
+import { APP_GUARD } from '@nestjs/core';
+import { MaintenanceGuard } from './share/guard/maintenance';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -24,9 +27,16 @@ import { InventoryModule } from './module/inventory/inventory.module';
     CatalogModule,
     OperationsModule,
     SalesModule,
-    InventoryModule
+    InventoryModule,
+    SystemModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: MaintenanceGuard,
+    },
+    AppService,
+  ],
 })
 export class AppModule {}

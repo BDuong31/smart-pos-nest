@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Combo Sáng Nhanh Gọn",
+    "price": 49000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Bữa Sáng Truyền Thống",
+    "price": 69000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Trưa Năng Lượng",
+    "price": 89000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Trưa Đậm Đà",
+    "price": 79000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Healthy Dinh Dưỡng",
+    "price": 95000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Đồ Âu Sang Trọng",
+    "price": 145000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Fastfood Tiêu Chuẩn",
+    "price": 105000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Trà Chiều Ngọt Ngào",
+    "price": 85000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Nhâm Nhi",
+    "price": 99000,
+    "isActive": true
+  },
+  {
+    "name": "Combo Chắn Dạ Mát Lòng",
+    "price": 79000,
+    "isActive": true
+  }
+]

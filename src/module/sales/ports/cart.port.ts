@@ -46,6 +46,8 @@ export interface ICartRepository {
     insertCart(cart: Cart): Promise<void>; // Tạo mới giỏ hàng
     updateCart(userId: string, dto: CartUpdateDTO): Promise<void>; // Cập nhật thông tin giỏ hàng theo ID người dùng
     deleteCart(userId: string): Promise<void>; // Xóa giỏ hàng theo ID người dùng
+    increaseCount(id: string, field: string, value: number): Promise<void>; // Tăng số lượng của một trường nào đó trong giỏ hàng
+    decreaseCount(id: string, field: string, value: number): Promise<void>; // Giảm số lượng của một trường nào đó trong giỏ hàng
 
     // Cart Item
     getCartItem(id: string): Promise<CartItem | null>; // Lấy thông tin mục sản phẩm trong giỏ hàng theo ID
@@ -64,4 +66,5 @@ export interface ICartRepository {
     insertCartItemOption(cartItemOption: CartItemOption): Promise<void>; // Tạo mới tùy chọn sản phẩm trong mục giỏ hàng
     updateCartItemOption(id: string, dto: CartItemOptionUpdateDTO): Promise<void>; // Cập nhật thông tin tùy chọn sản phẩm trong mục giỏ hàng theo ID
     deleteCartItemOption(id: string): Promise<void>; // Xóa tùy chọn sản phẩm trong mục giỏ hàng theo ID
+    deleteCartItemOptionByCartItemId(cartItemId: string): Promise<void>; // Xóa tùy chọn sản phẩm trong mục giỏ hàng theo ID
 }

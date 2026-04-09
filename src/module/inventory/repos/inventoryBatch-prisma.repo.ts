@@ -18,7 +18,7 @@ export class InventoryBatchPrismaRepo implements IInventoryBatchRepository {
 
     // Lấy danh sách lô hàng tồn kho theo điều kiện
     async list(cond: InventoryBatchCondDTO, paging: PagingDTO): Promise<Paginated<InventoryBatch>> {
-        const { ingredientId, quantity, expiryDate, importDate, ...rest } = cond;
+        const { ingredientId, importInvoiceDetailId, quantity, expiryDate, importDate, ...rest } = cond;
 
         let where = {
             ...rest,
@@ -31,6 +31,13 @@ export class InventoryBatchPrismaRepo implements IInventoryBatchRepository {
             }
         }
 
+        if (importInvoiceDetailId) {
+            where = {
+                ...where,
+                importInvoiceDetailId: importInvoiceDetailId,
+            }
+        }
+        
         if (quantity) {
             where = {
                 ...where,

@@ -2,14 +2,16 @@ import { Inject, Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, H
 import { INGREDIENT_SERVICE } from '../inventory.di-token';
 import type { IIngredientService } from '../ports/ingredient.port';
 import { RemoteAuthGuard, RolesGuard, Roles } from 'src/share/guard';
-import type { IngredientCreateDTO, IngredientUpdateDTO, IngredientCondDTO } from '../dtos/ingredient.dto';
-import { getIPv4FromReq, paginatedResponse, type PagingDTO, type ReqWithRequester, UserRole } from 'src/share';
+import {type IngredientCreateDTO,type IngredientUpdateDTO,type IngredientCondDTO, ingredientCondDTOSchema } from '../dtos/ingredient.dto';
+import { AppError, getIPv4FromReq, IMAGE_RPC,type IPublicImageRpc, paginatedResponse, type PagingDTO, pagingDTOSchema, PublicImage, type ReqWithRequester, UserRole } from 'src/share';
 import type { Request as ExpressRequest } from 'express';
+import { ErrIngredientNotFound, Ingredient } from '../models/ingredient.model';
 
 @Controller('v1/ingredients')
 export class IngredientHttpController {
     constructor(
         @Inject(INGREDIENT_SERVICE) private readonly ingredientService: IIngredientService,
+        @Inject(IMAGE_RPC) private readonly imageRpc: IPublicImageRpc,
     ){}
 
     // API để tạo mới nguyên liệu
@@ -56,7 +58,31 @@ export class IngredientHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async list(@Query() cond: IngredientCondDTO,  @Query() paging: PagingDTO) {
+        paging = pagingDTOSchema.parse(paging);
+        cond = ingredientCondDTOSchema.parse(cond);
+
         const result = await this.ingredientService.list(cond, paging);
+
+        const ingredientIds = result.data.map(ingredient => ingredient.id);
+        const images = await this.imageRpc.getImagesByRefId([... new Set(ingredientIds)], 'ingredient');
+
+        const imageMap = new Map<string, PublicImage[]>();
+
+        if (images && images.length > 0) {
+            images.forEach(image => {
+                const refId = image.refId;
+                if (!imageMap.has(refId)) {
+                    imageMap.set(refId, []);
+                }
+                imageMap.get(refId)?.push(image);
+             });
+        }
+
+        result.data = result.data.map((ingredient) => {
+            const images = imageMap.get(ingredient.id) || [];
+            return {...ingredient, images } as Ingredient;
+        })
+
         return paginatedResponse(result, paging);
     }
 
@@ -66,7 +92,18 @@ export class IngredientHttpController {
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async get(@Param('id') ingredientId: string) {
-        const data = await this.ingredientService.get(ingredientId);
+        const result = await this.ingredientService.get(ingredientId);
+
+        if (!result) {
+            throw AppError.from(ErrIngredientNotFound, 404);
+        }
+
+        const image = await this.imageRpc.getImagesByRefId(ingredientId, 'ingredient');
+
+        const data = {
+            ...result,
+            image: image.length > 0 ? image : undefined,
+        } as Ingredient;
         return { data };
     }
 

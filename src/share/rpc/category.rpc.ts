@@ -9,6 +9,9 @@ export class CategoryRPCClient implements IPublicCategoryRpc {
     async findById(id: string): Promise<PublicCategory | null> {
         try {
             const response = await axios.get(`${this.categoryServiceUrl}/rpc/categories/${id}`);
+            if (response.data && response.data.data) {
+                return response.data.data;
+            }
             return response.data;
         } catch (error) {
             return null;
@@ -18,6 +21,9 @@ export class CategoryRPCClient implements IPublicCategoryRpc {
     async findByIds(ids: string[]): Promise<PublicCategory[]> {
         try {
             const response = await axios.post(`${this.categoryServiceUrl}/rpc/categories/list-by-ids`, { ids });
+            if (response.data && response.data.data) {
+                return response.data.data;
+            }
             return response.data;
         } catch (error) {
             return [];

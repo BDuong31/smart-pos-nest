@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Tầng trệt (Trong nhà)",
+    "description": "Khu vực phòng lạnh ở tầng dưới, ngay sát quầy pha chế và thu ngân.",
+    "isActive": true
+  },
+  {
+    "name": "Lầu 1 (Trong nhà)",
+    "description": "Khu vực phòng lạnh trên lầu, không gian yên tĩnh hơn.",
+    "isActive": true
+  },
+  {
+    "name": "Ngoài trời",
+    "description": "Khu vực thoáng mát, không máy lạnh, dành cho khách thích khí trời hoặc hút thuốc.",
+    "isActive": true
+  }
+]

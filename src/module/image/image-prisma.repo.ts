@@ -68,19 +68,18 @@ export class ImagePrismaRepository implements IImageRepository {
     }
 
     // Lấy danh sách ảnh theo mảng refId và type
-    async listByRefIds(refId: string[], type: string, isMain?: boolean): Promise<Image[]> {
+    async listByRefIds(refIds: string[], type: string, isMain?: boolean): Promise<Image[]> {
         let where: any = {
-            refId: { in: refId },
-            type
+            refId: { in: refIds },
+            type,
         };
-
+        
         if (isMain !== undefined) {
             where.isMain = isMain;
         }
-        
-        const data = await prisma.image.findMany({
-            where
-        });
+
+
+        const data = await prisma.image.findMany({ where });
         return data.map(this._toModel);
     }
 

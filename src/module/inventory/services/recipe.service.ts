@@ -17,18 +17,25 @@ export class RecipeService implements IRecipeService {
     // Tạo mới công thức
     async create(requester: Requester, dto: RecipeCreateDTO, ip: string, userAgent: string): Promise<Recipe> {
         // Kiểm tra dữ liệu đầu vào
-        const data = recipeCreateDTOSchema.parse(dto);
-
+        console.log("RecipeCreateDTO:", dto);
+        const data = dto
+        // const data = recipeCreateDTOSchema.parse(dto);
+        console.log("Parsed RecipeCreateDTO:", data);
         let recipeExisting: Paginated<Recipe> | undefined;
 
         // Kiểm tra công thức của biến thể của sản phẩm
-        if (data.productId && data.variantId && !data.optionItemId) {
-            recipeExisting = await this.recipeRepo.list({ productId: data.productId, variantId: data.variantId }, { page: 1, limit: 1 });
+        if (!data.productId && data.variantId && !data.optionItemId) {
+            recipeExisting = await this.recipeRepo.list({variantId: data.variantId, ingredientId: data.ingredientId }, { page: 1, limit: 100 });
         } 
 
         // Kiểm tra công thức của tùy chọn của sản phẩm
-        if (data.productId && !data.variantId && data.optionItemId) {
-            recipeExisting = await this.recipeRepo.list({ productId: data.productId, optionItemId: data.optionItemId }, { page: 1, limit: 1 });
+        if (!data.productId && !data.variantId && data.optionItemId) {
+            recipeExisting = await this.recipeRepo.list({optionItemId: data.optionItemId, ingredientId: data.ingredientId }, { page: 1, limit: 100 });
+        }
+
+        // Kiểm tra công thức của sản phẩm
+        if (data.productId && !data.variantId && !data.optionItemId) {
+            recipeExisting = await this.recipeRepo.list({productId: data.productId, ingredientId: data.ingredientId }, { page: 1, limit: 100 });
         }
 
         if (recipeExisting && recipeExisting.total > 0) {

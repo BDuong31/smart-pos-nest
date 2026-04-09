@@ -1,7 +1,11 @@
-import prisma from 'src/share/components/prisma'
+import prisma from 'src/share/components/prisma';
 import { Injectable } from '@nestjs/common';
 import { Table } from '../models/table.model';
-import type { TableCreatedDTO, TableUpdateDTO, TableCondDTO} from '../dtos/table.dto';
+import type {
+  TableCreatedDTO,
+  TableUpdateDTO,
+  TableCondDTO,
+} from '../dtos/table.dto';
 import type { ITableRepository } from '../ports/table.port';
 import type { Prisma, Table as TablePrisma } from '@prisma/client';
 import { Paginated, PagingDTO } from 'src/share/data-model';
@@ -10,82 +14,83 @@ import { Reservation } from '../models/reservation.model';
 // Lớp TablePrismaRepo cung cấp phương thức truy vấn dữ liệu bàn từ Prisma
 @Injectable()
 export class TablePrismaRepo implements ITableRepository {
-    // Lấy bàn theo ID
-    async get(id: string): Promise<Table | null> {
-        const data = await prisma.table.findFirst({ where: { id } });
+  // Lấy bàn theo ID
+  async get(id: string): Promise<Table | null> {
+    const data = await prisma.table.findFirst({ where: { id } });
 
-        if (!data) return null;
-        
-        return this._toModel(data);
+    if (!data) return null;
+
+    return this._toModel(data);
+  }
+
+  // Lấy danh sách bàn
+  async list(cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>> {
+    const { name, zoneId, qrCode, capacity, isActive, status} = cond;
+
+    let where = {};
+
+    if (name) {
+      where = {
+        ...where,
+        name: name,
+      };
     }
 
-    // Lấy danh sách bàn
-    async list(cond: TableCondDTO, paging: PagingDTO): Promise<Paginated<Table>> {
-        const { name, zoneId, qrCode, capacity, isActive, status, ...rest} = cond;
-        
-        let where = {
-            ...rest,
-        }
-        
-        if (name) {
-            where = {
-                ...where,
-                name: name,
-            }
-        }
-
-        if (zoneId) {
-            where = {
-                ...where,
-                zoneId: zoneId,
-            }
-        }
-
-        if (qrCode) {
-            where = {
-                ...where,
-                qrCode: qrCode,
-            }
-        }
-
-        if (capacity) {
-            where = {
-                ...where,
-                capacity: capacity,
-            }
-        }
-
-        if (isActive !== undefined) {
-            where = {
-                ...where,
-                isActive: isActive,
-            }
-        }   
-
-        if (status) {
-            where = {
-                ...where,
-                status: status,
-            }
-        }
-
-        const total = await prisma.table.count({ where });
-
-        const skip = (paging.page - 1) * paging.limit;
-
-        const result = await prisma.table.findMany({
-            where,
-            skip,
-            take: paging.limit,
-            orderBy: { name: 'asc' },
-        });
-
-        return {
-            data: result.map(this._toModel),
-            paging,
-            total
-        }
+    if (zoneId) {
+      where = {
+        ...where,
+        zoneId: zoneId,
+      };
     }
+
+    if (qrCode) {
+      where = {
+        ...where,
+        qrCode: qrCode,
+      };
+    }
+
+    if (capacity) {
+      where = {
+        ...where,
+        capacity: capacity,
+      };
+    }
+
+    if (isActive !== undefined) {
+      where = {
+        ...where,
+        isActive: Boolean(isActive),
+      };
+    }
+
+    if (status) {
+      where = {
+        ...where,
+        status: status,
+      };
+    }
+
+    const page = Number(paging.page) || 1;
+    const limit = Number(paging.limit) || 10;
+
+    const total = await prisma.table.count({ where });
+
+    const skip = (page - 1) * limit;
+
+    const result = await prisma.table.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { name: 'asc' },
+    });
+
+    return {
+      data: result.map(this._toModel),
+      paging,
+      total,
+    };
+  }
 
     // Lấy danh sách bàn theo nhiều ID
     async listByIds(ids: string[]): Promise<Table[]> {
@@ -98,8 +103,16 @@ export class TablePrismaRepo implements ITableRepository {
     async listAvailable(reservations: Reservation[], time: Date, cond: TableCondDTO): Promise<Table[]> {
         const { name, zoneId, qrCode, capacity, isActive, status} = cond;
 
-        let where = {}
+        console.log('reservations', reservations);
+        console.log('time', time);
+        console.log('cond', cond);
+        
+        let where = {
+        }
 
+        where = {
+          status: 'available',
+        }
         if (name) {
             where = {
                 ...where,
@@ -135,13 +148,7 @@ export class TablePrismaRepo implements ITableRepository {
             }
         }
 
-        if (status) {
-            where = {
-                ...where,
-                status: status,
-            }
-        }
-
+        console.log(where);
         let reservedTableIds: string[] = [];
 
         if (time) {
@@ -164,7 +171,6 @@ export class TablePrismaRepo implements ITableRepository {
             },
             orderBy: { name: 'asc' },
         });
-        
         return data.map(this._toModel);
     }
 

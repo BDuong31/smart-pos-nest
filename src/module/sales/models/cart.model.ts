@@ -1,4 +1,3 @@
-import { create } from 'axios';
 import { PublicOptionItem, PublicProduct, PublicVariant } from 'src/share';
 import { z } from 'zod';
 
