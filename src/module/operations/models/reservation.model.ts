@@ -40,7 +40,7 @@ export const reservationSchema = z.object({
     tableId: z.string().uuid(),
     customerName: z.string().min(1, ErrCustomerNameTooShort).max(100, ErrCustomerNameTooLong),
     phone: z.string().max(20).regex(/^\+?[0-9\s\-]+$/, ErrCustomerPhoneInvalidFormat),
-    time: z.date().refine(date => date > new Date(), ErrReservationTimeInPast),
+    time: z.coerce.date().refine(date => date > new Date(), ErrReservationTimeInPast),
     guestCount: z.number().int().positive(),
     note: z.string().max(500).nullable(),
     status: z.nativeEnum(ReservationStatus),

@@ -9,7 +9,7 @@ export class OptionItemRPCClient implements IPublicOptionItemRpc {
 
     async findById(id: string): Promise<PublicOptionItem | null> {
         try {
-            const response = await axios.get(`${this.productServiceUrl}/rpc/option/group/items/${id}`);
+            const response = await axios.get(`${this.productServiceUrl}/rpc/options/group/item/${id}`);
             return response.data;
         } catch (error) {
             return null;
@@ -18,7 +18,7 @@ export class OptionItemRPCClient implements IPublicOptionItemRpc {
 
     async findByIds(ids: string[]): Promise<PublicOptionItem[]> {
         try {
-            const response = await axios.post(`${this.productServiceUrl}/rpc/option/group/items/list-by-ids`, { ids });
+            const response = await axios.post(`${this.productServiceUrl}/rpc/options/group/item/list-by-ids`, { ids });
             return response.data;
         } catch (error) {
             return [];

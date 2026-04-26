@@ -20,7 +20,7 @@ export class MomoService {
     }
 
     // ==== Tạo URL thanh toán Momo ====
-    async createPaymentUrl(amount: number, paymentId: string, orderInfo: string, userId: string, method: string): Promise<{ paymentUrl: string; externalTransactionId: string; }> {
+    async createPaymentUrl(amount: number, paymentId: string, orderInfo: string, userId: string, method: string): Promise<{ responseTime: number; paymentUrl: string; deeplink: string; qrCodeUrl: string; deeplinkMiniApp: string;  externalTransactionId: string; }> {
         const requestId = uuidv7();
         const requestType = method;
         const extraData = "eyJ1c2VybmFtZSI6ICJtb21vIn0=";
@@ -57,8 +57,13 @@ export class MomoService {
 
         try {
             const result = await axios.post(`${this.config.endpoint}/create`, requestBody);
+            console.log(result)
             return {
+                responseTime: result.data.responseTime,
                 paymentUrl: result.data.payUrl,
+                deeplink: result.data.deeplink,
+                qrCodeUrl: result.data.qrCodeUrl,
+                deeplinkMiniApp: result.data.deeplinkMiniApp,
                 externalTransactionId: result.data.transId,
             }
         } catch (error) {

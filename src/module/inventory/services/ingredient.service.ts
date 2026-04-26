@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IIngredientRepository, IIngredientService } from "../ports/ingredient.port";
 import { INGREDIENT_REPOSITORY } from "../inventory.di-token";
 import { ErrIngredientAlreadyExists, ErrIngredientNotFound, Ingredient } from "../models/ingredient.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { IngredientCondDTO, IngredientCreateDTO, ingredientCreateDTOSchema, IngredientUpdateDTO, ingredientUpdateDTOSchema } from "../dtos/ingredient.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { IngredientCreatedEvent, IngredientDeletedEvent, IngredientUpdatedEvent } from "src/share/event/ingredient.evt";
 
 // Lớp IngredientService cung cấp các phương thức để quản lý nguyên liệu
 @Injectable()
 export class IngredientService implements IIngredientService {
     constructor(
         @Inject(INGREDIENT_REPOSITORY) private readonly ingredientRepo: IIngredientRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới nguyên liệu
@@ -40,6 +42,15 @@ export class IngredientService implements IIngredientService {
 
         await this.ingredientRepo.insert(ingredient);
 
+        await this.eventPublisher.publish(IngredientCreatedEvent.create({
+            ingredientId: newId,
+            name: data.name,
+            baseUnit: data.baseUnit,
+            minStock: data.minStock,
+            forecastDataId: data.forecastDataId,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         return ingredient;
     }
 
@@ -57,6 +68,15 @@ export class IngredientService implements IIngredientService {
             throw AppError.from(ErrIngredientNotFound, 404);
         }
 
+        await this.eventPublisher.publish(IngredientUpdatedEvent.create({
+            ingredientId: ingredientId,
+            name: data.name,
+            baseUnit: data.baseUnit,
+            minStock: data.minStock,
+            forecastDataId: data.forecastDataId,
+            changeType: 'UPDATED',
+        }, requester.sub));
+
         return updatedIngredient;
     }
     
@@ -70,6 +90,15 @@ export class IngredientService implements IIngredientService {
 
         // Xóa nguyên liệu
         await this.ingredientRepo.delete(ingredientId);
+
+        await this.eventPublisher.publish(IngredientDeletedEvent.create({
+            ingredientId: ingredientId,
+            name: existing.name,
+            baseUnit: existing.baseUnit,
+            minStock: existing.minStock,
+            forecastDataId: existing.forecastDataId,
+            changeType: 'DELETED',
+        }, requester.sub));
     }
 
     // Lấy thông tin nguyên liệu theo ID

@@ -39,10 +39,11 @@ export class ShiftPrismaRepository implements IShiftRepository {
             }
         }
 
-        if (endTime) {
-            where = {
-                ...where,
-                endTime: { lte: endTime },
+        if (endTime !== undefined) {
+            if (endTime === null) {
+                where = { ...where, endTime: null }; 
+            } else {
+                where = { ...where, endTime: { lte: endTime } };
             }
         }
 

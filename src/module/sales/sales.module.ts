@@ -17,8 +17,8 @@ import { MomoService } from "./services/payment/momo.service";
 import { ZalopayService } from "./services/payment/zalo.service";
 import { VnpayService } from "./services/payment/vnpay.service";
 import { ConfigModule } from "@nestjs/config";
+import { CartConsumer } from "./consumers/cart.consumer";
 
-// Định nghĩa các dependency
 const dependencies: Provider[] = [
     { provide: CART_REPOSITORY, useClass: CartPrismaRepo },
     { provide: CART_SERVICE, useClass: CartService },
@@ -34,9 +34,35 @@ const dependencies: Provider[] = [
 ]
 
 @Module({
-    imports: [ShareModule, ConfigModule.forRoot({isGlobal: true}),],
-    controllers: [CartHttpController, CartRpcController, CartItemHttpController, CartItemRpcController, CartItemOptionHttpController, CartItemOptionRpcController, OrderHttpController, OrderRpcController, OrderItemHttpController, OrderItemRpcController, OrderItemOptionHttpController, OrderItemOptionRpcController, OrderTableHttpController, OrderTableRpcController, OrderVoucherHttpController, OrderVoucherRpcController, InvoiceHttpController, InvoiceRpcController, VoucherHttpController, VoucherRpcController,  PaymentHttpController, PaymentRpcController],
+    imports: [ShareModule, ConfigModule.forRoot({isGlobal: true})],
+    controllers: [
+        // 1. NHÓM DÀI NHẤT / CỤ THỂ NHẤT LÊN ĐẦU (Item Options, Vouchers, Tables)
+        CartItemOptionHttpController, 
+        CartItemOptionRpcController,
+        OrderItemOptionHttpController, 
+        OrderItemOptionRpcController,
+        OrderTableHttpController, 
+        OrderTableRpcController, 
+        OrderVoucherHttpController, 
+        OrderVoucherRpcController, 
+        
+        // 2. NHÓM DÀI VỪA (Items)
+        CartItemHttpController, 
+        CartItemRpcController, 
+        OrderItemHttpController, 
+        OrderItemRpcController, 
+        CartHttpController, 
+        CartRpcController,
+        OrderHttpController,
+        OrderRpcController,
+        InvoiceHttpController,
+        InvoiceRpcController,
+        VoucherHttpController,
+        VoucherRpcController,
+        PaymentHttpController,
+        PaymentRpcController,
+        CartConsumer
+    ],
     providers: [...dependencies],
 })
-
 export class SalesModule {}

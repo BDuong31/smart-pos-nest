@@ -18,7 +18,7 @@ export const EvtProductOptionConfigRemoved = 'ProductOptionConfigRemoved';
 export type OptionGroupEventPayload = {
     optionGroupId: string; // ID nhóm tùy chọn
     name?: string; // Tên nhóm tùy chọn
-    changeType?: 'created' | 'updated' | 'deleted'; // Loại thay đổi
+    changeType?: 'CREATED' | 'UPDATED' | 'DELETED'; // Loại thay đổi
 };
 
 // Định nghĩa kiểu dữ liệu cho sự kiện liên quan đến mục tùy chọn
@@ -27,14 +27,14 @@ export type OptionItemEventPayload = {
     optionItemId: string; // ID mục tùy chọn
     name?: string; // Tên mục tùy chọn
     priceExtra?: number; // Giá phụ thu của mục tùy chọn
-    changeType?: 'created' | 'updated' | 'deleted'; // Loại thay đổi
+    changeType?: 'CREATED' | 'UPDATED' | 'DELETED'; // Loại thay đổi
 };
 
 // Định nghĩa kiểu dữ liệu cho sự kiện liên quan đến cấu hình tùy chọn sản phẩm
 export type ProductOptionConfigEventPayload = {
     productId: string; // ID sản phẩm
     optionGroupId: string; // ID nhóm tùy chọn
-    changeType?: 'set' | 'removed'; // Loại thay đổi
+    changeType?: 'SET' | 'REMOVED'; // Loại thay đổi
 };
 
 // Payload: Dữ liệu đi kèm sự kiện

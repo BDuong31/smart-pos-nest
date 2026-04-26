@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IPurchaseProposalDetailRepository, IPurchaseProposalDetailService } from "../ports/purchaseProposalDetail.port";
 import { PURCHASEPROPOSALDETAIL_REPOSITORY } from "../inventory.di-token";
 import { ErrPurchaseProposalDetailAlreadyExists, ErrPurchaseProposalDetailNotFound, PurchaseProposalDetail } from "../models/purchaseProposalDetail.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { PurchaseProposalDetailCondDTO, PurchaseProposalDetailCreateDTO, purchaseProposalDetailCreateDTOSchema, PurchaseProposalDetailUpdateDTO, purchaseProposalDetailUpdateDTOSchema } from "../dtos/purchaseProposalDetail.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { PurchaseProposalDetailCreatedEvent, PurchaseProposalDetailDeletedEvent, PurchaseProposalDetailUpdatedEvent } from "src/share/event/purchase-proposal-detail.evt";
 
 // Lớp PurchaseProposalDetailService cung cấp các phương thức để quản lý chi tiết đề xuất mua hàng  
 @Injectable()
 export class PurchaseProposalDetailService implements IPurchaseProposalDetailService {
     constructor(
         @Inject(PURCHASEPROPOSALDETAIL_REPOSITORY) private readonly purchaseProposalDetailRepo: IPurchaseProposalDetailRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới chi tiết đề xuất mua hàng
@@ -40,6 +42,14 @@ export class PurchaseProposalDetailService implements IPurchaseProposalDetailSer
 
         await this.purchaseProposalDetailRepo.insert(purchaseProposalDetail);
 
+        await this.eventPublisher.publish(PurchaseProposalDetailCreatedEvent.create({
+            detailId: newId,
+            proposalId: data.proposalId,
+            ingredientId: data.ingredientId,
+            quantity: data.quantity,
+            unit: data.unit,
+            changeType: 'CREATED'
+        }, requester.sub))
         return purchaseProposalDetail;
     }
 
@@ -63,6 +73,15 @@ export class PurchaseProposalDetailService implements IPurchaseProposalDetailSer
             throw AppError.from(ErrPurchaseProposalDetailNotFound, 404);
         }
 
+        await this.eventPublisher.publish(PurchaseProposalDetailUpdatedEvent.create({
+            detailId: updatedPurchaseProposalDetail.id,
+            proposalId: updatedPurchaseProposalDetail.proposalId,
+            ingredientId: updatedPurchaseProposalDetail.ingredientId,
+            quantity: updatedPurchaseProposalDetail.quantity,
+            unit: updatedPurchaseProposalDetail.unit,
+            changeType: 'UPDATED'
+        }, requester.sub))
+
         return updatedPurchaseProposalDetail;
     }
 
@@ -76,6 +95,15 @@ export class PurchaseProposalDetailService implements IPurchaseProposalDetailSer
 
         // Xóa chi tiết đề xuất mua hàng
         await this.purchaseProposalDetailRepo.delete(purchaseProposalDetailId);
+
+        await this.eventPublisher.publish(PurchaseProposalDetailDeletedEvent.create({
+            detailId: existing.id,
+            proposalId: existing.proposalId,
+            ingredientId: existing.ingredientId,
+            quantity: existing.quantity,
+            unit: existing.unit,
+            changeType: 'DELETED'
+        }, requester.sub))
     }
 
     // Lấy thông tin chi tiết đề xuất mua hàng theo ID

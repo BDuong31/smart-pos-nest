@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IImportInvoiceRepository, IImportInvoiceService } from "../ports/importInvoice.port";
 import { IMPORTINVOICE_REPOSITORY } from "../inventory.di-token";
 import { ErrImportInvoiceAlreadyExists, ErrImportInvoiceNotFound, ImportInvoice } from "../models/importInvoice.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { ImportInvoiceCondDTO, ImportInvoiceCreateDTO, importInvoiceCreateDTOSchema, ImportInvoiceUpdateDTO, importInvoiceUpdateDTOSchema } from "../dtos/importInvoice.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share"; 
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share"; 
+import { ImportInvoiceCreatedEvent, ImportInvoiceDeletedEvent, ImportInvoiceUpdatedEvent } from "src/share/event/import-invoice.evt";
 
 // Lớp ImportInvoiceService cung cấp các phương thức để quản lý hóa đơn nhập hàng   
 @Injectable()   
 export class ImportInvoiceService implements IImportInvoiceService {
     constructor(
         @Inject(IMPORTINVOICE_REPOSITORY) private readonly importInvoiceRepo: IImportInvoiceRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới hóa đơn nhập hàng
@@ -40,6 +42,15 @@ export class ImportInvoiceService implements IImportInvoiceService {
 
         await this.importInvoiceRepo.insert(importInvoice);
 
+        await this.eventPublisher.publish(ImportInvoiceCreatedEvent.create({
+            invoiceId: newId,
+            code: data.code,
+            supplierId: data.supplierId,
+            totalCost: data.totalCost,
+            importDate: data.importDate,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         return importInvoice;
     }
     
@@ -61,6 +72,16 @@ export class ImportInvoiceService implements IImportInvoiceService {
         if (!updatedImportInvoice) {
             throw AppError.from(ErrImportInvoiceNotFound, 404);
         }
+
+        await this.eventPublisher.publish(ImportInvoiceUpdatedEvent.create({
+            invoiceId: importInvoiceId,
+            code: data.code || existing.code,
+            supplierId: data.supplierId || existing.supplierId,
+            totalCost: data.totalCost || existing.totalCost,
+            importDate: data.importDate || existing.importDate,
+            changeType: 'UPDATED',
+        }, requester.sub));
+
         return updatedImportInvoice;
     }
 
@@ -74,6 +95,15 @@ export class ImportInvoiceService implements IImportInvoiceService {
 
         // Xóa hóa đơn nhập hàng
         await this.importInvoiceRepo.delete(importInvoiceId);
+
+        await this.eventPublisher.publish(ImportInvoiceDeletedEvent.create({
+            invoiceId: importInvoiceId,
+            code: existing.code,
+            supplierId: existing.supplierId,
+            totalCost: existing.totalCost,
+            importDate: existing.importDate,
+            changeType: 'DELETED',
+        }, requester.sub));
     }
 
     // Lấy thông tin hóa đơn nhập hàng theo ID 

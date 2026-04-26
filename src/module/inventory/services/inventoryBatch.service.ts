@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IInventoryBatchRepository, IInventoryBatchService } from "../ports/inventoryBatch.port";
 import { INVENTORYBATCH_REPOSITORY } from "../inventory.di-token";
 import { ErrInventoryBatchAlreadyExists, ErrInventoryBatchNotFound, InventoryBatch } from "../models/inventoryBatch.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { InventoryBatchCondDTO, InventoryBatchCreateDTO, inventoryBatchCreateDTOSchema, InventoryBatchUpdateDTO, inventoryBatchUpdateDTOSchema } from "../dtos/inventoryBatch.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { InventoryBatchCreatedEvent, InventoryBatchDeletedEvent, InventoryBatchUpdatedEvent } from "src/share/event/inventory-batch.evt";
 
 // Lớp InventoryBatchService cung cấp các phương thức để quản lý lô hàng tồn kho
 @Injectable()
 export class InventoryBatchService implements IInventoryBatchService {
     constructor(
         @Inject(INVENTORYBATCH_REPOSITORY) private readonly inventoryBatchRepo: IInventoryBatchRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới lô hàng tồn kho
@@ -34,6 +36,15 @@ export class InventoryBatchService implements IInventoryBatchService {
 
         await this.inventoryBatchRepo.insert(inventoryBatch);
 
+        await this.eventPublisher.publish(InventoryBatchCreatedEvent.create({
+            batchId: newId,
+            ingredientId: data.ingredientId,
+            quantity: data.quantity,
+            expiryDate: data.expiryDate,
+            importDate: data.importDate,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         return inventoryBatch;
     }
 
@@ -51,6 +62,15 @@ export class InventoryBatchService implements IInventoryBatchService {
             throw AppError.from(ErrInventoryBatchNotFound, 404);
         }
 
+        await this.eventPublisher.publish(InventoryBatchUpdatedEvent.create({
+            batchId: inventoryBatchId,
+            ingredientId: data.ingredientId || updatedInventoryBatch.ingredientId,
+            quantity: data.quantity || updatedInventoryBatch.quantity,
+            expiryDate: data.expiryDate || updatedInventoryBatch.expiryDate,
+            importDate: data.importDate || updatedInventoryBatch.importDate,
+            changeType: 'UPDATED',
+        }, requester.sub));
+
         return updatedInventoryBatch;
     }
 
@@ -64,6 +84,15 @@ export class InventoryBatchService implements IInventoryBatchService {
 
         // Xóa lô hàng tồn kho
         await this.inventoryBatchRepo.delete(inventoryBatchId);
+
+        await this.eventPublisher.publish(InventoryBatchDeletedEvent.create({
+            batchId: inventoryBatchId,
+            ingredientId: existing.ingredientId,
+            quantity: existing.quantity,
+            expiryDate: existing.expiryDate,
+            importDate: existing.importDate,
+            changeType: 'DELETED',
+        }, requester.sub));
     }
 
     // Lấy thông tin lô hàng tồn kho theo ID   

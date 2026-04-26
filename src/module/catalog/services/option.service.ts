@@ -1,16 +1,18 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { IOptionRepository, IOptionService } from "../ports/option.port";
 import { OPTION_REPOSITORY } from "../catalog.di-token";
-import { AppError, Paginated, PagingDTO, Requester } from "src/share";
+import { AppError, EVENT_PUBLISHER,type IEventPublisher, Paginated, PagingDTO, Requester } from "src/share";
 import { CreateOptionGroupDTO, createOptionGroupDTOSchema, CreateOptionItemDTO, createOptionItemDTOSchema, CreateProductOptionConfigDTO, createProductOptionConfigDTOSchema, OptionGroupCondDTO, OptionItemCondDTO, ProductOptionConfigCondDTO, UpdateOptionGroupDTO, updateOptionGroupDTOSchema, UpdateOptionItemDTO, updateOptionItemDTOSchema, UpdateProductOptionConfigDTO } from "../dtos/option.dto";
 import { ErrOptionGroupAlreadyExists, ErrOptionGroupNotFound, ErrOptionItemNotFound, OptionGroup, OptionItem, ProductOptionConfig } from "../models/option.model";
 import { v7 } from "uuid";
 import { id } from "zod/v4/locales";
+import { OptionGroupCreatedEvent, OptionGroupDeletedEvent, OptionGroupUpdatedEvent, OptionItemCreatedEvent, OptionItemDeletedEvent, OptionItemUpdatedEvent, ProductOptionConfigRemovedEvent, ProductOptionConfigSetEvent } from "src/share/event/option.evt";
 
 @Injectable()
 export class OptionService implements IOptionService {
     constructor(
         @Inject(OPTION_REPOSITORY) private readonly optionRepository: IOptionRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // ===========================
@@ -41,9 +43,15 @@ export class OptionService implements IOptionService {
 
         await this.optionRepository.insertOptionGroup(newOptionGroup);
 
+        await this.eventPublisher.publish(OptionGroupCreatedEvent.create({
+            optionGroupId: newId,
+            name: data.name,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         // 4. Trả về kết quả
         return newOptionGroup;
-    }; 
+    };
 
     // cập nhật Option Group
     async updateOptionGroup(requester: Requester, optionGroupId: string, dto: UpdateOptionGroupDTO, ip: string, userAgent: string): Promise<OptionGroup | null>{
@@ -68,7 +76,12 @@ export class OptionService implements IOptionService {
         await this.optionRepository.updateOptionGroup(optionGroupId, updatedOptionGroup);
 
         const result = await this.optionRepository.getOptionGroup(optionGroupId);
-        // 4. Trả về kết quả
+
+        await this.eventPublisher.publish(OptionGroupUpdatedEvent.create({
+            optionGroupId: result?.id || '',
+            name: result?.name,
+            changeType: 'UPDATED'
+        }, requester.sub))
         return result;
     };
 
@@ -83,12 +96,22 @@ export class OptionService implements IOptionService {
 
         // 2. Xóa Option Group
         await this.optionRepository.deleteOptionGroup(optionGroupId);
+
+        await this.eventPublisher.publish(OptionGroupDeletedEvent.create({
+            optionGroupId: existing.id,
+            name: existing.name,
+            changeType: 'DELETED'
+        }, requester.sub))
     }
 
     // lấy Option Group theo Id
     async getOptionGroupById(optionGroupId: string): Promise<OptionGroup | null> {
         const optionGroup = await this.optionRepository.getOptionGroup(optionGroupId);
-        return optionGroup ? optionGroup : null;
+        console.log(optionGroup);
+        if (!optionGroup) {
+            throw AppError.from(ErrOptionGroupNotFound, 404);
+        }
+        return optionGroup;
     }
 
     // lấy danh sách Option Group theo điều kiện
@@ -132,6 +155,14 @@ export class OptionService implements IOptionService {
 
         await this.optionRepository.insertOptionItem(newOptionItem);
 
+        await this.eventPublisher.publish(OptionItemCreatedEvent.create({
+            groupId: data.groupId,
+            optionItemId: newId,
+            name: data.name,
+            priceExtra: data.priceExtra,
+            changeType: 'CREATED'
+        }, requester.sub))
+
         // 4. Trả về kết quả
         return newOptionItem;
     }
@@ -166,6 +197,14 @@ export class OptionService implements IOptionService {
         await this.optionRepository.updateOptionItem(id, updatedOptionItem);
 
         const result = await this.optionRepository.getOptionItem(id);
+
+        await this.eventPublisher.publish(OptionItemUpdatedEvent.create({
+            groupId: result?.groupId || '',
+            optionItemId: result?.id || '',
+            name: result?.name,
+            priceExtra: result?.priceExtra,
+            changeType: 'UPDATED'
+        }, requester.sub))
         // 5. Trả về kết quả
         return result;
     }
@@ -181,6 +220,14 @@ export class OptionService implements IOptionService {
         
         // 2. Xóa Option Item
         await this.optionRepository.deleteOptionItem(id);
+
+        await this.eventPublisher.publish(OptionItemDeletedEvent.create({
+            groupId: optionItem.groupId,
+            optionItemId: optionItem.id,
+            name: optionItem.name,
+            priceExtra: optionItem.priceExtra,
+            changeType: 'DELETED'
+        }, requester.sub))
     }
 
     // lấy Option Item theo Id
@@ -242,6 +289,11 @@ export class OptionService implements IOptionService {
 
         const result = await this.optionRepository.getProductOptionConfigById(id);
         
+        await this.eventPublisher.publish(ProductOptionConfigSetEvent.create({
+            productId: result?.productId || '',
+            optionGroupId: result?.optionGroupId || '',
+            changeType:  'SET'
+        }, requester.sub))
         // 5. Trả về kết quả
         return result ;
     }  
@@ -257,6 +309,12 @@ export class OptionService implements IOptionService {
 
         // 2. Xóa cấu hình Option của sản phẩm
         await this.optionRepository.deleteProductOptionConfig(id);
+
+        await this.eventPublisher.publish(ProductOptionConfigRemovedEvent.create({
+            productId: existing.productId,
+            optionGroupId: existing.optionGroupId,
+            changeType: 'REMOVED'
+        }, requester.sub))
     }
 
     // lấy cấu hình Option của sản phẩm

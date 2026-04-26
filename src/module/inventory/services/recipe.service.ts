@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IRecipeRepository, IRecipeService } from "../ports/recipe.port";
 import { RECIPE_REPOSITORY } from "../inventory.di-token";
 import { ErrRecipeAlreadyExists, ErrRecipeNotFound, Recipe } from "../models/recipe.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { RecipeCondDTO, RecipeCreateDTO, recipeCreateDTOSchema, RecipeUpdateDTO, recipeUpdateDTOSchema } from "../dtos/recipe.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { RecipeCreatedEvent, RecipeDeletedEvent, RecipeUpdatedEvent } from "src/share/event/recipe.evt";
 
 // Lớp RecipeService cung cấp các phương thức để quản lý công thức
 @Injectable()
 export class RecipeService implements IRecipeService {
     constructor(
         @Inject(RECIPE_REPOSITORY) private readonly recipeRepo: IRecipeRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher
     ){}
 
     // Tạo mới công thức
@@ -57,6 +59,16 @@ export class RecipeService implements IRecipeService {
 
         await this.recipeRepo.insert(newRecipe);
 
+        await this.eventPublisher.publish(RecipeCreatedEvent.create({
+            recipeId: newId,
+            ingredientId: data.ingredientId,
+            amount: data.amount,
+            productId: data.productId,
+            variantId: data.variantId,
+            optionItemId: data.optionItemId,
+            changeType: 'CREATED'
+        }, requester.sub))
+
         return newRecipe;
     } 
         
@@ -80,6 +92,16 @@ export class RecipeService implements IRecipeService {
             throw AppError.from(ErrRecipeNotFound, 404);
         }
 
+        await this.eventPublisher.publish(RecipeUpdatedEvent.create({
+            recipeId: updatedRecipe.id,
+            ingredientId: updatedRecipe.ingredientId,
+            amount: updatedRecipe.amount,
+            productId: updatedRecipe.productId,
+            variantId: updatedRecipe.variantId,
+            optionItemId: updatedRecipe.optionItemId,
+            changeType: 'UPDATED'
+        }, requester.sub))
+
         return updatedRecipe;
     }   
 
@@ -93,6 +115,16 @@ export class RecipeService implements IRecipeService {
 
         // Xóa công thức
         await this.recipeRepo.delete(recipeId);
+
+        await this.eventPublisher.publish(RecipeDeletedEvent.create({
+            recipeId: existing.id,
+            ingredientId: existing.ingredientId,
+            amount: existing.amount,
+            productId: existing.productId,
+            variantId: existing.variantId,
+            optionItemId: existing.optionItemId,
+            changeType: 'DELETED'
+        }, requester.sub))
     }   
 
     // Lấy thông tin công thức theo ID

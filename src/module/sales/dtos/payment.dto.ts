@@ -26,7 +26,6 @@ export const paymentUpdateDTOSchema = paymentTransactionSchema.pick({
     gatewayResponse: true, // Phản hồi từ cổng thanh toán
     status: true, // Trạng thái thanh toán
     paidAt: true, // Thời gian thanh toán
-    updatedAt: true, // Thời gian cập nhật
 }).partial()
 
 // Định nghĩa kiểu dữ liệu cho cập nhật giao dịch thanh toán

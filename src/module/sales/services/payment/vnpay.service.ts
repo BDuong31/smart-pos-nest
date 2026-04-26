@@ -23,7 +23,7 @@ export class VnpayService {
         this.ipnUrl = this.configService.get<string>('VNPAY_IPN_URL')!;
         
         this.vnpay = new VNPay({
-            vnpayHost: this.configService.get<string>('VNPAY_URL')!,
+            // vnpayHost: this.configService.get<string>('VNPAY_URL')!,
             tmnCode: this.configService.get<string>('VNPAY_TMN_CODE')!,
             secureSecret: this.configService.get<string>('VNPAY_HASH_SECRET')!,
         });
@@ -33,7 +33,7 @@ export class VnpayService {
     async createPaymentUrl(amount: number, paymentId: string, userId: string, bankCode: string): Promise<{ paymentUrl: string; externalTransactionId: string }> {
         try {
             const url = await this.vnpay.buildPaymentUrl({
-                vnp_Amount: amount * 100, 
+                vnp_Amount: amount,
                 vnp_TxnRef: paymentId,
                 vnp_OrderInfo: `Payment for ${paymentId}`,
                 vnp_BankCode: bankCode,

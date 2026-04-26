@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import {type ICategoryRepository, ICategoryService } from "../ports/category.port";
 import { CATEGORY_REPOSITORY } from "../catalog.di-token";
 import { ErrCategoryAlreadyExists, ErrCategoryNotFound, type Category } from "../models/category.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { CategoryCondDTO, CategoryCreatedDTO, categoryCreatedDTOSchema, CategoryUpdateDTO, categoryUpdateDTOSchema } from "../dtos/category.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { CategoryCreatedEvent, CategoryDeletedEvent, CategoryUpdatedEvent } from "src/share/event/category.evt";
 
 // Lớp CategoryService cung cấp các phương thức để quản lý danh mục sản phẩm
 @Injectable()
 export class CategoryService implements ICategoryService {
     constructor(
         @Inject(CATEGORY_REPOSITORY) private readonly categoryRepo: ICategoryRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới danh mục
@@ -37,6 +39,13 @@ export class CategoryService implements ICategoryService {
 
         await this.categoryRepo.insert(category);
 
+        await this.eventPublisher.publish(CategoryCreatedEvent.create({
+            categoryId: newId,
+            parentId: data.parentId || undefined,
+            name: data.name,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         // Ghi log hành động tạo danh mục (MongoDB)
         // TODO: Ghi log hành động tạo danh mục với thông tin requester, ip, userAgent
         // Chưa triển khai phần này
@@ -59,6 +68,13 @@ export class CategoryService implements ICategoryService {
         // Cập nhật thông tin danh mục
         await this.categoryRepo.update(id, data);
 
+        await this.eventPublisher.publish(CategoryUpdatedEvent.create({
+            categoryId: id,
+            parentId: data.parentId || undefined,
+            name: data.name,
+            changeType: 'UPDATED',
+        }, requester.sub));
+
         // Ghi log hành động cập nhật danh mục (MongoDB)
     }
 
@@ -73,6 +89,13 @@ export class CategoryService implements ICategoryService {
 
         // Xóa danh mục
         await this.categoryRepo.delete(id);
+
+        await this.eventPublisher.publish(CategoryDeletedEvent.create({
+            categoryId: id,
+            parentId: existing.parentId || undefined,
+            name: existing.name,
+            changeType: 'DELETED',
+        }, requester.sub));
 
         // Ghi log hành động xóa danh mục (MongoDB)
     }

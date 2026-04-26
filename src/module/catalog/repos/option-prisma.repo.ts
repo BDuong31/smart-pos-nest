@@ -18,7 +18,7 @@ export class OptionPrismaRepository implements IOptionRepository {
         await prisma.optionGroup.create({
             data: optionGroup
         });
-    }   
+    }
 
     // cập nhật Option Group
     async updateOptionGroup(id: string, dto: any): Promise<void> {

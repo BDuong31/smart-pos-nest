@@ -18,6 +18,7 @@ export class ShiftService implements IShiftService {
     async checkIn(userId: string, dto: ShiftCreateDTO, ip: string, userAgent: string): Promise<string> {
         // 1. Kiểm tra nếu nhân viên đã có ca làm việc hiện tại chưa
         const currentShift = await this.shiftRepository.list({ userId, endTime: null }, { page: 1, limit: 1 });
+        console.log(currentShift);
         if (currentShift.data.length > 0) {
             await this.userAuditRepo.logUserAudit({
                 userId: userId,

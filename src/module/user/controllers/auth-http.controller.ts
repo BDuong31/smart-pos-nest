@@ -191,8 +191,11 @@ export class AuthHttpController {
     async login(@Body() body: UserLoginDTO, @Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
         const ip = getIPv4FromReq(req);
         const userAgent = req.headers['user-agent'] || '';
+        console.log(body)
         const token = await this.authService.login(body, ip, userAgent);
 
+
+        console.log(token)
         res.cookie('refreshToken', token.refreshToken, {
             httpOnly: true,
             secure: true,

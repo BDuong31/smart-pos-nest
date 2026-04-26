@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IPurchaseProposalRepository, IPurchaseProposalService } from "../ports/purchaseProposal.port";
 import { PURCHASEPROPOSAL_REPOSITORY } from "../inventory.di-token";
 import { ErrPurchaseProposalAlreadyExists, ErrPurchaseProposalNotFound, PurchaseProposal } from "../models/purchaseProposal.model"; 
-import { Requester } from "src/share/interface";
+import {type IEventPublisher, Requester } from "src/share/interface";
 import { PurchaseProposalCondDTO, PurchaseProposalCreateDTO, purchaseProposalCreateDTOSchema, PurchaseProposalUpdateDTO, purchaseProposalUpdateDTOSchema } from "../dtos/purchaseProposal.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { PurchaseProposalCreatedEvent, PurchaseProposalDeletedEvent, PurchaseProposalUpdatedEvent } from "src/share/event/purchase-proposal.evt";
 
 // Lớp PurchaseProposalService cung cấp các phương thức để quản lý đề xuất mua hàng
 @Injectable()
 export class PurchaseProposalService implements IPurchaseProposalService {
     constructor(
         @Inject(PURCHASEPROPOSAL_REPOSITORY) private readonly purchaseProposalRepo: IPurchaseProposalRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher
     ){}
 
     // Tạo mới đề xuất mua hàng
@@ -40,6 +42,14 @@ export class PurchaseProposalService implements IPurchaseProposalService {
 
         await this.purchaseProposalRepo.insert(purchaseProposal);
 
+        await this.eventPublisher.publish(PurchaseProposalCreatedEvent.create({
+            proposalId: newId,
+            code: data.code,
+            creatorId: requester.sub,
+            status: 'peding',
+            note: data.note,
+            changeType: 'CREATED'
+        }))
         return purchaseProposal;
     }
 
@@ -63,6 +73,15 @@ export class PurchaseProposalService implements IPurchaseProposalService {
             throw AppError.from(ErrPurchaseProposalNotFound, 404);
         }
 
+        await this.eventPublisher.publish(PurchaseProposalUpdatedEvent.create({
+            proposalId: updatedPurchaseProposal.id,
+            code: updatedPurchaseProposal.code,
+            creatorId: requester.sub,
+            status: updatedPurchaseProposal.status,
+            note: updatedPurchaseProposal.note,
+            changeType: 'UPDATED'
+        }))
+
         return updatedPurchaseProposal;
     }
 
@@ -76,6 +95,15 @@ export class PurchaseProposalService implements IPurchaseProposalService {
 
         // Xóa đề xuất mua hàng
         await this.purchaseProposalRepo.delete(purchaseProposalId);
+
+        await this.eventPublisher.publish(PurchaseProposalDeletedEvent.create({
+            proposalId: existing.id,
+            code: existing.code,
+            creatorId: requester.sub,
+            status: existing.status,
+            note: existing.note,
+            changeType: 'DELETED'
+        }))
     }
 
     // Lấy thông tin đề xuất mua hàng theo ID

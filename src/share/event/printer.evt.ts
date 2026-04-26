@@ -8,6 +8,7 @@ export type PrinterEventPayload = {
     printerId: string;
     name?: string;
     type?: string;
+    ipAddress?: string;
     changeType: 'CREATED' | 'UPDATED' | 'DELETED';
 }
 
@@ -70,5 +71,5 @@ export class PrinterDeletedEvent extends PrinterEvent<PrinterEventPayload> {
     static from(json: any): PrinterDeletedEvent {
         const { eventName, payload, id, occurredAt, senderId } = json;
         return new PrinterDeletedEvent(eventName, payload, { id, occurredAt: new Date(occurredAt), senderId });
-    }   
+    }
 }

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Pat
 import { PAYMENT_SERVICE } from "../sales.di-token";
 import type { IPaymentService } from "../ports/payment.port";
 import { RemoteAuthGuard  } from "src/share/guard";
-import { getIPv4FromReq,type PagingDTO, type ReqWithRequester } from "src/share";
+import { getIPv4FromReq,paginatedResponse,type PagingDTO, type ReqWithRequester } from "src/share";
 import type { InitiatePaymentDTO, PaymentCondDTO, PaymentCreateDTO, PaymentUpdateDTO } from "../dtos/payment.dto";
 import type { Request as RequestExpress } from "express";
 import { ConfigService } from '@nestjs/config';
@@ -24,7 +24,8 @@ export class PaymentHttpController {
         const ip = getIPv4FromReq(reqExpress);
         const userAgent = reqExpress.headers['user-agent'] || 'unknown';
         const data = await this.paymentService.createPayment(requester, dto, ip, userAgent);
-        return { data };
+        console.log(data);
+        return data;
     }
     // API cập nhật thông tin giao dịch thanh toán theo ID
     @Patch(':id')
@@ -48,6 +49,18 @@ export class PaymentHttpController {
         await this.paymentService.deletePayment(requester, id, ip, userAgent);
     }
 
+    // API lấy danh sách giao dịch thanh toán theo điều kiện với phân trang
+    @Get()
+    @UseGuards(RemoteAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async list(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: PaymentCondDTO, @Query() paging: PagingDTO) {
+        const requester = req.requester;
+        const ip = getIPv4FromReq(reqExpress);
+        const userAgent = reqExpress.headers['user-agent'] || 'unknown';
+        const data = await this.paymentService.listPayments(paging, cond);
+        return paginatedResponse(data, paging);
+    }
+
     // API lấy thông tin giao dịch thanh toán theo ID
     @Get(':id')
     @UseGuards(RemoteAuthGuard)
@@ -60,18 +73,6 @@ export class PaymentHttpController {
         return { data };
     }
 
-    // API lấy danh sách giao dịch thanh toán theo điều kiện với phân trang
-    @Get()
-    @UseGuards(RemoteAuthGuard)
-    @HttpCode(HttpStatus.OK)
-    async list(@Request() req: ReqWithRequester, @Request() reqExpress: RequestExpress, @Query() cond: PaymentCondDTO, @Query() paging: PagingDTO) {
-        const requester = req.requester;
-        const ip = getIPv4FromReq(reqExpress);
-        const userAgent = reqExpress.headers['user-agent'] || 'unknown';
-        const data = await this.paymentService.listPayments(paging, cond);
-        return { data };
-    }
-    
     // API lấy danh sách giao dịch thanh toán theo nhiều ID với phân trang
     @Post('list-by-ids')
     @UseGuards(RemoteAuthGuard)

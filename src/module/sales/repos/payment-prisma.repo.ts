@@ -23,7 +23,6 @@ export class PaymentPrismaRepo implements IPaymentRepository {
         const { orderId, externalTransactionId, method, status, paidAt, ...rest } = cond; 
 
         let where = {
-            ...rest,
         }
 
         if (orderId) {  
@@ -61,14 +60,17 @@ export class PaymentPrismaRepo implements IPaymentRepository {
             }
         }
 
+        const page = Number(paging.page)
+        const limit = Number(paging.limit)
+
         const total = await prisma.paymentTransaction.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const result = await prisma.paymentTransaction.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { createdAt: 'desc' },
         }); 
 

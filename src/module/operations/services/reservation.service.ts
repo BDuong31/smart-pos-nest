@@ -17,8 +17,10 @@ export class ReservationService implements IReservationService {
     // Tạo mới đặt bàn
     async create(requester: Requester, dto: ReservationCreatedDTO, ip: string, userAgent: string): Promise<string> {
         // Kiểm tra dữ liệu đầu vào
+        console.log(dto);
         const data = reservationCreatedDTOSchema.parse(dto);
 
+        console.log(data)
         // Kiểm tra xem đặt bàn đã tồn tại chưa
         const existing = await this.reservationRepo.list({ 
             userId: data.userId,
@@ -88,5 +90,10 @@ export class ReservationService implements IReservationService {
     // Lấy danh sách đặt bàn theo nhiều ID
     async listByIds(ids: string[]): Promise<Reservation[]> {
         return await this.reservationRepo.listByIds(ids);
+    }
+
+    // Lấy danh sách đặt bàn theo khoảng thời gian
+    async listByTime(timeStart: Date, timeEnd: Date): Promise<Reservation[]> {
+        return await this.reservationRepo.listByTime(timeStart, timeEnd);
     }
 }

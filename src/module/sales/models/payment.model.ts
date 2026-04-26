@@ -37,12 +37,12 @@ export enum PaymentStatus {
 export const paymentTransactionSchema = z.object({
     id: z.string().uuid(),
     orderId: z.string().uuid(),
-    externalTransactionId: z.string().min(1).max(100).optional(), // ID giao dịch từ hệ thống thanh toán bên thứ ba, nếu có
+    externalTransactionId: z.string().min(1).max(100).optional().nullable(), // ID giao dịch từ hệ thống thanh toán bên thứ ba, nếu có
     amount: z.number().min(0, {message: ErrPaymentAmountNegative.message}), // Số tiền thanh toán, không được âm
     method: z.nativeEnum(PaymentMethod),
-    gatewayResponse: z.any().transform((val) => val as Prisma.InputJsonValue).optional(), // Phản hồi từ cổng thanh toán, lưu dưới dạng JSON
+    gatewayResponse: z.any().transform((val) => val as Prisma.InputJsonValue).optional().nullable(), // Phản hồi từ cổng thanh toán, lưu dưới dạng JSON
     status: z.nativeEnum(PaymentStatus),
-    paidAt: z.date().optional(),
+    paidAt: z.date().optional().nullable(),
     createdAt: z.date(),
     updatedAt: z.date(),
 })
@@ -52,5 +52,5 @@ export type PaymentTransaction = z.infer<typeof paymentTransactionSchema>;
 export const InitiatePaymentSchemaTable = z.object({
     paymentId: z.string().uuid(),
     method: z.string().min(1).max(50),
-    methodChild: z.string().min(1).max(50).optional(), 
+    methodChild: z.string().min(1).max(50).optional().nullable(), 
 });

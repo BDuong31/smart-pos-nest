@@ -1,17 +1,20 @@
+import { ErrInvoiceNotFound, ErrOrderTableNotFound, ErrOrderVoucherNotFound, OrderVoucher } from './../models/order.model';
 import { Inject, Injectable } from '@nestjs/common';
 import { type IOrderRepository, IOrderService } from '../ports/order.port';
 import { ORDER_REPOSITORY } from '../sales.di-token';
-import { ErrOrderAlreadyExists, ErrOrderNotFound, OrderStatus, type Order, type OrderItem, type OrderItemOption, type OrderVoucher, type OrderTable, type Invoice } from '../models/order.model';
-import { Requester } from 'src/share/interface';
+import { ErrOrderAlreadyExists, ErrOrderNotFound, OrderStatus, type Order, type OrderItem, type OrderItemOption, type OrderVoucher, type OrderTable, type Invoice, ErrOrderItemNotFound, ErrOrderItemOptionNotFound } from '../models/order.model';
+import { type IEventPublisher, Requester } from 'src/share/interface';
 import { InvoiceCondDTO, InvoiceCreateDTO, invoiceCreateDTOSchema, InvoiceUpdateDTO, OrderCondDTO, OrderCreateDTO, orderCreateDTOSchema, OrderItemCondDTO, OrderItemCreateDTO, orderItemCreateDTOSchema, OrderItemOptionCondDTO, OrderItemOptionCreateDTO, orderItemOptionCreateDTOSchema, OrderItemOptionUpdateDTO, orderItemOptionUpdateDTOSchema, OrderItemUpdateDTO, orderItemUpdateDTOSchema, OrderTableCondDTO, OrderTableCreateDTO, orderTableCreateDTOSchema, OrderTableUpdateDTO, OrderUpdateDTO, orderUpdateDTOSchema, OrderVoucherCondDTO, OrderVoucherCreateDTO, orderVoucherCreateDTOSchema, OrderVoucherUpdateDTO } from '../dtos/order.dto';
 import { v7 } from 'uuid';
-import { AppError, Paginated, PagingDTO } from 'src/share';
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from 'src/share';
+import { InvoiceCreatedEvent, InvoiceDeletedEvent, InvoiceUpdatedEvent, OrderCreatedEvent, OrderDeletedEvent, OrderItemAddedEvent, OrderItemOptionAddedEvent, OrderItemOptionRemovedEvent, OrderItemOptionUpdatedEvent, OrderItemRemovedEvent, OrderItemUpdatedEvent, OrderTableAssignedEvent, OrderTableUnassignedEvent, OrderUpdatedEvent, OrderVoucherAppliedEvent, OrderVoucherRemovedEvent } from 'src/share/event/oder.evt';
 
 // Lớp OrderService cung cấp các phương thức để quản lý đơn hàng
 @Injectable()
 export class OrderService implements IOrderService {
     constructor(
         @Inject(ORDER_REPOSITORY) private readonly orderRepo: IOrderRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Order
@@ -21,14 +24,14 @@ export class OrderService implements IOrderService {
         const data = orderCreateDTOSchema.parse(dto);
 
         // Kiểm tra xem đơn hàng đã tồn tại chưa
-        const existing = await this.orderRepo.listOrders({ 
-            userId: data.userId,
-            status: OrderStatus.PENDING,
-        }, { page: 1, limit: 1 });
+        // const existing = await this.orderRepo.listOrders({ 
+        //     userId: data.userId,
+        //     status: OrderStatus.PENDING,
+        // }, { page: 1, limit: 1 });
 
-        if (existing.data.length > 0) {
-            throw AppError.from(ErrOrderAlreadyExists, 409);
-        }
+        // if (existing.data.length > 0) {
+        //     throw AppError.from(ErrOrderAlreadyExists, 409);
+        // }
 
         // Tạo đơn hàng mới
         const newId = v7();
@@ -42,11 +45,20 @@ export class OrderService implements IOrderService {
             status: status,
             createdAt: new Date(),
             updatedAt: new Date(),
-        };  
+        };
 
         await this.orderRepo.insertOrder(order);
 
-        return code;
+        await this.eventPublisher.publish(OrderCreatedEvent.create({
+            orderId: newId,
+            code: code,
+            userId: data.userId,
+            totalAmount: data.totalAmount,
+            status: status,
+            changeType: 'CREATED',
+        }, requester.sub));
+
+        return newId;
     }
 
     // Cập nhật thông tin đơn hàng theo ID
@@ -62,6 +74,15 @@ export class OrderService implements IOrderService {
 
         // Cập nhật thông tin đơn hàng
         await this.orderRepo.updateOrder(orderId, data);
+
+        await this.eventPublisher.publish(OrderUpdatedEvent.create({
+            orderId: orderId,
+            code: existing.code,
+            userId: existing.userId,
+            totalAmount: existing.totalAmount,
+            status: existing.status,
+            changeType: 'UPDATED',
+        }, requester.sub));
     }
 
     // Xóa đơn hàng theo ID
@@ -74,6 +95,15 @@ export class OrderService implements IOrderService {
 
         // Xóa đơn hàng
         await this.orderRepo.deleteOrder(orderId);
+
+        await this.eventPublisher.publish(OrderDeletedEvent.create({
+            orderId: orderId,
+            code: existing.code,
+            userId: existing.userId,
+            totalAmount: existing.totalAmount,
+            status: existing.status,
+            changeType: 'DELETED',
+        }, requester.sub));
     }
     
     // Lấy thông tin đơn hàng theo ID 
@@ -82,8 +112,8 @@ export class OrderService implements IOrderService {
     }
     
     // Lấy danh sách đơn hàng theo điều kiện
-    async listOrders(pagingDTO: PagingDTO, orderCondDTO: OrderCondDTO): Promise<Paginated<Order>> {
-        return await this.orderRepo.listOrders(orderCondDTO, pagingDTO);
+    async listOrders(paging: PagingDTO, cond: OrderCondDTO): Promise<Paginated<Order>> {
+        return await this.orderRepo.listOrders(cond, paging);
     }
 
     // Lấy danh sách đơn hàng theo nhiều ID
@@ -115,7 +145,19 @@ export class OrderService implements IOrderService {
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+
         await this.orderRepo.insertOrderItem(orderItem);
+
+        await this.eventPublisher.publish(OrderItemAddedEvent.create({
+            orderId: data.orderId,
+            itemId: newId,
+            productId: data.productId,
+            variantId: data.variantId,
+            productName: data.productName,
+            price: price,
+            quantity: data.quantity,
+            changeType: 'ADDED',
+        }, requester.sub));
         return newId;
     }
 
@@ -124,14 +166,47 @@ export class OrderService implements IOrderService {
         // Kiểm tra dữ liệu đầu vào
         const data = orderItemUpdateDTOSchema.parse(dto);   
 
+        // Kiểm tra xem mục sản phẩm có tồn tại không
+        const existing = await this.orderRepo.getOrderItemById(orderItemId);
+        if (!existing) {
+            throw AppError.from(ErrOrderItemNotFound, 404);
+        }
+
         // Cập nhật thông tin mục sản phẩm trong đơn hàng theo ID
         await this.orderRepo.updateOrderItem(orderItemId, data);
+
+        await this.eventPublisher.publish(OrderItemUpdatedEvent.create({
+            orderId: existing.orderId,
+            itemId: orderItemId,
+            productId: existing.productId,
+            variantId: existing.variantId,
+            productName: existing.productName,
+            price: existing.price,
+            quantity: data.quantity,
+            changeType: 'UPDATED',
+        }, requester.sub));
     }
 
     // Xóa mục sản phẩm trong đơn hàng theo ID
     async deleteOrderItem(requester: Requester, orderItemId: string, ip: string, userAgent: string): Promise<void> {
+        // Kiểm tra xem mục sản phẩm có tồn tại không
+        const existing = await this.orderRepo.getOrderItemById(orderItemId);
+        if (!existing) {
+            throw AppError.from(ErrOrderItemNotFound, 404);
+        }
         // Xóa mục sản phẩm trong đơn hàng theo ID
         await this.orderRepo.deleteOrderItem(orderItemId);
+
+        await this.eventPublisher.publish(OrderItemRemovedEvent.create({
+            orderId: existing.orderId,
+            itemId: orderItemId,
+            productId: existing.productId,
+            variantId: existing.variantId,
+            productName: existing.productName,
+            price: existing.price,
+            quantity: existing.quantity,
+            changeType: 'REMOVED',
+        }, requester.sub));
     }
 
     // Lấy thông tin mục sản phẩm trong đơn hàng theo ID    
@@ -167,6 +242,16 @@ export class OrderService implements IOrderService {
             updatedAt: new Date(),
         };
         await this.orderRepo.insertOrderItemOption(orderItemOption);
+
+        await this.eventPublisher.publish(OrderItemOptionAddedEvent.create({
+            orderId: data.orderItemId,
+            itemId: newId,
+            optionId: data.optionItemId,
+            name: data.optionName,
+            price: data.price,
+            changeType: 'ADDED',
+        }, requester.sub));
+
         return newId;
     }
 
@@ -174,15 +259,42 @@ export class OrderService implements IOrderService {
     async updateOrderItemOption(requester: Requester, orderItemOptionId: string, orderItemOptionUpdateDTO: OrderItemOptionUpdateDTO, ip: string, userAgent: string): Promise<void> {
         // Kiểm tra dữ liệu đầu vào
         const data = orderItemOptionUpdateDTOSchema.parse(orderItemOptionUpdateDTO);
-    
+
+        const existing = await this.orderRepo.getOrderItemOptionById(orderItemOptionId);
+        if (!existing) {
+            throw AppError.from(ErrOrderItemOptionNotFound, 404);
+        }
+
         // Cập nhật thông tin tùy chọn sản phẩm trong mục đơn hàng theo ID
         await this.orderRepo.updateOrderItemOption(orderItemOptionId, data);
+
+        await this.eventPublisher.publish(OrderItemOptionUpdatedEvent.create({
+            orderId: existing.orderItemId,
+            itemId: orderItemOptionId,
+            optionId: existing.optionItemId,
+            name: data.optionName,
+            price: data.price,
+            changeType: 'UPDATED',
+        }, requester.sub));
     }
 
     // Xóa tùy chọn sản phẩm trong mục đơn hàng theo ID
     async deleteOrderItemOption(requester: Requester, orderItemOptionId: string, ip: string, userAgent: string): Promise<void> {
         // Xóa tùy chọn sản phẩm trong mục đơn hàng theo ID
+        const existing = await this.orderRepo.getOrderItemOptionById(orderItemOptionId);
+        if (!existing) {
+            throw AppError.from(ErrOrderItemOptionNotFound, 404);
+        }
         await this.orderRepo.deleteOrderItemOption(orderItemOptionId);
+
+        await this.eventPublisher.publish(OrderItemOptionRemovedEvent.create({
+            orderId: existing.orderItemId,
+            itemId: orderItemOptionId,
+            optionId: existing.optionItemId,
+            name: existing.optionName,
+            price: existing.price,
+            changeType: 'REMOVED',
+        }, requester.sub));
     }
 
     // Lấy thông tin tùy chọn sản phẩm trong mục đơn hàng theo ID
@@ -219,6 +331,13 @@ export class OrderService implements IOrderService {
 
         await this.orderRepo.insertOrderVoucher(orderVoucher);
 
+        await this.eventPublisher.publish(OrderVoucherAppliedEvent.create({
+            orderId: data.orderId,
+            voucherId: data.voucherId,
+            discountValue: data.discountApplied,
+            changeType: 'APPLIED',
+        }, requester.sub));
+
         return newId;
     }
 
@@ -227,14 +346,30 @@ export class OrderService implements IOrderService {
         // Kiểm tra dữ liệu đầu vào
         const data = orderVoucherCreateDTOSchema.parse(orderVoucherUpdateDTO);
 
+        const existing = await this.orderRepo.getOrderVoucherById(orderVoucherId);
+        if (!existing) {
+            throw AppError.from(ErrOrderVoucherNotFound, 404);
+        }
+
         // Cập nhật thông tin voucher áp dụng trong đơn hàng theo ID
         await this.orderRepo.updateOrderVoucher(orderVoucherId, data);
     }
 
     // Xóa voucher áp dụng trong đơn hàng theo ID
     async deleteOrderVoucher(requester: Requester, orderVoucherId: string, ip: string, userAgent: string): Promise<void> {
+        const existing = await this.orderRepo.getOrderVoucherById(orderVoucherId);
+        if (!existing) {
+            throw AppError.from(ErrOrderVoucherNotFound, 404);
+        }
         // Xóa voucher áp dụng trong đơn hàng theo ID
         await this.orderRepo.deleteOrderVoucher(orderVoucherId);
+
+        await this.eventPublisher.publish(OrderVoucherRemovedEvent.create({
+            orderId: existing.orderId,
+            voucherId: existing.voucherId,
+            discountValue: existing.discountApplied,
+            changeType: 'REMOVED',
+        }, requester.sub));
     }
 
     // Lấy thông tin voucher áp dụng trong đơn hàng theo ID
@@ -270,6 +405,12 @@ export class OrderService implements IOrderService {
 
         await this.orderRepo.insertOrderTable(orderTable);
 
+        await this.eventPublisher.publish(OrderTableAssignedEvent.create({
+            orderId: data.orderId,
+            tableId: data.tableId,
+            changeType: 'ASSIGNED',
+        }, requester.sub));
+
         return newId;
     }
 
@@ -284,8 +425,18 @@ export class OrderService implements IOrderService {
 
     // Xóa bàn ăn được đặt trong đơn hàng theo ID
     async deleteOrderTable(requester: Requester, orderTableId: string, ip: string, userAgent: string): Promise<void> {
+        const existing = await this.orderRepo.getOrderTableById(orderTableId);
+        if (!existing) {
+            throw AppError.from(ErrOrderTableNotFound, 404);
+        }
         // Xóa bàn ăn được đặt trong đơn hàng theo ID
         await this.orderRepo.deleteOrderTable(orderTableId);
+
+        await this.eventPublisher.publish(OrderTableUnassignedEvent.create({
+            orderId: existing.orderId,
+            tableId: existing.tableId,
+            changeType: 'UNASSIGNED',
+        }, requester.sub));
     }
 
     // Lấy thông tin bàn ăn được đặt trong đơn hàng theo ID
@@ -320,6 +471,15 @@ export class OrderService implements IOrderService {
             updatedAt: new Date(),
         }
         await this.orderRepo.insertInvoice(invoice);
+
+        await this.eventPublisher.publish(InvoiceCreatedEvent.create({
+            invoiceId: newId,
+            orderId: data.orderId,
+            taxCode: data.taxCode,
+            issuedAt: data.issuedAt,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         return newId;
     }
 
@@ -328,14 +488,39 @@ export class OrderService implements IOrderService {
         // Kiểm tra dữ liệu đầu vào
         const data = invoiceCreateDTOSchema.parse(invoiceUpdateDTO);
 
+        const existing = await this.orderRepo.getInvoiceById(invoiceId);
+        if (!existing) {
+            throw AppError.from(ErrInvoiceNotFound, 404);
+        }
+
         // Cập nhật thông tin hóa đơn được tạo từ đơn hàng theo ID
         await this.orderRepo.updateInvoice(invoiceId, data);
+
+        await this.eventPublisher.publish(InvoiceUpdatedEvent.create({
+            invoiceId: invoiceId,
+            orderId: data.orderId,
+            taxCode: data.taxCode,
+            issuedAt: data.issuedAt,
+            changeType: 'UPDATED',
+        }, requester.sub));
     }
 
     // Xóa hóa đơn được tạo từ đơn hàng theo ID
     async deleteInvoice(requester: Requester, invoiceId: string, ip: string, userAgent: string): Promise<void> {
+        const existing = await this.orderRepo.getInvoiceById(invoiceId);
+        if (!existing) {
+            throw AppError.from(ErrInvoiceNotFound, 404);
+        }
         // Xóa hóa đơn được tạo từ đơn hàng theo ID
         await this.orderRepo.deleteInvoice(invoiceId);
+
+        await this.eventPublisher.publish(InvoiceDeletedEvent.create({
+            invoiceId: invoiceId,
+            orderId: existing.orderId,
+            taxCode: existing.taxCode,
+            issuedAt: existing.issuedAt,
+            changeType: 'DELETED',
+        }, requester.sub));
     }
 
     // Lấy thông tin hóa đơn được tạo từ đơn hàng theo ID

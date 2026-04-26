@@ -1,17 +1,19 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { IProductRepository, IProductService } from "../ports/product.port";
 import { PRODUCT_REPOSITORY } from "../catalog.di-token";
-import { AppError, Paginated, PagingDTO, Requester } from "src/share";
+import { AppError, EVENT_PUBLISHER,type IEventPublisher, Paginated, PagingDTO, Requester } from "src/share";
 import { ComboCreateDTO, ProductCondDTO, ProductCreatedDTO, productCreatedDTOSchema, ProductUpdateDTO, productUpdateDTOSchema, VariantCondDTO, VariantDTO, variantDTOSchema, VariantUpdateDTO, variantUpdateDTOSchema, comboCreateDTOSchema, ComboUpdateDTO, comboUpdateDTOSchema, ComboCondDTO, ComboItemCreateDTO, comboItemCreateDTOSchema, comboItemUpdateDTOSchema, ComboItemUpdateDTO, ComboItemCondDTO } from "../dtos/product.dto";
 import { Combo, ComboItem, ErrProductAlreadyExists, ErrProductNotFound, Product, Variant } from "../models/product.model";
 import { v7 } from "uuid";
 import { create } from "axios";
+import { ProductComboCreatedEvent, ProductComboDeletedEvent, ProductComboItemCreatedEvent, ProductComboItemDeletedEvent, ProductComboItemUpdatedEvent, ProductComboUpdatedEvent, ProductCreatedEvent, ProductDeletedEvent, ProductUpdatedEvent, ProductVariantCreatedEvent, ProductVariantDeletedEvent, ProductVariantUpdatedEvent } from "src/share/event/product.evt";
 
 // Lớp ProductService chịu trách nhiệm quản lý các sản phẩm trong hệ thống.
 @Injectable()
 export class ProductService implements IProductService {
     constructor(
         @Inject(PRODUCT_REPOSITORY) private readonly productRepository: IProductRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // ============================
@@ -46,6 +48,11 @@ export class ProductService implements IProductService {
 
         await this.productRepository.insert(newProduct);
 
+        await this.eventPublisher.publish(ProductCreatedEvent.create({
+            productId: id,
+            name: data.name,
+            changeType: 'CREATED'
+        }, requester.sub))
         // Ghi log tạo sản phẩm (có thể sử dụng một service riêng để quản lý log)
         
         return id;
@@ -66,6 +73,11 @@ export class ProductService implements IProductService {
         // Cập nhật sản phẩm
         await this.productRepository.update(productId, data);
 
+        await this.eventPublisher.publish(ProductUpdatedEvent.create({
+            productId: existingProduct.id,
+            name: existingProduct.name,
+            changeType: 'UPDATED'
+        }, requester.sub))
         // Ghi log cập nhật sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -81,6 +93,11 @@ export class ProductService implements IProductService {
         // Xóa sản phẩm
         await this.productRepository.delete(productId);
 
+        await this.eventPublisher.publish(ProductDeletedEvent.create({
+            productId: existingProduct.id,
+            name: existingProduct.name,
+            changeType: 'DELETED'
+        }, requester.sub))
         // Ghi log xóa sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -144,6 +161,13 @@ export class ProductService implements IProductService {
 
         await this.productRepository.insertVariant(newVariant);
 
+        await this.eventPublisher.publish(ProductVariantCreatedEvent.create({
+            productId: data.productId,
+            variantId: id,
+            name: data.name,
+            priceDiff: data.priceDiff,
+            changeType: 'CREATED'
+        }, requester.sub))
         // Ghi log tạo biến thể sản phẩm (có thể sử dụng một service riêng để quản lý log)
         
         return id;
@@ -182,6 +206,17 @@ export class ProductService implements IProductService {
 
         await this.productRepository.insertVariants(newVariants);
 
+        await Promise.all(
+            data.map(async (dto, index) => {
+                await this.eventPublisher.publish(ProductVariantCreatedEvent.create({
+                    productId: dto.productId, // Đổi 'data' thành 'dto'
+                    variantId: ids[index],        // Giả sử id lấy từ dto
+                    name: dto.name,           // Đổi 'data' thành 'dto'
+                    priceDiff: dto.priceDiff, // Đổi 'data' thành 'dto'
+                    changeType: 'CREATED'
+                }, requester.sub));
+            })
+        );
         // Ghi log tạo biến thể sản phẩm (có thể sử dụng một service riêng để quản lý log)
         
         return ids;
@@ -207,6 +242,13 @@ export class ProductService implements IProductService {
         // Cập nhật biến thể sản phẩm
         await this.productRepository.updateVariant(variantId, data);
 
+        await this.eventPublisher.publish(ProductVariantUpdatedEvent.create({
+            productId: existingVariant.productId,
+            variantId: existingVariant.id,
+            name: existingVariant.name,
+            priceDiff: existingVariant.priceDiff,
+            changeType: 'UPDATED'
+        }, requester.sub))
         // Ghi log cập nhật biến thể sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -227,6 +269,13 @@ export class ProductService implements IProductService {
         // Xóa biến thể sản phẩm
         await this.productRepository.deleteVariant(variantId);
 
+        await this.eventPublisher.publish(ProductVariantDeletedEvent.create({
+            productId: existingVariant.productId,
+            variantId: existingVariant.id,
+            name: existingVariant.name,
+            priceDiff: existingVariant.priceDiff,
+            changeType: 'DELETED'
+        }, requester.sub))
         // Ghi log xóa biến thể sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -275,6 +324,12 @@ export class ProductService implements IProductService {
 
         await this.productRepository.insertCombo(newCombo);
 
+        await this.eventPublisher.publish(ProductComboCreatedEvent.create({
+            comboId: id,
+            name: data.name,
+            price: data.price,
+            changeType: 'CREATED'
+        }, requester.sub))
         // Ghi log tạo combo sản phẩm (có thể sử dụng một service riêng để quản lý log) 
         return id;
     }
@@ -294,6 +349,12 @@ export class ProductService implements IProductService {
         // Cập nhật combo sản phẩm
         await this.productRepository.updateCombo(comboId, data);
 
+        await this.eventPublisher.publish(ProductComboUpdatedEvent.create({
+            comboId: existingCombo.id,
+            name: existingCombo.name,
+            price: existingCombo.price,
+            changeType: 'UPDATED'
+        }, requester.sub))
         // Ghi log cập nhật combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -309,6 +370,12 @@ export class ProductService implements IProductService {
         // Xóa combo sản phẩm
         await this.productRepository.deleteCombo(comboId);
 
+        await this.eventPublisher.publish(ProductComboDeletedEvent.create({
+            comboId: existingCombo.id,
+            name: existingCombo.name,
+            price: existingCombo.price,
+            changeType: 'DELETED'
+        }, requester.sub))
         // Ghi log xóa combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -365,6 +432,13 @@ export class ProductService implements IProductService {
 
         await this.productRepository.insertComboItem(newComboItem);
 
+        await this.eventPublisher.publish(ProductComboItemCreatedEvent.create({
+            comboItemId: id,
+            comboId: data.comboId,
+            productId: data.productId,
+            quantity: data.quantity,
+            changeType: 'CREATED'
+        }, requester.sub))
         // Ghi log tạo mục combo sản phẩm (có thể sử dụng một service riêng để quản lý log) 
         return id;
     }
@@ -383,6 +457,13 @@ export class ProductService implements IProductService {
         // Cập nhật mục combo sản phẩm
         await this.productRepository.updateComboItem(id, data);
 
+        await this.eventPublisher.publish(ProductComboItemUpdatedEvent.create({
+            comboItemId: existingComboItem.id,
+            comboId: existingComboItem.comboId,
+            productId: existingComboItem.productId,
+            quantity: existingComboItem.quantity,
+            changeType: 'UPDATED'
+        }, requester.sub))
         // Ghi log cập nhật mục combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 
@@ -398,6 +479,13 @@ export class ProductService implements IProductService {
          // Xóa mục combo sản phẩm
          await this.productRepository.deleteComboItem(id);
 
+         await this.eventPublisher.publish(ProductComboItemDeletedEvent.create({
+            comboItemId: existingComboItem.id,
+            comboId: existingComboItem.comboId,
+            productId: existingComboItem.productId,
+            quantity: existingComboItem.quantity,
+            changeType: 'UPDATED'
+        }, requester.sub))
         // Ghi log xóa mục combo sản phẩm (có thể sử dụng một service riêng để quản lý log)
     }
 

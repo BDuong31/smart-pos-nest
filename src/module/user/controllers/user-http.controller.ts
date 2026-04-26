@@ -133,16 +133,17 @@ export class UserHttpController {
     ranks.map((rank) => {
       rankMap[rank.id] = rank;
     });
-
+    
     const mappedData = results.data.map((item) => {
       const userObj: any = { ...item };
       delete userObj.password;
       delete userObj.salt;
       userObj.avatar = avatarMap[item.id];
-      userObj.rank = rankMap[item.id];
+      userObj.rank = rankMap[item.rankId || ''];
 
       return userObj;
     });
+
 
     const data: Paginated<Omit<User, 'password' | 'salt'>> = {
       ...results,

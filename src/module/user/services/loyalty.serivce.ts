@@ -6,14 +6,15 @@ import { PointHistoryCondDTO, PointHistoryDTO, pointHistoryDTOSchema, UserRankCo
 import { AppError } from "src/share/app-error";
 import { ErrUserRankMinPointAlreadyExists, ErrUserRankNameAlreadyExists, ErrUserRankNotFound, UserRank } from "../models/user-rank.model";
 import { v7 } from "uuid";
-import { Paginated, PagingDTO } from "src/share";
+import { EVENT_PUBLISHER,type IEventPublisher, Paginated, PagingDTO } from "src/share";
 import { PointHistory } from "../models/point-history.model";
-
+import { PointsDecreasedEvent, PointsIncreasedEvent, RankCreatedEvent, RankDeletedEvent, RankUpdatedEvent } from "src/share/event/loyalty.evt";
 // Lớp LoyaltySerivce triển khai các phương thức quản lý chương trình khách hàng thân thiết
 export class LoyaltyService implements ILoyaltyService {
     constructor(
         @Inject(LOYALTY_REPOSITORY) private readonly loyaltyRepository: ILoyaltyRepository,
         @Inject(USER_MONGO_AUDIT_REPOSITORY) private readonly userAuditRepo: IUserMongoAuditRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo hạng khách hàng thân thiết mới
@@ -46,6 +47,12 @@ export class LoyaltyService implements ILoyaltyService {
         }
         await this.loyaltyRepository.insertUserRank(newUserRank);
 
+        await this.eventPublisher.publish(RankCreatedEvent.create({
+            rankId: newId,
+            rankName: dto.name,
+            rankChanges: 'CREATED',
+        }, 'system'));
+
         // 3. Ghi log hoặc thực hiện các hành động khác nếu cần
         await this.userAuditRepo.logUserAudit({
             userId: 'system',
@@ -74,6 +81,12 @@ export class LoyaltyService implements ILoyaltyService {
         // 2. Cập nhật hạng khách hàng thân thiết và lưu vào cơ sở dữ liệu
         await this.loyaltyRepository.updateUserRank(id, dto);
 
+        await this.eventPublisher.publish(RankUpdatedEvent.create({
+            rankId: id,
+            rankName: dto.name,
+            rankChanges: 'UPDATED',
+        }, 'system'));
+        
         // 3. Ghi log hoặc thực hiện các hành động khác nếu cần
         await this.userAuditRepo.logUserAudit({
             userId: 'system',
@@ -99,6 +112,12 @@ export class LoyaltyService implements ILoyaltyService {
 
         // 2. Xóa hạng khách hàng thân thiết khỏi cơ sở dữ liệu
         await this.loyaltyRepository.deleteUserRank(id);
+
+        await this.eventPublisher.publish(RankDeletedEvent.create({
+            rankId: id,
+            rankName: existingRank.name,
+            rankChanges: 'DELETED',
+        }, 'system'));
 
         // 3. Ghi log hoặc thực hiện các hành động khác nếu cần
         await this.userAuditRepo.logUserAudit({
@@ -145,7 +164,22 @@ export class LoyaltyService implements ILoyaltyService {
             createdAt: new Date(),
             updatedAt: new Date(),
         }
+
         await this.loyaltyRepository.insertPointHistory(newPointHistory);
+
+        if (data.amount > 0) {
+            await this.eventPublisher.publish(PointsIncreasedEvent.create({
+                userId: data.userId,
+                points: data.amount,
+                rankChanges: 'INCREASED',
+            }, 'system'));
+        } else if (data.amount < 0) {
+            await this.eventPublisher.publish(PointsDecreasedEvent.create({
+                userId: data.userId,
+                points: data.amount,
+                rankChanges: 'DECREASED',
+            }, 'system'));
+        }
 
         return newId;
     }

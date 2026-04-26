@@ -2,19 +2,21 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type IPaymentRepository,  IPaymentService } from '../ports/payment.port';
 import { PAYMENT_REPOSITORY } from '../sales.di-token';
 import { ErrPaymentNotFound, ErrPaymentNotPending, PaymentMethod, PaymentStatus, type PaymentTransaction } from '../models/payment.model';
-import { Requester } from 'src/share/interface';
+import { type IEventPublisher, Requester } from 'src/share/interface';
 import { PaymentCreateDTO, paymentCreateDTOSchema, PaymentUpdateDTO, paymentUpdateDTOSchema, PaymentCondDTO, paymentCondDTOSchema, InitiatePaymentDTO, InitiatePaymentSchema } from '../dtos/payment.dto';
 import { MomoService } from './payment/momo.service';
 import { ZalopayService } from './payment/zalo.service';
 import { VnpayService } from './payment/vnpay.service';
 import { v7 } from 'uuid';
-import { AppError, ErrBadGateway, ErrInvalidRequest, Paginated, PagingDTO } from 'src/share';
+import { AppError, ErrBadGateway, ErrInvalidRequest, EVENT_PUBLISHER, Paginated, PagingDTO } from 'src/share';
+import { PaymentCreatedEvent, PaymentDeletedEvent, PaymentUpdatedEvent } from 'src/share/event/payment.evt';
 
 // Lớp PaymentService cung cấp các phương thức để quản lý giao dịch thanh toán
 @Injectable()
 export class PaymentService implements IPaymentService {
     constructor(
         @Inject(PAYMENT_REPOSITORY) private readonly paymentRepo: IPaymentRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
         private readonly momoService: MomoService,
         private readonly zalopayService: ZalopayService,
         private readonly vnpayService: VnpayService,
@@ -41,6 +43,19 @@ export class PaymentService implements IPaymentService {
 
         await this.paymentRepo.insertPayment(newPayment)
 
+        await this.eventPublisher.publish(PaymentCreatedEvent.create({
+            userId: requester.sub,
+            paymentId: newPayment.id,
+            orderId: newPayment.orderId,
+            externalTransactionId: newPayment.externalTransactionId || '',
+            amount: newPayment.amount,
+            method: newPayment.method,
+            gatewayResponse: newPayment.gatewayResponse,
+            status: newPayment.status,
+            paidAt: newPayment.paidAt || new Date(),
+            changeType: 'CREATED'
+        }, requester.sub))
+
         return newPayment
     }
 
@@ -58,7 +73,7 @@ export class PaymentService implements IPaymentService {
         // 3. Cập nhật thông tin giao dịch thanh toán
         const updatedPayment: PaymentUpdateDTO = {
             ...data,
-            updatedAt: new Date(),
+            paidAt: new Date(),
         }
 
         await this.paymentRepo.updatePayment(paymentId, updatedPayment)
@@ -67,6 +82,19 @@ export class PaymentService implements IPaymentService {
         if (!payment) {
             throw AppError.from(ErrPaymentNotFound, 404)
         }
+
+        await this.eventPublisher.publish(PaymentUpdatedEvent.create({
+            userId: requester.sub,
+            paymentId: payment.id,
+            orderId: payment.orderId,
+            externalTransactionId: payment.externalTransactionId || '',
+            amount: payment.amount,
+            method: payment.method,
+            gatewayResponse: payment.gatewayResponse,
+            status: payment.status,
+            paidAt: payment.paidAt || new Date(),
+            changeType: 'UPDATED',
+        }, requester.sub))
         return payment
     }
 
@@ -80,6 +108,19 @@ export class PaymentService implements IPaymentService {
 
         // 2. Xóa giao dịch thanh toán
         await this.paymentRepo.deletePayment(paymentId)
+
+        await this.eventPublisher.publish(PaymentDeletedEvent.create({
+            userId: requester.sub,
+            paymentId: existingPayment.id,
+            orderId: existingPayment.orderId,
+            externalTransactionId: existingPayment.externalTransactionId || '',
+            amount: existingPayment.amount,
+            method: existingPayment.method,
+            gatewayResponse: existingPayment.gatewayResponse,
+            status: existingPayment.status,
+            paidAt: existingPayment.paidAt || new Date(),
+            changeType: 'DELETED'
+        }, requester.sub))
     }
 
     // Lấy thông tin giao dịch thanh toán theo ID
@@ -98,8 +139,8 @@ export class PaymentService implements IPaymentService {
     }
 
     // Khởi tạo giao dịch thanh toán và trả về URL thanh toán nếu có    
-    async initiatePayment(dto: InitiatePaymentDTO, user: Requester): Promise<{ paymentUrl?: string; paymentId?: string; success: boolean }> {
-        const data = InitiatePaymentSchema.parse(dto)
+    async initiatePayment(dto: InitiatePaymentDTO, user: Requester): Promise<{ responseTime?: number, paymentUrl?: string; deeplink?: string; qrCodeUrl?: string; deeplinkMiniApp?: string;  externalTransactionId?: string; paymentId?: string; success: boolean }> {
+        const data = dto;
 
         const payment = await this.paymentRepo.getPaymentById(data.paymentId!)
 
@@ -111,19 +152,28 @@ export class PaymentService implements IPaymentService {
         throw AppError.from(ErrPaymentNotPending, 400)
         }
 
+        let responseTime: number | undefined
         let paymentUrl: string | undefined
+        let deeplink: string | undefined
+        let qrCodeUrl: string | undefined
+        let deeplinkMiniApp: string | undefined
         let externalTransactionId: string | undefined
 
-        switch (payment.method) {
+        console.log(data.method)
+        switch (data.method) {
             case PaymentMethod.MOMO:{
                 const momoResult = await this.momoService.createPaymentUrl(
-                    payment.amount, 
-                    payment.id, 
+                    payment.amount,
+                    payment.id,
                     `Payment for order ${payment.orderId}`, 
-                    user.sub, 
+                    user.sub,
                     data.methodChild || 'captureWallet'
                 )
+                responseTime = momoResult.responseTime
                 paymentUrl = momoResult.paymentUrl
+                deeplink = momoResult.deeplink
+                qrCodeUrl = momoResult.qrCodeUrl
+                deeplinkMiniApp = momoResult.deeplinkMiniApp
                 externalTransactionId = momoResult.externalTransactionId
                 break
             }
@@ -142,6 +192,8 @@ export class PaymentService implements IPaymentService {
             }
 
             case PaymentMethod.VNPAY: {
+                console.log(payment.id)
+                console.log(payment.amount);
                 const vnpayResult= await this.vnpayService.createPaymentUrl(
                     payment.amount,
                     payment.id,
@@ -163,12 +215,18 @@ export class PaymentService implements IPaymentService {
         if (externalTransactionId) {
             await this.paymentRepo.updatePayment(payment.id, {
                 externalTransactionId: externalTransactionId,
-                updatedAt: new Date(),
+                paidAt: new Date(),
              })
         }
 
+        console.log(paymentUrl)
+
         return {
-            paymentUrl,
+            responseTime: responseTime,
+            paymentUrl: paymentUrl,
+            deeplink: deeplink,
+            qrCodeUrl: qrCodeUrl,
+            deeplinkMiniApp: deeplinkMiniApp,
             paymentId: payment.id,
             success: true,
         }
@@ -372,6 +430,19 @@ export class PaymentService implements IPaymentService {
             gatewayResponse: raw,
             paidAt: success ? new Date() : undefined,
         })
+
+        await this.eventPublisher.publish(PaymentUpdatedEvent.create({
+            userId: 'system',
+            paymentId: payment.id,
+            orderId: payment.orderId,
+            externalTransactionId: payment.externalTransactionId || '',
+            amount: payment.amount,
+            method: payment.method,
+            gatewayResponse: payment.gatewayResponse,
+            status: payment.status,
+            paidAt: payment.paidAt || new Date(),
+            changeType: 'UPDATED'
+        }, 'system'))
 
         return true
     }

@@ -2,16 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { type IImportInvoiceDetailRepository, IImportInvoiceDetailService } from "../ports/importInvoiceDetail.port";
 import { IMPORTINVOICEDETAIL_REPOSITORY } from "../inventory.di-token";
 import { ErrImportInvoiceDetailAlreadyExists, ErrImportInvoiceDetailNotFound, ImportInvoiceDetail } from "../models/importInvoiceDetail.model";
-import { Requester } from "src/share/interface";
+import { type IEventPublisher, Requester } from "src/share/interface";
 import { ImportInvoiceDetailCondDTO, ImportInvoiceDetailCreateDTO, importInvoiceDetailCreateDTOSchema, ImportInvoiceDetailUpdateDTO, importInvoiceDetailUpdateDTOSchema } from "../dtos/importInvoiceDetail.dto";
 import { v7 } from "uuid";
-import { AppError, Paginated, PagingDTO } from "src/share";
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from "src/share";
+import { ImportInvoiceDetailCreatedEvent, ImportInvoiceDetailDeletedEvent, ImportInvoiceDetailUpdatedEvent } from "src/share/event/import-invoice-detail.evt";
 
 // Lớp ImportInvoiceDetailService cung cấp các phương thức để quản lý chi tiết hóa đơn nhập hàng
 @Injectable()
 export class ImportInvoiceDetailService implements IImportInvoiceDetailService {
     constructor(
         @Inject(IMPORTINVOICEDETAIL_REPOSITORY) private readonly importInvoiceDetailRepo: IImportInvoiceDetailRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới chi tiết hóa đơn nhập hàng
@@ -41,6 +43,16 @@ export class ImportInvoiceDetailService implements IImportInvoiceDetailService {
 
         await this.importInvoiceDetailRepo.insert(importInvoiceDetail);
 
+        await this.eventPublisher.publish(ImportInvoiceDetailCreatedEvent.create({
+            detailId: newId,
+            invoiceId: data.invoiceId,
+            ingredientId: data.ingredientId,
+            quantity: data.quantity,
+            unit: data.unit,
+            unitPrice: data.unitPrice,
+            changeType: 'CREATED',
+        }, requester.sub));
+
         return importInvoiceDetail;
     }
 
@@ -60,9 +72,20 @@ export class ImportInvoiceDetailService implements IImportInvoiceDetailService {
 
         const updatedImportInvoiceDetail = await this.importInvoiceDetailRepo.get(importInvoiceDetailId);   
 
+
         if (!updatedImportInvoiceDetail) {  
             throw AppError.from(ErrImportInvoiceDetailNotFound, 404);
         }
+
+        await this.eventPublisher.publish(ImportInvoiceDetailUpdatedEvent.create({
+            detailId: importInvoiceDetailId,
+            invoiceId: data.invoiceId || existing.invoiceId,
+            ingredientId: data.ingredientId || existing.ingredientId,
+            quantity: data.quantity || existing.quantity,
+            unit: data.unit || existing.unit,
+            unitPrice: data.unitPrice || existing.unitPrice,
+            changeType: 'UPDATED',
+        }, requester.sub));
 
         return updatedImportInvoiceDetail;
     }
@@ -74,6 +97,16 @@ export class ImportInvoiceDetailService implements IImportInvoiceDetailService {
         if (!existing) {
             throw AppError.from(ErrImportInvoiceDetailNotFound, 404);
         }
+
+        await this.eventPublisher.publish(ImportInvoiceDetailDeletedEvent.create({
+            detailId: importInvoiceDetailId,
+            invoiceId: existing.invoiceId,
+            ingredientId: existing.ingredientId,
+            quantity: existing.quantity,
+            unit: existing.unit,
+            unitPrice: existing.unitPrice,
+            changeType: 'DELETED',
+        }, requester.sub));
 
         // Xóa chi tiết hóa đơn nhập hàng
         await this.importInvoiceDetailRepo.delete(importInvoiceDetailId);

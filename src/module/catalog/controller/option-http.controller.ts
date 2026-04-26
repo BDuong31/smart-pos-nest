@@ -52,20 +52,20 @@ export class OptionHttpController {
         const userAgent = reqExpress.headers['user-agent'] || '';
         return await this.optionService.deleteOptionGroup(requester, id, ip, userAgent);
     }
+    // API lấy danh sách Option Group theo điều kiện lọc
+    @Get('group')
+    @HttpCode(HttpStatus.OK)
+    async getListOptionGroup(@Query() cond: OptionGroupCondDTO, @Query() paging: PagingDTO) {
+        return await this.optionService.getListOptionGroup(cond, paging);
+    }
 
     // API lấy thông tin Option Group theo ID
     @Get('group/:id')
     @HttpCode(HttpStatus.OK)
     async getOptionGroupById(@Param('id') id: string) {
-        return await this.optionService.getOptionGroupById(id);
+        const data = await this.optionService.getOptionGroupById(id);
+        return data;
      }
-
-    // API lấy danh sách Option Group theo điều kiện lọc
-    @Get('group')
-    @HttpCode(HttpStatus.OK)
-    async getListOptionGroup(@Body() cond: OptionGroupCondDTO, @Query() paging: PagingDTO) {
-        return await this.optionService.getListOptionGroup(cond, paging);
-    }
 
     // API lấy danh sách Option Group theo mảng IDs
     @Post('group/list-by-ids')
@@ -198,7 +198,7 @@ export class OptionItemHttpController {
     @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async getListOptionItemByIds(@Body('ids') ids: string[]) {
-        return await this.optionService.getOptionItemsByIds(ids);  
+        return await this.optionService.getOptionItemsByIds(ids); 
     }
 }
 
@@ -256,7 +256,7 @@ export class ProductOptionConfigHttpController {
         const userAgent = reqExpress.headers['user-agent'] || '';
         return await this.optionService.removeProductOptionConfig(requester, productOptionConfigId, ip, userAgent);
      }
-    
+
     // API lấy danh sách cấu hình Option của sản phẩm theo điều kiện lọc
     @Get()
     @HttpCode(HttpStatus.OK)

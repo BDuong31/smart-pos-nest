@@ -1,17 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type ICartRepository, ICartService } from '../ports/cart.port';
 import { CART_REPOSITORY } from '../sales.di-token';
-import {Cart, CartItem, CartItemOption, ErrCartAlreadyExists } from '../models/cart.model';
-import { Requester } from 'src/share/interface';
+import {Cart, CartItem, CartItemOption, ErrCartAlreadyExists, ErrCartItemNotFound, ErrCartItemOptionNotFound, ErrCartNotFound } from '../models/cart.model';
+import { type IEventPublisher, Requester } from 'src/share/interface';
 import { CartCondDTO, CartCreateDTO, cartCreateDTOSchema, CartItemCondDTO, CartItemCreateDTO, cartItemCreateDTOSchema, CartItemOptionCondDTO, CartItemOptionCreateDTO, cartItemOptionCreateDTOSchema, CartItemOptionUpdateDTO, cartItemOptionUpdateDTOSchema, CartItemUpdateDTO, cartItemUpdateDTOSchema, CartUpdateDTO, cartUpdateDTOSchema } from '../dtos/cart.dto';
 import { v7 } from 'uuid';
-import { AppError, Paginated, PagingDTO } from 'src/share';
-
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from 'src/share';
+import { CartCreatedEvent, CartDeletedEvent, CartItemAddedEvent, CartItemOptionAddedEvent, CartItemOptionRemovedEvent, CartItemRemovedEvent, CartItemUpdatedEvent, CartUpdatedEvent } from '../../../share/event/cart.evt';
 // Lớp CartService cung cấp các phương thức để quản lý giỏ hàng
 @Injectable()
 export class CartService implements ICartService {
     constructor(
         @Inject(CART_REPOSITORY) private readonly cartRepo: ICartRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Cart 
@@ -39,6 +40,12 @@ export class CartService implements ICartService {
 
         await this.cartRepo.insertCart(cart);
 
+        await this.eventPublisher.publish(CartCreatedEvent.create({
+            cartId: newId,
+            userId: data.userId,
+            totalItem: 0,
+            changeType: 'CREATED',
+        }, requester.sub));
         return newId;
     }
 
@@ -47,15 +54,39 @@ export class CartService implements ICartService {
         // Kiểm tra dữ liệu đầu vào
         const data = cartUpdateDTOSchema.parse(dto);
 
+        const existing = await this.cartRepo.getCart(userId);
+        if (!existing) {
+            throw AppError.from(ErrCartNotFound, 404);
+        }
+
         // Cập nhật thông tin giỏ hàng
         await this.cartRepo.updateCart(userId, data);
+
+        await this.eventPublisher.publish(CartUpdatedEvent.create({
+            cartId: existing.id,
+            userId: userId,
+            totalItem: data.totalItem,
+            changeType: 'UPDATED',
+        }, requester.sub));
     }
 
     // Xóa giỏ hàng theo ID người dùng
     async deleteCart(requester: Requester, userId: string, ip: string, userAgent: string): Promise<void> {
+        const existing = await this.cartRepo.getCart(userId);
+        if (!existing) {
+            throw AppError.from(ErrCartNotFound, 404);
+        }
+
         // Xóa giỏ hàng
         await this.cartRepo.deleteCart(userId);
-    }   
+
+        await this.eventPublisher.publish(CartDeletedEvent.create({
+            cartId: existing.id,
+            userId: userId,
+            totalItem: 0,
+            changeType: 'DELETED',
+        }, requester.sub));
+    }
 
     // Lấy thông tin giỏ hàng theo ID người dùng
     async getCart(userId: string): Promise<Cart | null> {
@@ -93,6 +124,14 @@ export class CartService implements ICartService {
 
         await this.cartRepo.insertCartItem(cartItem);
 
+        await this.eventPublisher.publish(CartItemAddedEvent.create({
+            cartItemId: newId,
+            cartId: data.cartId,
+            productId: data.productId,
+            quantity: data.quantity,
+            changeType: 'ADDED',
+            statusUpdateCartItem: 'increase',
+        }, requester.sub));
         return newId;
     }
 
@@ -101,14 +140,41 @@ export class CartService implements ICartService {
         // Kiểm tra dữ liệu đầu vào
         const data = cartItemUpdateDTOSchema.parse(dto);
 
+        const existing = await this.cartRepo.getCartItem(id);
+        if (!existing) {
+            throw AppError.from(ErrCartItemNotFound, 404);
+        }
+
         // Cập nhật thông tin mục sản phẩm trong giỏ hàng
         await this.cartRepo.updateCartItem(id, data);
+
+        await this.eventPublisher.publish(CartItemUpdatedEvent.create({
+            cartItemId: id,
+            cartId: existing.cartId,
+            productId: existing.productId,
+            quantity: data.quantity,
+            changeType: 'UPDATED',
+            statusUpdateCartItem: 'increase',
+        }, requester.sub));
     }
 
     // Xóa mục sản phẩm trong giỏ hàng theo ID
     async deleteCartItem(requester: Requester, id: string, ip: string, userAgent: string): Promise<void> {
         // Xóa mục sản phẩm trong giỏ hàng
+        const cartItem = await this.cartRepo.getCartItem(id);
+        if (!cartItem) {
+            throw AppError.from(ErrCartItemNotFound, 404);
+        }
         await this.cartRepo.deleteCartItem(id);
+
+        await this.eventPublisher.publish(CartItemRemovedEvent.create({
+            cartItemId: id,
+            cartId: cartItem.cartId,
+            productId: cartItem.productId,
+            quantity: cartItem.quantity,
+            changeType: 'REMOVED',
+            statusUpdateCartItem: 'decrease',
+        }, requester.sub));
     }
 
     // Lấy thông tin mục sản phẩm trong giỏ hàng theo ID
@@ -144,6 +210,13 @@ export class CartService implements ICartService {
 
         await this.cartRepo.insertCartItemOption(cartItemOption);
 
+        await this.eventPublisher.publish(CartItemOptionAddedEvent.create({
+            cartItemOptionId: newId,
+            cartItemId: data.cartItemId,
+            optionItemId: data.optionItemId,
+            changeType: 'ADDED',
+        }, requester.sub));
+
         return newId;
     }
     
@@ -152,14 +225,30 @@ export class CartService implements ICartService {
         // Kiểm tra dữ liệu đầu vào
         const data = cartItemOptionUpdateDTOSchema.parse(dto);
 
+        const existing = await this.cartRepo.getCartItemOption(id);
+        if (!existing) {
+            throw AppError.from(ErrCartItemOptionNotFound, 404);
+        }
+
         // Cập nhật thông tin tùy chọn sản phẩm trong mục giỏ hàng
         await this.cartRepo.updateCartItemOption(id, data);
     }
 
     // Xóa tùy chọn sản phẩm trong mục giỏ hàng theo ID
     async deleteCartItemOption(requester: Requester, id: string, ip: string, userAgent: string): Promise<void> {
+        const existing = await this.cartRepo.getCartItemOption(id);
+        if (!existing) {
+            throw AppError.from(ErrCartItemOptionNotFound, 404);
+        }
         // Xóa tùy chọn sản phẩm trong mục giỏ hàng
         await this.cartRepo.deleteCartItemOption(id);
+
+        await this.eventPublisher.publish(CartItemOptionRemovedEvent.create({
+            cartItemOptionId: id,
+            cartItemId: existing.cartItemId,
+            optionItemId: existing.optionItemId,
+            changeType: 'REMOVED',
+        }, requester.sub));
     }
 
     // Lấy thông tin tùy chọn sản phẩm trong mục giỏ hàng theo ID

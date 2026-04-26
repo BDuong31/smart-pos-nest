@@ -26,6 +26,7 @@ export interface OrderUpdateDTO extends z.infer<typeof orderUpdateDTOSchema> {}
 // Định nghĩa schema cho điều kiện truy vấn đơn hàng
 export const orderCondDTOSchema = orderSchema.pick({
     userId: true, // ID người dùng
+    code: true, // Mã đơn hàng
     totalAmount: true, // Tổng số tiền của đơn hàng
     status: true, // Trạng thái của đơn hàng
 }).partial();
@@ -33,9 +34,9 @@ export const orderCondDTOSchema = orderSchema.pick({
 // Định nghĩa kiểu dữ liệu cho điều kiện truy vấn đơn hàng
 export interface OrderCondDTO extends z.infer<typeof orderCondDTOSchema> {}
 
-// Định nghĩa schema cho tạo mục sản phẩm trong đơn hàng    
+// Định nghĩa schema cho tạo mục sản phẩm trong đơn hàng
 export const orderItemCreateDTOSchema = orderItemSchema.pick({
-    orderId: true, // ID đơn hàng   
+    orderId: true, // ID đơn hàng
     productId: true, // ID sản phẩm
     variantId: true, // ID biến thể sản phẩm
     productName: true, // Tên sản phẩm

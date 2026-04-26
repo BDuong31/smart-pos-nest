@@ -21,16 +21,22 @@ export class OrderPrismaRepo implements IOrderRepository {
 
     // Lấy danh sách đơn hàng theo điều kiện
     async listOrders(cond: OrderCondDTO, paging: PagingDTO): Promise<Paginated<Order>> {  
-        const { userId, totalAmount, status, ...rest } = cond;  
+        const { userId, code, totalAmount, status } = cond;
 
         let where = {
-            ...rest,
         }
 
         if (userId) {
             where = {
                 ...where,
                 userId: userId,
+            }
+        }
+
+        if (code) {
+            where = {
+                ...where,
+                code: code,
             }
         }
 
@@ -48,14 +54,17 @@ export class OrderPrismaRepo implements IOrderRepository {
             }
         }
 
+        const page = Number(paging.page);
+        const limit = Number(paging.limit);
+
         const total = await prisma.order.count({ where });
 
-        const skip = (paging.page - 1) * paging.limit;
+        const skip = (page - 1) * limit;
 
         const result = await prisma.order.findMany({
             where,
             skip,
-            take: paging.limit,
+            take: limit,
             orderBy: { createdAt: 'desc' },
         });
 

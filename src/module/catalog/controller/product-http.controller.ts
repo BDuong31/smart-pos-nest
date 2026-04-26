@@ -87,14 +87,12 @@ export class ProductHttpController {
         const imageMap: Record<string, PublicImage[]> = {};
 
         if (categories && categories.length > 0){
-            console.log('Categories:', categories);
             categories.map(category => {
                 categoryMap[category.id] = category;
             });
         }
 
         if (images){
-            console.log('Images:', images);
             images.map(image => {
                 if (!imageMap[image.refId]) {
                     imageMap[image.refId] = [];
@@ -106,10 +104,8 @@ export class ProductHttpController {
         result.data = result.data.map(item => {
             const category = categoryMap[item.categoryId];
             const images = imageMap[item.id] || [];
-            console.log(`Mapping product ${item.id} with category ${category?.id} and images:`, images);
             return { ...item, category, images } as Product;
         })
-        console.log('Final Result with Categories and Images:', result);
 
         return paginatedResponse(result, dto);
     }

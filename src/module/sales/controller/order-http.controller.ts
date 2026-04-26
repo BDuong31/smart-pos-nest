@@ -70,7 +70,9 @@ export class OrderHttpController {
         paging = pagingDTOSchema.parse(paging);
         cond = orderCondDTOSchema.parse(cond);
 
-        const result = await this.orderService.listOrders(paging,cond);
+        const result = await this.orderService.listOrders(paging, cond);
+
+        console.log(result);
 
         const userIds = result.data.map(item => item.userId);
 
@@ -89,8 +91,7 @@ export class OrderHttpController {
             return { ...item, user } as Order;
         });
 
-        return paginatedResponse(result, paging);
-        
+        return paginatedResponse(result, paging)
     }
 
     // API để lấy thông tin mục sản phẩm trong đơn hàng theo nhiều ID
@@ -236,7 +237,7 @@ export class OrderItemHttpController {
             return { ...item, product, variant } as OrderItem;
         });
 
-        return { data };
+        return paginatedResponse(data, paging);
     }
 
     // API lấy thông tin mục sản phẩm trong đơn hàng theo nhiều ID

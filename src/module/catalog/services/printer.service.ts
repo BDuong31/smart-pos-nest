@@ -2,16 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type IPrinterRepository, IPrinterService } from '../ports/printer.port';
 import { PRINTER_REPOSITORY } from '../catalog.di-token';
 import { ErrPrinterAlreadyExists, ErrPrinterNotFound, type Printer } from '../models/printer.model';
-import { Requester } from 'src/share/interface';
+import {type IEventPublisher, Requester } from 'src/share/interface';
 import { CreatePrinterDTO, PrinterCondDTO, UpdatePrinterDTO, createPrinterDTOSchema, updatePrinterDTOSchema } from '../dtos/printer.dto';
 import { v7 } from 'uuid';
-import { AppError, Paginated, PagingDTO } from 'src/share';
+import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from 'src/share';
+import { PrinterCreatedEvent, PrinterDeletedEvent, PrinterUpdatedEvent } from 'src/share/event/printer.evt';
 
 // Lớp PrinterService cung cấp các phương thức để quản lý máy in
 @Injectable()
 export class PrinterService implements IPrinterService {
     constructor(
         @Inject(PRINTER_REPOSITORY) private readonly printerRepo: IPrinterRepository,
+        @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
     // Tạo mới máy in
@@ -36,6 +38,14 @@ export class PrinterService implements IPrinterService {
         };
 
         await this.printerRepo.insert(printer);
+
+        await this.eventPublisher.publish(PrinterCreatedEvent.create({
+            printerId: newId,
+            name: data.name,
+            type: data.type,
+            ipAddress: data.ipAddress,
+            changeType: 'CREATED'
+        }, requester.sub))
 
         return printer;
     }
@@ -62,6 +72,14 @@ export class PrinterService implements IPrinterService {
             throw AppError.from(ErrPrinterNotFound, 404);
         }
 
+        await this.eventPublisher.publish(PrinterUpdatedEvent.create({
+            printerId: updatedPrinter.id,
+            name: updatedPrinter.name,
+            type: updatedPrinter.type,
+            ipAddress: updatedPrinter.ipAddress,
+            changeType: 'UPDATED'
+        }, requester.sub))
+
         return updatedPrinter;
     }
 
@@ -75,6 +93,14 @@ export class PrinterService implements IPrinterService {
         }
 
         await this.printerRepo.delete(printerId);
+
+        await this.eventPublisher.publish(PrinterDeletedEvent.create({
+            printerId: existing.id,
+            name: existing.name,
+            type: existing.type,
+            ipAddress: existing.ipAddress,
+            changeType: 'DELETED'
+        }, requester.sub))
     }
 
     // Lấy thông tin máy in theo ID

@@ -57,7 +57,7 @@ export class ZalopayService {
 
         try {
             const result = await axios.post(
-                `${this.config.endpoint}/createorder`,
+                `${this.config.endpoint}/create`,
                 qs.stringify(order),       // <--- phải stringify theo form-urlencoded
                 {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }

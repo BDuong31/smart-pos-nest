@@ -90,11 +90,7 @@ export const userSchema = z.object({
   salt: z.string().min(8), // Salt để băm mật khẩu
   password: z
     .string({ message: ErrPasswordRequired.message }) // Mật khẩu bắt buộc
-    .min(8, { message: ErrPasswordTooShort.message }) // Tối thiểu 8 ký tự
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^_-])[A-Za-z\d@$!%*#?&^_-]+$/,
-      { message: ErrPasswordTooWeak.message },
-    ), // Mật khẩu mạnh (có chữ hoa, chữ thường, số, ký tự đặc biệt)
+    .min(5, { message: ErrPasswordTooShort.message }), // Tối thiểu 8 ký tự
   fullName: z
     .string({ message: ErrFullnameRequired.message }) // Họ tên bắt buộc
     .max(100, { message: ErrFullnameTooLong.message }), // Tối đa 100 ký tự
