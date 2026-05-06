@@ -80,9 +80,14 @@ export class ProductRepository implements IProductRepository {
 
     // Lấy danh sách sản phẩm theo mảng IDs
     async listByIds(ids: string[]): Promise<Product[]> {
-        const data = await prisma.product.findMany({
-            where: { id: { in: ids } },
-        });
+        let data;
+        if (ids.length > 0){
+            data = await prisma.product.findMany({
+                where: { id: { in: ids } },
+            });
+        } else {
+            data = await prisma.product.findMany();
+        }
         return data.map(this._toModel);
     }
 
@@ -177,9 +182,14 @@ export class ProductRepository implements IProductRepository {
 
     // Lấy danh sách biến thể sản phẩm theo mảng IDs
     async listVariantByIds(ids: string[]): Promise<Variant[]> {
-        const data = await prisma.variant.findMany({
-            where: { id: { in: ids } },
-        });
+        let data
+        if (ids && ids.length > 0){
+            data = await prisma.variant.findMany({
+                where: { id: { in: ids } },
+            });
+        } else {
+            data = await prisma.variant.findMany();
+        }
         return data.map(this._toModelVariant);
     }
 

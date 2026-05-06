@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { INotificationRepository } from "./notification.port";
 import {
   Notification,
@@ -11,10 +10,10 @@ import {
   NotificationCondDTO,
   UpdateNotificationSettingDTO,
 } from "./notification.dto";
-import { Paginated, PagingDTO } from "src/share";
+import { Paginated, PagingDTO, UserRole } from "src/share";
+import prisma from "src/share/components/prisma";
 
 export class NotificationPrismaRepository implements INotificationRepository {
-  constructor(private readonly prisma: PrismaClient) {}
 
   private toNotificationModel(item: any): Notification {
     return {
@@ -40,11 +39,8 @@ export class NotificationPrismaRepository implements INotificationRepository {
   // ========================
 
   async getNotification(id: string): Promise<Notification | null> {
-    const result = await this.prisma.notification.findUnique({
+    const result = await prisma.notification.findUnique({
       where: { id },
-      include: {
-        reads: true,
-      },
     });
 
     if (!result) return null;
@@ -88,30 +84,21 @@ export class NotificationPrismaRepository implements INotificationRepository {
     const skip = (page - 1) * limit;
 
     const [total, data] = await Promise.all([
-      this.prisma.notification.count({ where }),
-      this.prisma.notification.findMany({
+      prisma.notification.count({ where }),
+      prisma.notification.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: {
-          reads: userId
-            ? {
-                where: { userId },
-                select: { id: true },
-              }
-            : false,
-        },
       }),
     ]);
 
     let result = data.map(this.toNotificationModel);
 
-    // 🔥 filter isRead (after query)
     if (isRead !== undefined) {
       result = result.filter((item) => item.isRead === isRead);
     }
-
+    
     return {
       data: result,
       paging,
@@ -120,31 +107,30 @@ export class NotificationPrismaRepository implements INotificationRepository {
   }
 
   async listNotificationByIds(ids: string[]): Promise<Notification[]> {
-    const data = await this.prisma.notification.findMany({
+    const data = await prisma.notification.findMany({
       where: { id: { in: ids } },
-      include: { reads: true },
     });
 
     return data.map(this.toNotificationModel);
   }
 
   async createNotification(dto: CreateNotificationDTO): Promise<Notification> {
-    const created = await this.prisma.notification.create({
+    const created = await prisma.notification.create({
       data: dto,
     });
 
-    return this.toNotificationModel({ ...created, reads: [] });
+    return this.toNotificationModel(created);
   }
 
   async updateNotification(id: string, dto: UpdateNotificationDTO): Promise<void> {
-    await this.prisma.notification.update({
+    await prisma.notification.update({
       where: { id },
       data: dto,
     });
   }
 
   async deleteNotification(id: string): Promise<void> {
-    await this.prisma.notification.delete({
+    await prisma.notification.delete({
       where: { id },
     });
   }
@@ -157,7 +143,7 @@ export class NotificationPrismaRepository implements INotificationRepository {
     notificationId: string,
     userId: string
   ): Promise<NotificationRead | null> {
-    return this.prisma.notificationRead.findUnique({
+    return prisma.notificationRead.findUnique({
       where: {
         notificationId_userId: {
           notificationId,
@@ -171,7 +157,7 @@ export class NotificationPrismaRepository implements INotificationRepository {
     notificationId: string;
     userId: string;
   }): Promise<void> {
-    await this.prisma.notificationRead.upsert({
+    await prisma.notificationRead.upsert({
       where: {
         notificationId_userId: data,
       },
@@ -180,15 +166,22 @@ export class NotificationPrismaRepository implements INotificationRepository {
     });
   }
 
+  async markAsRead(notificationId: string): Promise<void> {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true },
+    });
+  }
+
   async markAllAsRead(userId: string): Promise<void> {
-    const notifications = await this.prisma.notification.findMany({
+    const notifications = await prisma.notification.findMany({
       where: {
         OR: [{ userId }, { isGlobal: true }],
       },
       select: { id: true },
     });
 
-    await this.prisma.notificationRead.createMany({
+    await prisma.notificationRead.createMany({
       data: notifications.map((n) => ({
         notificationId: n.id,
         userId,
@@ -197,18 +190,23 @@ export class NotificationPrismaRepository implements INotificationRepository {
     });
   }
 
-  async countUnread(userId: string): Promise<number> {
-    const total = await this.prisma.notification.count({
+  async countUnread(userId: string, role: string): Promise<number> {
+    const total = await prisma.notification.count({
       where: {
-        OR: [{ userId }, { isGlobal: true }],
+        AND: [
+          { isRead: false },
+          {
+            OR: [
+              { userId: userId },
+              ...(role ? [{ role: role as UserRole }] : []),
+              { isGlobal: true },
+            ],
+          },
+        ],
       },
     });
 
-    const read = await this.prisma.notificationRead.count({
-      where: { userId },
-    });
-
-    return total - read;
+    return total;
   }
 
   // ========================
@@ -216,7 +214,7 @@ export class NotificationPrismaRepository implements INotificationRepository {
   // ========================
 
   async getNotificationSetting(userId: string): Promise<NotificationSetting | null> {
-    const data = await this.prisma.notificationSetting.findUnique({
+    const data = await prisma.notificationSetting.findUnique({
       where: { userId },
     });
     
@@ -229,7 +227,7 @@ export class NotificationPrismaRepository implements INotificationRepository {
     userId: string,
     dto: UpdateNotificationSettingDTO
   ): Promise<void> {
-    await this.prisma.notificationSetting.upsert({
+    await prisma.notificationSetting.upsert({
       where: { userId },
       update: {
         enabled: dto.enabled,
@@ -242,7 +240,7 @@ export class NotificationPrismaRepository implements INotificationRepository {
   }
 
   async createSettingIfNotExists(userId: string): Promise<NotificationSetting> {
-    return this.prisma.notificationSetting.upsert({
+    return prisma.notificationSetting.upsert({
       where: { userId },
       update: {},
       create: {

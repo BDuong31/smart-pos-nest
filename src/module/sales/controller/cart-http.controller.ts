@@ -251,8 +251,6 @@ export class CartItemOptionHttpController {
             optionItems.map(optionItem => { optionItemMap[optionItem.id] = optionItem; });
         }
 
-        console.log(optionItems);
-
         result.data = result.data.map(item => {
             const optionItem = optionItemMap[item.optionItemId];
             return { ...item, optionItem } as CartItemOption;

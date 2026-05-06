@@ -6,14 +6,16 @@ import { PointHistoryCondDTO, PointHistoryDTO, pointHistoryDTOSchema, UserRankCo
 import { AppError } from "src/share/app-error";
 import { ErrUserRankMinPointAlreadyExists, ErrUserRankNameAlreadyExists, ErrUserRankNotFound, UserRank } from "../models/user-rank.model";
 import { v7 } from "uuid";
-import { EVENT_PUBLISHER,type IEventPublisher, Paginated, PagingDTO } from "src/share";
+import { EVENT_PUBLISHER,type IEventPublisher, type IPublicUserRpc, Paginated, PagingDTO, USER_RPC } from "src/share";
 import { PointHistory } from "../models/point-history.model";
-import { PointsDecreasedEvent, PointsIncreasedEvent, RankCreatedEvent, RankDeletedEvent, RankUpdatedEvent } from "src/share/event/loyalty.evt";
+import { PointsDecreasedEvent, PointsIncreasedEvent, RankCreatedEvent, RankDeletedEvent, RankUpdatedEvent, UserRankChangedEvent } from "src/share/event/loyalty.evt";
+import { ErrUserNotFound } from "../models/user.model";
 // Lớp LoyaltySerivce triển khai các phương thức quản lý chương trình khách hàng thân thiết
 export class LoyaltyService implements ILoyaltyService {
     constructor(
         @Inject(LOYALTY_REPOSITORY) private readonly loyaltyRepository: ILoyaltyRepository,
         @Inject(USER_MONGO_AUDIT_REPOSITORY) private readonly userAuditRepo: IUserMongoAuditRepository,
+        @Inject(USER_RPC) private readonly userRpc: IPublicUserRpc,
         @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
     ){}
 
@@ -167,18 +169,66 @@ export class LoyaltyService implements ILoyaltyService {
 
         await this.loyaltyRepository.insertPointHistory(newPointHistory);
 
+        const user = await this.userRpc.getUserById(data.userId);
+        if (!user) {
+            throw AppError.from(ErrUserNotFound, 404);
+        }
+
+        const listRank = await this.loyaltyRepository.listUserRanksByIds([])
+
+        if(listRank.length == 0) {
+            throw AppError.from(ErrUserRankNotFound, 404);
+        }
+
         if (data.amount > 0) {
             await this.eventPublisher.publish(PointsIncreasedEvent.create({
                 userId: data.userId,
                 points: data.amount,
                 rankChanges: 'INCREASED',
             }, 'system'));
+
+            const currentPoints = user.currentPoints + data.amount;
+
+            let nextRank;
+            for (const rank of listRank) {
+                if (currentPoints >= rank.minPoint) {
+                    nextRank = rank;
+                } else {
+                    break;
+                }
+            }
+            if (nextRank && nextRank.id !== user.rankId) {
+                await this.eventPublisher.publish(UserRankChangedEvent.create({
+                    userId: data.userId,
+                    oldRankId: user.rankId || '',
+                    newRankId: nextRank.id || '',
+                    rankChanges: 'CHANGED',
+                }, 'system'))
+            }
         } else if (data.amount < 0) {
             await this.eventPublisher.publish(PointsDecreasedEvent.create({
                 userId: data.userId,
                 points: data.amount,
                 rankChanges: 'DECREASED',
             }, 'system'));
+
+            const currentPoints = user.currentPoints - data.amount;
+            let prevRank;
+            for (const rank of listRank) {
+                if (currentPoints >= rank.minPoint) {
+                    prevRank = rank;
+                } else {
+                    break;
+                }
+            }
+            if (prevRank && prevRank.id !== user.rankId) {
+                await this.eventPublisher.publish(UserRankChangedEvent.create({
+                    userId: data.userId,
+                    oldRankId: user.rankId || '',
+                    newRankId: prevRank.id || '',
+                    rankChanges: 'CHANGED',
+                }, 'system'))
+            }
         }
 
         return newId;

@@ -66,9 +66,14 @@ export class LoyaltyPrismaRepository implements ILoyaltyRepository {
 
     // Phương thức lấy danh sách hạng khách hàng thân thiết theo mảng IDs
     async listUserRanksByIds(ids: string[]): Promise<UserRank[]> {
-        const data = await prisma.userRank.findMany({
-            where: { id: { in: ids } }
-        });
+        let data;
+        if (ids.length > 0) {
+            data = await prisma.userRank.findMany({
+                where: { id: { in: ids } }
+            });
+        } else {
+            data = await prisma.userRank.findMany();
+        }
         return data.map(this._toUserRankModel);
     }
     

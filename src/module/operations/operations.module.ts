@@ -10,6 +10,7 @@ import { ShareModule } from "src/share/module";
 import { ZoneHttpController, ZoneRpcController } from "./controller/zone-http.controller";
 import { TableHttpController, TableRpcController } from "./controller/table-http.controller";
 import { ReservationHttpController, ReservationRpcController } from "./controller/reservation-http.controller";
+import { TableConsumer } from "./consumers/table.consumer";
 
 const dependencies: Provider[] = [
     { provide: ZONE_REPOSITORY,  useClass: ZonePrismaRepo },
@@ -22,7 +23,7 @@ const dependencies: Provider[] = [
 
 @Module({
     imports: [ShareModule],
-    controllers: [ZoneHttpController, ZoneRpcController, TableHttpController, TableRpcController, ReservationHttpController, ReservationRpcController],
+    controllers: [ZoneHttpController, ZoneRpcController, TableHttpController, TableRpcController,  TableConsumer, ReservationHttpController, ReservationRpcController],
     providers: [...dependencies],
 })
 

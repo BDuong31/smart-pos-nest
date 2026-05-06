@@ -564,11 +564,10 @@ model Notification {
   type      NotificationType
   refType   String?  @db.VarChar(50)
   refId     String?  @db.VarChar(36)
+  isRead    Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  reads     NotificationRead[]
 
   @@index([userId, createdAt])
   @@index([role, createdAt])
@@ -585,8 +584,6 @@ model NotificationRead {
   userId         String   @db.VarChar(36)
 
   readAt         DateTime @default(now())
-
-  notification   Notification @relation(fields: [notificationId], references: [id])
 
   @@unique([notificationId, userId])
   @@index([userId])

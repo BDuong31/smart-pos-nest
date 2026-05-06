@@ -308,6 +308,7 @@ export class PaymentService implements IPaymentService {
                 const result = await this.zalopayService.queryPaymentStatus(
                     externalPaymentId
                 )
+
                 return result.return_code === 1
                     ? PaymentStatus.SUCCESS
                     : PaymentStatus.FAILED

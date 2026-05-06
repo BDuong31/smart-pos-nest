@@ -105,12 +105,12 @@ export class ZalopayService {
                 app_trans_id: appTransId,
             };
 
-            const data = postData.app_id + '|' + postData.app_trans_id;
+            const data = postData.app_id + '|' + postData.app_trans_id + '|' + this.config.key1;
 
             postData['mac'] = CryptoJS.HmacSHA256(data, this.config.key1).toString();
 
             const response = await axios.post(
-                this.config.endpoint + '/getstatusbyapptransid',
+                this.config.endpoint + '/query',
                 qs.stringify(postData),
                 { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
             );

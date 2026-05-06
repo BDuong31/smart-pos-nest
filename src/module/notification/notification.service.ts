@@ -11,10 +11,13 @@ import {
   ErrNotificationNotFound,
 } from "./notification.model";
 import { GATEWAY_SERVICE, Paginated, PagingDTO, Requester } from "src/share";
-import { Inject } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { NOTIFICATION_REPOSITORY } from "./notification.di-token";
 import { AppGateway } from "src/share/components/gateway";
+import { Expo } from 'expo-server-sdk';
 
+const expo = new Expo();
+@Injectable()
 export class NotificationService implements INotificationService {
   constructor(
     @Inject(NOTIFICATION_REPOSITORY) private readonly repo: INotificationRepository,
@@ -52,6 +55,8 @@ export class NotificationService implements INotificationService {
         "notification:new",
         created
       );
+
+      // await this.sendExpoPush(created.userId, created.title, created.content);
     }
 
     else if (created.role) {
@@ -60,6 +65,8 @@ export class NotificationService implements INotificationService {
         "notification:new",
         created
       );
+
+      // await this.sendExpoPush('role', created.title, created.content);
     }
 
     else if (created.isGlobal) {
@@ -67,6 +74,8 @@ export class NotificationService implements INotificationService {
         "notification:new",
         created
       );
+
+      // await this.sendExpoPush('global', created.title, created.content);
     }
     return created.id;
   }
@@ -121,27 +130,19 @@ export class NotificationService implements INotificationService {
     ip: string,
     userAgent: string
   ): Promise<void> {
-    const userId = requester.sub;
 
     const notification = await this.repo.getNotification(notificationId);
     if (!notification) throw ErrNotificationNotFound;
 
-    // 🔥 check đã đọc chưa
-    const existed = await this.repo.getNotificationRead(notificationId, userId);
-    if (existed) return;
-
-    await this.repo.insertNotificationRead({
-      notificationId,
-      userId,
-    });
+    await this.repo.markAsRead(notificationId);
   }
 
   async markAllAsRead(requester: Requester, userId: string, ip: string, userAgent: string): Promise<void> {
     await this.repo.markAllAsRead(userId);
   }
 
-  async countUnread(userId: string): Promise<number> {
-    return this.repo.countUnread(userId);
+  async countUnread(userId: string, role?: string): Promise<number> {
+    return this.repo.countUnread(userId, role);
   }
 
   async getNotificationRead(
@@ -172,4 +173,19 @@ export class NotificationService implements INotificationService {
   async getNotificationSetting(userId: string): Promise<NotificationSetting | null> {
     return this.repo.getNotificationSetting(userId);
   }
+
+  // private async sendExpoPush(userId: string, title: string, body: string) {
+  //   const userSetting = await this.repo.getNotificationSetting(userId);
+  //   const pushToken = (userSetting as any).expoPushToken;
+
+  //   if (Expo.isExpoPushToken(pushToken)) {
+  //     await expo.sendPushNotificationsAsync([{
+  //       to: pushToken,
+  //       sound: 'default',
+  //       title: title,
+  //       body: body,
+  //       data: { withSome: 'data' },
+  //     }]);
+  //   }
+  // }
 }

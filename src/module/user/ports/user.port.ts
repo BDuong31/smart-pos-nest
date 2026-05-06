@@ -34,6 +34,8 @@ export interface IUserRepository {
     insert(user: User): Promise<void>; // Thêm người dùng mới
     update(id: string, dto: UserUpdateDTO): Promise<void>; // Cập nhật thông tin người dùng
     delete(id: string): Promise<void>; // Xóa người dùng theo ID
+    increaseCount(id: string, field: string, value: number): Promise<void>; // Tăng số lượng
+    decreaseCount(id: string, field: string, value: number): Promise<void>; // Giảm số lượng
 }
 
 export interface IUserMongoAuditRepository {

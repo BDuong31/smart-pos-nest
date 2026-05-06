@@ -12,6 +12,7 @@ import { OperationsModule } from './module/operations/operations.module';
 import { SalesModule } from './module/sales/sales.module';
 import { InventoryModule } from './module/inventory/inventory.module';
 import { SystemModule } from './module/system/system.module';
+import { NotificationModule } from './module/notification/notification.module';
 import { APP_GUARD } from '@nestjs/core';
 import { MaintenanceGuard } from './share/guard/maintenance';
 @Module({
@@ -29,6 +30,7 @@ import { MaintenanceGuard } from './share/guard/maintenance';
     SalesModule,
     InventoryModule,
     SystemModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

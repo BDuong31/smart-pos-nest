@@ -11,6 +11,8 @@ import {
   UseGuards,
   HttpStatus,
   HttpCode,
+  Inject,
+  Patch,
 } from "@nestjs/common";
 import { NotificationService } from "./notification.service";
 import type {
@@ -21,10 +23,13 @@ import type {
 import { getIPv4FromReq, paginatedResponse, PagingDTO,UserRole,type ReqWithRequester } from "src/share";
 import type { Request as ExpressRequest } from "express";
 import { RemoteAuthGuard, Roles, RolesGuard } from "src/share/guard";
+import { NOTIFICATION_SERVICE } from "./notification.di-token";
 
-@Controller("notifications")
+@Controller("v1/notifications")
 export class NotificationHttpController {
-  constructor(private readonly service: NotificationService) {}
+  constructor(
+    @Inject(NOTIFICATION_SERVICE)private readonly service: NotificationService
+  ) {}
 
   // ========================
   // ADMIN / STAFF
@@ -52,7 +57,7 @@ export class NotificationHttpController {
     };
   }
 
-  @Put(":id")
+  @Patch(":id")
   async updateNotification(
     @Param("id") id: string,
     @Body() dto: UpdateNotificationDTO,
@@ -100,6 +105,7 @@ export class NotificationHttpController {
       type: query.type,
       refType: query.refType,
       refId: query.refId,
+      isRead: query.isRead,
     };
 
     const paging: PagingDTO = {
@@ -117,7 +123,7 @@ export class NotificationHttpController {
     return this.service.getNotification(id);
   }
 
-  @Post(":id/read")
+  @Patch(":id/read")
   async markAsRead(@Param("id") id: string, @Request() req: ReqWithRequester, @Request() expressReq: ExpressRequest) {
     const ip = getIPv4FromReq(expressReq);
     const userAgent = expressReq.headers["user-agent"] || "";
@@ -143,8 +149,8 @@ export class NotificationHttpController {
   }
 
   @Get("unread/count")
-  async countUnread(@Request() req: ReqWithRequester) {
-    const total = await this.service.countUnread(req.requester.sub);
+  async countUnread(@Request() req: ReqWithRequester, @Query() cond: { userId: string, role: UserRole }) {
+    const total = await this.service.countUnread(cond.userId, cond.role);
 
     return { total };
   }

@@ -10,7 +10,7 @@ export const ErrReasonTooLong = new Error('Reason is too long');
 export const pointHistorySchema = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
-    amount: z.number().min(0, { message: ErrAmountNegative.message }),
+    amount: z.number(),
     reason: z.string().max(255, { message: ErrReasonTooLong.message }),
     createdAt: z.date(),
     updatedAt: z.date(),

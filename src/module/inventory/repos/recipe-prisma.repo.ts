@@ -50,6 +50,13 @@ export class RecipePrismaRepo implements IRecipeRepository {
                 ...where,
                 variantId: variantId,
             }
+            const recipe = await prisma.recipe.findFirst({
+                where: {
+                    variantId: variantId
+                }
+            })
+
+            console.log(recipe);
         }
         
         if (optionItemId) {
@@ -58,6 +65,8 @@ export class RecipePrismaRepo implements IRecipeRepository {
                 optionItemId: optionItemId,
             }
         }
+
+        console.log(where)
 
         const total = await prisma.recipe.count({ where });
         
@@ -70,6 +79,8 @@ export class RecipePrismaRepo implements IRecipeRepository {
             orderBy: { createdAt: "desc" },
         });
 
+        console.log(result)
+
         return {
             data: result.map(this._toModel),
             paging,
@@ -79,7 +90,12 @@ export class RecipePrismaRepo implements IRecipeRepository {
 
     // Lấy danh sách công thức theo nhiều ID
     async listByIds(recipeIds: string[]): Promise<Recipe[]> {
-        const result = await prisma.recipe.findMany({ where: { id: { in: recipeIds } } });
+        let result;
+        if (recipeIds.length > 0) {
+            result = await prisma.recipe.findMany({ where: { id: { in: recipeIds } } });
+        } else {
+            result = await prisma.recipe.findMany();
+        }
 
         return result.map(this._toModel);
     }

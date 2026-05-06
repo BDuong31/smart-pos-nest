@@ -18,7 +18,7 @@ export class TableRPCClient implements IPublicTableRpc {
     async findByIds(ids: string[]): Promise<PublicTable[]> {
         try {
             const response = await axios.post(`${this.tableServiceUrl}/rpc/tables/list-by-ids`, { ids });
-            return response.data;
+            return response.data.data;
         } catch (error) {
             return [];
         }

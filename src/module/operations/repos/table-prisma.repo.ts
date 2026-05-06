@@ -94,8 +94,12 @@ export class TablePrismaRepo implements ITableRepository {
 
     // Lấy danh sách bàn theo nhiều ID
     async listByIds(ids: string[]): Promise<Table[]> {
-        const data = await prisma.table.findMany({ where: { id: { in: ids } } });
-
+        let data;
+        if (ids.length > 0) {
+          data = await prisma.table.findMany({ where: { id: { in: ids } } });
+        } else {
+          data = await prisma.table.findMany();
+        }
        return data.map(this._toModel);
     }
 

@@ -61,6 +61,9 @@ export class RecipeHttpController {
         paging = pagingDTOSchema.parse(paging);
         cond = recipeCondDTOSchema.parse(cond);
 
+
+        console.log(cond)
+
         const result = await this.recipeService.list(cond, paging);
 
         const ingredientIds = result.data.map(item => item.ingredientId);

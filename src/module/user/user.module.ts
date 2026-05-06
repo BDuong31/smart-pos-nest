@@ -16,6 +16,8 @@ import { LoyaltyService } from './services/loyalty.serivce';
 import { AuthHttpController, AuthRpcHttpController } from './controllers/auth-http.controller';
 import { ShiftHttpController, ShiftRpcController } from './controllers/shift-http.controller';
 import { LoyaltyHttpController, LoyaltyRpcController } from './controllers/loyalty-http.controller';
+import { UserComsumer } from './consumers/user.consumer';
+import { LoyaltyComsumer } from './consumers/loyalty.consumer';
 
 // Khai báo các Provider 
 const repositories: Provider[] = [
@@ -46,7 +48,7 @@ const accessTokenProvider: Provider = { provide: ACCESS_TOKEN_PROVIDER, useValue
 const refreshTokenProvider: Provider = { provide: REFRESH_TOKEN_PROVIDER, useValue: refreshTokenJWTProvider };
 @Module({
   imports: [ShareModule, ConfigModule],
-  controllers: [AuthHttpController, AuthRpcHttpController,UserHttpController, UserHttpRpcController, ShiftHttpController, ShiftRpcController, LoyaltyHttpController, LoyaltyRpcController],
+  controllers: [AuthHttpController, AuthRpcHttpController,UserHttpController, UserComsumer, LoyaltyComsumer, UserHttpRpcController, ShiftHttpController, ShiftRpcController, LoyaltyHttpController, LoyaltyRpcController],
   providers: [UserService, ...repositories, ...services, accessTokenProvider, refreshTokenProvider, ...mongoRepositories],
   exports: [USER_SERVICE, AUTH_SERVICE, SHIFT_SERVICE, LOYALTY_SERVICE, USER_REPOSITORY, SHIFT_REPOSITORY, LOYALTY_REPOSITORY, USER_MONGO_AUDIT_REPOSITORY, USER_MONGO_OTP_REPOSITORY],
 })

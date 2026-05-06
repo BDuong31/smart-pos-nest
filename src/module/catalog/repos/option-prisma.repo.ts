@@ -82,7 +82,12 @@ export class OptionPrismaRepository implements IOptionRepository {
 
     // lấy danh sách Option Group theo mảng IDs
     async getOptionGroupByIds(ids: string[]): Promise<OptionGroup[]> {
-        const data = await prisma.optionGroup.findMany({ where: { id: { in: ids }}});
+        let data;
+        if (ids.length > 0) {
+            data = await prisma.optionGroup.findMany({ where: { id: { in: ids }} });
+        } else {
+            data = await prisma.optionGroup.findMany();
+        }
         return data.map(this._toModelOptionGroup);
     }
  
@@ -168,13 +173,19 @@ export class OptionPrismaRepository implements IOptionRepository {
 
     // lấy danh sách Option Item theo mảng IDs
     async getOptionItemsByIds(ids: string[]): Promise<OptionItem[]> {
-        const data = await prisma.optionItem.findMany({
-            where: {
-                id: {
-                    in: ids,
-                }
-            },
-        });
+        let data;
+        if (ids.length > 0) {
+            data = await prisma.optionItem.findMany({
+                where: {
+                    id: {
+                        in: ids,
+                    },
+                },
+            })
+        } else {
+            data = await prisma.optionItem.findMany();
+        }
+            
         return data.map(this._toModelOptionItem);
     }
 
@@ -263,14 +274,18 @@ export class OptionPrismaRepository implements IOptionRepository {
 
     // lấy danh sách Product Option Config theo mảng product IDs
     async getProductOptionConfigsByIds(ids: string[]): Promise<ProductOptionConfig[]> {
-        const data = await prisma.productOptionConfig.findMany({
+        let data;
+        if (ids.length > 0) {
+            data = await prisma.productOptionConfig.findMany({
             where: {
                 id: {
                     in: ids,
                 }
             }
         });
-
+        } else {
+            data = await prisma.productOptionConfig.findMany();
+        }
         return data.map(this._toModelProductOptionConfig);
     }
 

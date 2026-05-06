@@ -63,7 +63,7 @@ export class TableHttpController {
   // API để cập nhật thông tin bàn
   @Patch(':id')
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Request() req: ReqWithRequester,
@@ -80,7 +80,7 @@ export class TableHttpController {
   // API để xóa bàn theo ID
   @Delete(':id')
   @UseGuards(RemoteAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
     @Request() req: ReqWithRequester,

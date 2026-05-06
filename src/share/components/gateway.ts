@@ -87,6 +87,7 @@ export class AppGateway
 
   // Gửi sự kiện đến role
   emitToRole(role: string, event: string, data: any) {
+    console.log(`Sending event ${event} to role ${role}`);
     this.server.to(`role:${role}`).emit(event, data);
   }
 
@@ -97,6 +98,7 @@ export class AppGateway
 
   // Gửi sự kiện đến nhiều role
   emitToRoles(roles: string[], event: string, data: any) {
+    console.log(`Sending event ${event} to roles ${roles}`);
     roles.forEach((role) => {
       this.server.to(`role:${role}`).emit(event, data);
     });

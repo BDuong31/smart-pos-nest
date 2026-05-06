@@ -89,6 +89,7 @@ export const publicUserSchema = z.object({
   fullName: z.string(),
   birthday: z.date(),
   rankId: z.string().nullable(),
+  currentPoints: z.number(),
 });
 
 // Kiểu dữ liệu người dùng công khai

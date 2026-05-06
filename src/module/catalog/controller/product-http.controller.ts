@@ -111,7 +111,7 @@ export class ProductHttpController {
     }
 
     // API lấy danh sách sản phẩm theo mảng IDs
-    @Get('list-by-ids')
+    @Post('list-by-ids')
     @HttpCode(HttpStatus.OK)
     async listProductByIds(@Body('ids') ids: string[]){
         const result = await this.productService.getProductByIds(ids);

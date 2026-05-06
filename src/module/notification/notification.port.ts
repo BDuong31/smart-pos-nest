@@ -39,8 +39,9 @@ export interface INotificationRepository {
   // Read
   getNotificationRead(notificationId: string, userId: string): Promise<NotificationRead | null>;
   insertNotificationRead(data: { notificationId: string;  userId: string;}): Promise<void>;
+  markAsRead(notificationId: string): Promise<void>;
   markAllAsRead(userId: string): Promise<void>;
-  countUnread(userId: string): Promise<number>;
+  countUnread(userId: string, role?: string): Promise<number>;
   // Setting
   getNotificationSetting(userId: string): Promise<NotificationSetting | null>;
   updateNotificationSetting(userId: string,  dto: UpdateNotificationSettingDTO): Promise<void>;

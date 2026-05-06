@@ -72,8 +72,6 @@ export class OrderHttpController {
 
         const result = await this.orderService.listOrders(paging, cond);
 
-        console.log(result);
-
         const userIds = result.data.map(item => item.userId);
 
         const users = await this.userRpc.getUsersByIds([...new Set(userIds)]);
@@ -587,7 +585,7 @@ export class OrderTableHttpController {
 
         const tableMap: Record<string, PublicTable> = {};
 
-        if (tables) {
+        if (tables && tables.length > 0) {
             tables.map(table => {
                 tableMap[table.id] = table;
             });

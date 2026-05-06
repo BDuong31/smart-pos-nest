@@ -23,6 +23,7 @@ export class UserRPCClient implements IPublicUserRpc {
         fullName: user.fullName,
         birthday: user.birthday,
         rankId: user.rankId,
+        currentPoints: user.currentPoints,
       };
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -41,6 +42,7 @@ export class UserRPCClient implements IPublicUserRpc {
             fullName: user.fullName,
             birthday: user.birthday,
             rankId: user.rankId,
+            currentPoints: user.currentPoints,
         };
       })
 

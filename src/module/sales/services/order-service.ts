@@ -1,13 +1,14 @@
-import { ErrInvoiceNotFound, ErrOrderTableNotFound, ErrOrderVoucherNotFound, OrderVoucher } from './../models/order.model';
+import { ErrInvoiceNotFound, ErrOrderTableNotFound, ErrOrderVoucherNotFound } from './../models/order.model';
 import { Inject, Injectable } from '@nestjs/common';
 import { type IOrderRepository, IOrderService } from '../ports/order.port';
 import { ORDER_REPOSITORY } from '../sales.di-token';
 import { ErrOrderAlreadyExists, ErrOrderNotFound, OrderStatus, type Order, type OrderItem, type OrderItemOption, type OrderVoucher, type OrderTable, type Invoice, ErrOrderItemNotFound, ErrOrderItemOptionNotFound } from '../models/order.model';
-import { type IEventPublisher, Requester } from 'src/share/interface';
+import { type IEventPublisher, Requester, UserRole } from 'src/share/interface';
 import { InvoiceCondDTO, InvoiceCreateDTO, invoiceCreateDTOSchema, InvoiceUpdateDTO, OrderCondDTO, OrderCreateDTO, orderCreateDTOSchema, OrderItemCondDTO, OrderItemCreateDTO, orderItemCreateDTOSchema, OrderItemOptionCondDTO, OrderItemOptionCreateDTO, orderItemOptionCreateDTOSchema, OrderItemOptionUpdateDTO, orderItemOptionUpdateDTOSchema, OrderItemUpdateDTO, orderItemUpdateDTOSchema, OrderTableCondDTO, OrderTableCreateDTO, orderTableCreateDTOSchema, OrderTableUpdateDTO, OrderUpdateDTO, orderUpdateDTOSchema, OrderVoucherCondDTO, OrderVoucherCreateDTO, orderVoucherCreateDTOSchema, OrderVoucherUpdateDTO } from '../dtos/order.dto';
 import { v7 } from 'uuid';
-import { AppError, EVENT_PUBLISHER, Paginated, PagingDTO } from 'src/share';
+import { AppError, EVENT_PUBLISHER, GATEWAY_SERVICE, Paginated, PagingDTO } from 'src/share';
 import { InvoiceCreatedEvent, InvoiceDeletedEvent, InvoiceUpdatedEvent, OrderCreatedEvent, OrderDeletedEvent, OrderItemAddedEvent, OrderItemOptionAddedEvent, OrderItemOptionRemovedEvent, OrderItemOptionUpdatedEvent, OrderItemRemovedEvent, OrderItemUpdatedEvent, OrderTableAssignedEvent, OrderTableUnassignedEvent, OrderUpdatedEvent, OrderVoucherAppliedEvent, OrderVoucherRemovedEvent } from 'src/share/event/oder.evt';
+import { AppGateway } from 'src/share/components/gateway';
 
 // Lớp OrderService cung cấp các phương thức để quản lý đơn hàng
 @Injectable()
@@ -15,6 +16,7 @@ export class OrderService implements IOrderService {
     constructor(
         @Inject(ORDER_REPOSITORY) private readonly orderRepo: IOrderRepository,
         @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
+        @Inject(GATEWAY_SERVICE) private readonly gateway: AppGateway,
     ){}
 
     // Order
@@ -58,6 +60,14 @@ export class OrderService implements IOrderService {
             changeType: 'CREATED',
         }, requester.sub));
 
+        // Gửi thông báo đến user
+        this.gateway.emitToUser(order.userId, 'order:created', order);
+
+        // Gửi thông báo đến bếp nếu nhân viên order
+        if (requester.role !== 'customer') {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:confirmed', order);
+        }
+
         return newId;
     }
 
@@ -75,14 +85,30 @@ export class OrderService implements IOrderService {
         // Cập nhật thông tin đơn hàng
         await this.orderRepo.updateOrder(orderId, data);
 
+        const order = await this.orderRepo.getOrderById(orderId);
+
         await this.eventPublisher.publish(OrderUpdatedEvent.create({
             orderId: orderId,
-            code: existing.code,
-            userId: existing.userId,
-            totalAmount: existing.totalAmount,
-            status: existing.status,
+            code: order!.code,
+            userId: order!.userId,
+            totalAmount: order!.totalAmount,
+            status: order!.status,
             changeType: 'UPDATED',
         }, requester.sub));
+
+        if (data.status === OrderStatus.CONFIRMED) {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:confirmed', existing);
+        } else if (data.status === OrderStatus.CANCELLED) {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:cancelled', existing);
+        } else if (data.status === OrderStatus.SERVED) {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:served', existing);
+        } else if (data.status === OrderStatus.COMPLETED) {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:completed', existing);
+        } else if (data.status === OrderStatus.PROCESSING) {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:processing', existing);
+        } else if (data.status === OrderStatus.PENDING) {
+            this.gateway.emitToRoles([UserRole.ADMIN, UserRole.STAFF, UserRole.KITCHEN], 'order:pending', existing);
+        }
     }
 
     // Xóa đơn hàng theo ID
@@ -104,6 +130,8 @@ export class OrderService implements IOrderService {
             status: existing.status,
             changeType: 'DELETED',
         }, requester.sub));
+
+        this.gateway.emitToRole('kitchen', 'order:deleted', existing);
     }
     
     // Lấy thông tin đơn hàng theo ID 
